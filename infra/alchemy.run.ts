@@ -3,7 +3,6 @@ import { adopt } from "alchemy/AdoptPolicy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
-import * as Redacted from "effect/Redacted";
 import { ROLE_MAILBOXES } from "@enrailar/shared";
 import { DOMAIN, isProductionStage, stubPath } from "./src/stage.ts";
 
@@ -43,9 +42,9 @@ export default Stack(
         include,
       },
     ];
-    // En prod la app se declara acá para poder atar `POLICY_AUD` a su `aud`.
-    // Un preview no tiene hostname propio todavía: la app dedicada del Worker
-    // sigue naciendo con el destino `worker`, y el aud entra por el entorno.
+    // En prod la app es compartida por inbox y admin. El `aud` entra como
+    // `POLICY_AUD` desde el entorno. Un preview no tiene hostname propio:
+    // la app dedicada del Worker nace con el destino `worker`.
     const accessApp = production
       ? yield* Cloudflare.Access.Application("Access", {
           type: "self_hosted",
@@ -115,7 +114,7 @@ export default Stack(
         EMAIL: inboxSend,
         DOMAINS: DOMAIN,
         EMAIL_ADDRESSES: [...ROLE_MAILBOXES],
-        POLICY_AUD: accessApp ? Redacted.make(accessApp.aud) : Config.Redacted("POLICY_AUD"),
+        POLICY_AUD: Config.Redacted("POLICY_AUD"),
         TEAM_DOMAIN: Config.Redacted("TEAM_DOMAIN"),
         MAILBOX: Cloudflare.DurableObject("Mailbox", { className: "MailboxDO" }),
         EMAIL_AGENT: Cloudflare.DurableObject("EmailAgent", { className: "EmailAgent" }),
