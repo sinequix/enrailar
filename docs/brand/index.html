@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual de marca · Enrailar</title>
+<link rel="icon" href="../../apps/web/public/brand/favicon.svg">
+<style>
+  @font-face { font-family: "Archivo"; src: url("../../apps/web/public/fonts/archivo-latin.woff2") format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "Archivo"; src: url("../../apps/web/public/fonts/archivo-italic-latin.woff2") format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; font-style: italic; }
+  @font-face { font-family: "Chivo"; src: url("../../apps/web/public/fonts/chivo-latin.woff2") format("woff2"); font-weight: 100 900; }
+  :root {
+    --blanco:#fff; --niebla:#f3f7fa; --celeste-100:#d9eaf5; --celeste-300:#8dbee2; --celeste-500:#3e86bd; --celeste-700:#1c5a88;
+    --azul-riel:#0e2a42; --oro-300:#f2cc6b; --oro-500:#d9a520; --oro-700:#7e5e0b; --balasto:#4a5a68; --gris-100:#e3eaf0; --gris-300:#b9c6d1;
+    --exito:#1e6b3a; --error:#a3331f; --display:"Archivo",sans-serif; --body:"Chivo",sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 1rem; }
+  body { margin: 0; font: 400 17px/1.6 var(--body); color: var(--azul-riel); background: var(--blanco); }
+  a { color: var(--celeste-700); }
+  :focus-visible { outline: 3px solid var(--celeste-700); outline-offset: 3px; }
+  .layout { display: grid; grid-template-columns: 16rem minmax(0,1fr); min-height: 100vh; }
+  nav.toc { position: sticky; top: 0; height: 100vh; overflow: auto; padding: 2rem 1.5rem; border-right: 1px solid var(--gris-100); background: var(--niebla); font-family: var(--display); font-size: 14px; }
+  nav.toc img { height: 32px; margin-bottom: 1.5rem; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+  nav.toc a { text-decoration: none; color: var(--azul-riel); display: block; padding: .25rem .5rem; border-radius: 4px; }
+  nav.toc a:hover { background: var(--celeste-100); }
+  nav.toc .small { font-size: 12px; color: var(--balasto); margin-top: 2rem; }
+  main { padding: 3rem clamp(1.5rem, 5vw, 5rem) 6rem; max-width: 72rem; }
+  .eyebrow { font-family: var(--display); font-stretch: 112%; font-weight: 560; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--balasto); display: flex; align-items: center; gap: .75rem; margin: 0 0 .75rem; }
+  .eyebrow::before { content: ""; width: .55rem; height: .55rem; border-radius: 50%; background: var(--oro-500); }
+  h1, h2, h3 { font-family: var(--display); font-weight: 620; letter-spacing: -.015em; line-height: 1.15; margin: 0 0 1rem; }
+  h1 { font-size: clamp(2.4rem, 1.5rem + 3vw, 4rem); font-stretch: 94%; line-height: 1.05; letter-spacing: -.025em; }
+  h2 { font-size: 2rem; font-stretch: 96%; margin-top: 0; }
+  h3 { font-size: 1.2rem; margin-top: 2rem; }
+  section { padding: 3rem 0; border-top: 1px solid var(--gris-100); }
+  section:first-of-type { border-top: 0; padding-top: 0; }
+  p { max-width: 64ch; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 1rem 0 1.5rem; }
+  th, td { text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--gris-100); vertical-align: top; }
+  th { font-family: var(--display); font-stretch: 112%; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--balasto); }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; background: var(--niebla); padding: .1em .35em; border-radius: 4px; }
+  .grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+  .tile { border: 1px solid var(--gris-100); border-radius: 10px; padding: 1.5rem; background: var(--blanco); }
+  .tile.dark { background: var(--azul-riel); }
+  .tile.pattern { background: var(--niebla); background-image: repeating-linear-gradient(45deg, transparent 0 12px, var(--gris-100) 12px 13px); }
+  .tile img { width: 100%; height: 64px; object-fit: contain; object-position: left; }
+  .tile.center img { object-position: center; height: 120px; }
+  .tile small { display: block; margin-top: .75rem; font-family: var(--display); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--balasto); }
+  .tile.dark small { color: var(--celeste-300); }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 1rem; margin: 1rem 0 2rem; }
+  .sw { border-radius: 10px; overflow: hidden; border: 1px solid var(--gris-100); }
+  .sw i { display: block; height: 5rem; }
+  .sw div { padding: .6rem .75rem; font-size: 13px; }
+  .sw b { font-family: var(--display); display: block; }
+  .sw code { background: none; padding: 0; color: var(--balasto); }
+  .type-specimen p { margin: .25rem 0 1rem; max-width: none; }
+  .spec-display { font: 640 clamp(2rem, 5vw, 4rem)/1.05 var(--display); font-stretch: 94%; letter-spacing: -.025em; }
+  .spec-eyebrow { font: 560 12px/1 var(--display); font-stretch: 112%; letter-spacing: .14em; text-transform: uppercase; color: var(--balasto); }
+  .spec-body { font: 400 17px/1.6 var(--body); max-width: 64ch; }
+  .spec-wide { font: 500 2rem/1.1 var(--display); font-stretch: 125%; }
+  .spec-narrow { font: 500 2rem/1.1 var(--display); font-stretch: 62%; }
+  .yesno { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .yesno div { border-radius: 10px; padding: 1rem 1.25rem; }
+  .yesno .yes { background: #e9f5ee; border-left: 4px solid var(--exito); }
+  .yesno .no { background: #fbeeeb; border-left: 4px solid var(--error); }
+  .yesno h4 { margin: 0 0 .5rem; font-family: var(--display); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+  .btn { display: inline-flex; align-items: center; font: 600 14px var(--display); padding: .8rem 1.25rem; border-radius: 999px; border: 1.5px solid var(--celeste-700); background: var(--celeste-700); color: #fff; text-decoration: none; }
+  .btn--ghost { background: transparent; color: var(--celeste-700); }
+  .btn--sol { background: var(--oro-300); border-color: var(--oro-300); color: var(--azul-riel); }
+  .field { display: grid; gap: .25rem; font: 540 14px var(--display); max-width: 20rem; }
+  .field input { font: 400 17px var(--body); padding: .65rem .75rem; border: 1.5px solid var(--gris-300); border-radius: 4px; }
+  .card { border: 1px solid var(--gris-100); border-radius: 10px; padding: 1.5rem; max-width: 20rem; }
+  .card h4 { font-family: var(--display); margin: .5rem 0 .25rem; }
+  .card p { color: var(--balasto); font-size: 14px; margin: 0; }
+  .line-diagram { list-style: none; margin: 1rem 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; position: relative; }
+  .line-diagram::before { content: ""; position: absolute; left: .75rem; right: .75rem; top: .65rem; height: 4px; border-radius: 2px; background: var(--celeste-500); }
+  .line-diagram li { position: relative; padding-top: 2.25rem; font: 620 15px/1.25 var(--display); }
+  .line-diagram li::before { content: ""; position: absolute; top: 0; left: 0; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #fff; border: 4px solid var(--celeste-500); }
+  .line-diagram li.now::before { background: var(--oro-500); border-color: var(--oro-500); }
+  .icons { display: flex; gap: 2rem; color: var(--celeste-700); }
+  .icons svg { width: 40px; height: 40px; }
+  figure { margin: 1.5rem 0; }
+  figure img { width: 100%; height: auto; border: 1px solid var(--gris-100); border-radius: 10px; }
+  figcaption { font-family: var(--display); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--balasto); margin-top: .5rem; }
+  .shots { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start; }
+  .shots img { max-height: 80vh; object-fit: cover; object-position: top; }
+  .dont li { margin: .35rem 0; }
+  .clear { height: 1rem; }
+  .safe { position: relative; display: inline-block; padding: 24px; border: 1px dashed var(--celeste-500); }
+  .safe img { height: 48px; }
+  .safe span { position: absolute; top: -.7em; left: 1rem; background: #fff; padding: 0 .4rem; font: 560 11px var(--display); letter-spacing: .1em; color: var(--celeste-700); }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } nav.toc { position: static; height: auto; } .shots, .yesno { grid-template-columns: 1fr; } .line-diagram { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="toc" aria-label="Secciones">
+    <img src="../../apps/web/public/brand/logo-horizontal.svg" alt="Enrailar">
+    <ol>
+      <li><a href="#adn">1. ADN de marca</a></li>
+      <li><a href="#naming">2. Naming y tagline</a></li>
+      <li><a href="#logo">3. Logo</a></li>
+      <li><a href="#paleta">4. Paleta</a></li>
+      <li><a href="#tipografia">5. Tipografía</a></li>
+      <li><a href="#iconografia">6. Iconografía</a></li>
+      <li><a href="#imagen">7. Imagen</a></li>
+      <li><a href="#patrones">8. Patrones</a></li>
+      <li><a href="#componentes">9. Componentes UI</a></li>
+      <li><a href="#aplicaciones">10. Aplicaciones</a></li>
+      <li><a href="#incorrectos">11. Usos incorrectos</a></li>
+      <li><a href="#capturas">12. Capturas</a></li>
+    </ol>
+    <p class="small">Versión 1.0 · octubre 2026<br>Texto completo en <a href="manual.md">manual.md</a></p>
+  </nav>
+
+  <main>
+    <p class="eyebrow">Manual de marca · v1.0</p>
+    <h1>Enrailar</h1>
+    <p>Celeste, blanco y oro como material, no como bandera. Este manual define cómo se ve, cómo habla y cómo se aplica Enrailar en la web, en documentos y en el Hackatrain.</p>
+
+    <section id="adn">
+      <p class="eyebrow">1</p>
+      <h2>ADN de marca</h2>
+      <h3>Propósito</h3>
+      <p>Que los trenes de Argentina vuelvan a servir, empezando por saber qué hay.</p>
+      <h3>Misión</h3>
+      <p>Construir, en abierto, la tecnología y la organización para recuperar, mantener y operar la red ferroviaria: un mapa vivo de la infraestructura, inspección con robots y drones, software de coordinación y energía renovable en el corredor. Primero en Tandil, después en el resto del país y en América Latina.</p>
+      <h3>Visión</h3>
+      <p>Una red que se pueda volver a usar: medida, mantenida y operada con evidencia pública, por una organización cooperativa donde quien firma una decisión de seguridad es una persona identificable.</p>
+      <h3>Valores</h3>
+      <table>
+        <tr><th>Valor</th><th>En la práctica</th></tr>
+        <tr><td>Abierto</td><td>Código, datos y protocolos públicos con licencia Apache-2.0. Lo que se construye se publica.</td></tr>
+        <tr><td>Cooperativo</td><td>Técnicos, trabajadores ferroviarios, municipios, comercios y usuarios en la misma mesa.</td></tr>
+        <tr><td>Transparente</td><td>Presupuestos, propuestas y avances se publican a medida que existen. Sin promesas sin fecha.</td></tr>
+        <tr><td>Responsable</td><td>La operación y las decisiones de seguridad quedan en profesionales identificables.</td></tr>
+        <tr><td>Concreto</td><td>Primero el mapa que se pueda verificar, después el prototipo, después el corredor.</td></tr>
+      </table>
+      <h3>Personalidad</h3>
+      <p>Enrailar es una ingeniera de vía que explica con calma. Esperanzadora sin grandilocuencia, técnica sin jerga innecesaria, seria sin solemnidad. Cooperativa: habla de "nosotros" y nombra a los demás. Transparente: dice lo que no sabe.</p>
+      <h3>Voz y tono</h3>
+      <div class="yesno">
+        <div class="yes"><h4>Sí</h4>"La fase 1 es monitoreo. Un mapa vivo de estaciones, vías y puentes, con fotos, fecha y estado."</div>
+        <div class="no"><h4>No</h4>"¡Estamos revolucionando el transporte argentino con tecnología de punta!"</div>
+        <div class="yes"><h4>Sí</h4>"El anuncio no fija un día. La referencia es Febrero 2027."</div>
+        <div class="no"><h4>No</h4>"¡Muy pronto! Grandes novedades en camino."</div>
+        <div class="yes"><h4>Sí</h4>"Cada intervención queda escrita: el defecto, la obra y la capacidad que se recupera."</div>
+        <div class="no"><h4>No</h4>"Soluciones integrales end-to-end para el ecosistema ferroviario."</div>
+      </div>
+    </section>
+
+    <section id="naming">
+      <p class="eyebrow">2</p>
+      <h2>Naming y tagline</h2>
+      <p><strong>Enrailar</strong> es un verbo: volver a poner sobre rieles. Inicial mayúscula en prosa, minúsculas en el wordmark. No se traduce ni se abrevia.</p>
+      <table>
+        <tr><th>Propuesta</th><th>Lectura</th><th></th></tr>
+        <tr><td><strong>Primero ver, después mover.</strong></td><td>Encadena la fase 1 con lo que viene. Evidencia antes de promesa.</td><td>Elegido</td></tr>
+        <tr><td>Una red que se pueda volver a usar.</td><td>Es el titular del sitio; largo para firma.</td><td></td></tr>
+        <tr><td>Trenes que se puedan medir.</td><td>Técnico y honesto, deja afuera a la gente.</td><td></td></tr>
+      </table>
+      <p>En inglés: <em>See first, then move.</em></p>
+    </section>
+
+    <section id="logo">
+      <p class="eyebrow">3</p>
+      <h2>Logo</h2>
+      <p>Dos rieles y un disco de oro que los interrumpe, como una estación en un diagrama de línea. El sol de mayo reducido a su forma esencial, sin rayos ni rostro. En el wordmark, el punto de la i es ese mismo disco.</p>
+      <div class="grid">
+        <div class="tile"><img src="../../apps/web/public/brand/logo-horizontal.svg" alt="Logo horizontal"><small>Horizontal · principal</small></div>
+        <div class="tile center"><img src="../../apps/web/public/brand/logo-apilado.svg" alt="Logo apilado"><small>Apilado</small></div>
+        <div class="tile"><img src="../../apps/web/public/brand/logo-mono.svg" alt="Logo monocromo"><small>Monocromo</small></div>
+        <div class="tile dark"><img src="../../apps/web/public/brand/logo-invertido.svg" alt="Logo invertido"><small>Invertido sobre azul riel</small></div>
+        <div class="tile"><img src="../../apps/web/public/brand/simbolo.svg" alt="Símbolo" style="height:64px"><small>Símbolo · favicon</small></div>
+        <div class="tile"><img src="../../apps/web/public/brand/wordmark.svg" alt="Wordmark"><small>Wordmark</small></div>
+      </div>
+      <h3>Área de seguridad y tamaños mínimos</h3>
+      <p class="safe"><span>S = diámetro del disco</span><img src="../../apps/web/public/brand/logo-horizontal.svg" alt=""></p>
+      <table>
+        <tr><th>Versión</th><th>Mínimo en pantalla</th><th>Mínimo impreso</th></tr>
+        <tr><td>Horizontal</td><td>120 px de ancho</td><td>30 mm</td></tr>
+        <tr><td>Apilado</td><td>72 px de ancho</td><td>18 mm</td></tr>
+        <tr><td>Símbolo</td><td>16 px</td><td>5 mm</td></tr>
+      </table>
+      <p>Por debajo de 24 px de alto se usa el símbolo solo. Archivos: <code>apps/web/public/brand/</code>. Regeneración: <code>scripts/brand/wordmark.py</code>, <code>logo.py</code>, <code>raster.sh</code>.</p>
+    </section>
+
+    <section id="paleta">
+      <p class="eyebrow">4</p>
+      <h2>Paleta</h2>
+      <p>El celeste de identidad es color de superficie y de línea; para texto y botones se usa su versión profunda. El oro va en puntos, nodos y acentos. La tinta es un azul casi negro. Hex, RGB, OKLCH y contrastes verificados en <a href="manual.md#4-paleta">manual.md</a>, generados por <code>scripts/brand/palette.py</code>.</p>
+      <div class="swatches">
+        <div class="sw"><i style="background:#fff"></i><div><b>blanco</b><code>#FFFFFF</code></div></div>
+        <div class="sw"><i style="background:#f3f7fa"></i><div><b>niebla</b><code>#F3F7FA</code></div></div>
+        <div class="sw"><i style="background:#d9eaf5"></i><div><b>celeste-100</b><code>#D9EAF5</code></div></div>
+        <div class="sw"><i style="background:#8dbee2"></i><div><b>celeste-300</b><code>#8DBEE2</code></div></div>
+        <div class="sw"><i style="background:#3e86bd"></i><div><b>celeste-500</b><code>#3E86BD</code></div></div>
+        <div class="sw"><i style="background:#1c5a88"></i><div><b>celeste-700</b><code>#1C5A88</code></div></div>
+        <div class="sw"><i style="background:#0e2a42"></i><div><b>azul-riel</b><code>#0E2A42</code></div></div>
+        <div class="sw"><i style="background:#f2cc6b"></i><div><b>oro-300</b><code>#F2CC6B</code></div></div>
+        <div class="sw"><i style="background:#d9a520"></i><div><b>oro-500</b><code>#D9A520</code></div></div>
+        <div class="sw"><i style="background:#7e5e0b"></i><div><b>oro-700</b><code>#7E5E0B</code></div></div>
+        <div class="sw"><i style="background:#4a5a68"></i><div><b>balasto</b><code>#4A5A68</code></div></div>
+        <div class="sw"><i style="background:#e3eaf0"></i><div><b>gris-100</b><code>#E3EAF0</code></div></div>
+        <div class="sw"><i style="background:#b9c6d1"></i><div><b>gris-300</b><code>#B9C6D1</code></div></div>
+        <div class="sw"><i style="background:#1e6b3a"></i><div><b>exito</b><code>#1E6B3A</code></div></div>
+        <div class="sw"><i style="background:#a3331f"></i><div><b>error</b><code>#A3331F</code></div></div>
+      </div>
+      <table>
+        <tr><th>Frente</th><th>Fondo</th><th>Uso</th><th>Ratio</th></tr>
+        <tr><td>azul-riel</td><td>blanco</td><td>Titulares y texto</td><td>14.70:1 AA</td></tr>
+        <tr><td>balasto</td><td>blanco</td><td>Texto secundario</td><td>7.11:1 AA</td></tr>
+        <tr><td>celeste-700</td><td>blanco</td><td>Enlaces, botón primario (invertido)</td><td>7.32:1 AA</td></tr>
+        <tr><td>oro-700</td><td>blanco</td><td>Etiqueta en oro</td><td>6.01:1 AA</td></tr>
+        <tr><td>oro-300</td><td>azul-riel</td><td>Oro sobre tinta</td><td>9.54:1 AA</td></tr>
+        <tr><td>celeste-300</td><td>azul-riel</td><td>Celeste sobre tinta</td><td>7.42:1 AA</td></tr>
+        <tr><td>celeste-500</td><td>blanco</td><td>Componentes (mínimo 3:1)</td><td>3.93:1 AA</td></tr>
+      </table>
+    </section>
+
+    <section id="tipografia">
+      <p class="eyebrow">5</p>
+      <h2>Tipografía</h2>
+      <p>Dos familias libres (OFL 1.1) de Omnibus-Type, fundición de Buenos Aires, auto-hosteadas como WOFF2 variable: <strong>Archivo</strong> para display y etiquetas, <strong>Chivo</strong> para texto.</p>
+      <div class="type-specimen">
+        <p class="spec-eyebrow">Archivo · 560 · ancho 112 % · etiqueta</p>
+        <p class="spec-display">Una red que se pueda volver a usar</p>
+        <p class="spec-eyebrow">Archivo · 640 · ancho 94 % · titular</p>
+        <p class="spec-wide">Ancho 125 %</p>
+        <p class="spec-narrow">Ancho 62 %</p>
+        <p class="spec-eyebrow">Archivo · eje de ancho</p>
+        <p class="spec-body">Chivo 400, 17 px, interlínea 1.6. La fase 1 es monitoreo. Un mapa vivo de estaciones, playones, vías, puentes, túneles, desvíos, pasos a nivel y señalización, con lugar, fotos, fecha, estado y qué haría falta para que vuelva a servir.</p>
+      </div>
+      <table>
+        <tr><th>Token</th><th>Tamaño</th><th>Uso</th></tr>
+        <tr><td>--t-xs</td><td>12 px</td><td>Etiquetas, leyendas</td></tr>
+        <tr><td>--t-sm</td><td>14 px</td><td>Navegación, notas, campos</td></tr>
+        <tr><td>--t-base</td><td>17 px</td><td>Texto</td></tr>
+        <tr><td>--t-md</td><td>20 px</td><td>Ledes, títulos de tarjeta</td></tr>
+        <tr><td>--t-lg</td><td>24 px</td><td>Títulos de formulario</td></tr>
+        <tr><td>--t-xl</td><td>30 px</td><td>Fecha del evento</td></tr>
+        <tr><td>--t-2xl</td><td>38 px</td><td>Cifras</td></tr>
+        <tr><td>--t-3xl</td><td>35–51 px</td><td>h2</td></tr>
+        <tr><td>--t-4xl</td><td>42–77 px</td><td>h1</td></tr>
+      </table>
+    </section>
+
+    <section id="iconografia">
+      <p class="eyebrow">6</p>
+      <h2>Iconografía</h2>
+      <p>Línea de 24 px, trazo 1.75 px, puntas redondeadas, un solo color. Formas simples en la misma cuadrícula que el símbolo; un punto relleno como énfasis.</p>
+      <div class="icons">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5M15 6.5V20"/><circle cx="12" cy="11" r="1.6" fill="currentColor" stroke="none"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.5 14.5a4.5 4.5 0 0 1 5 4.5"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h5M16 6h5M5.5 6v3M18.5 6v3"/><rect x="7" y="9" width="10" height="5" rx="1.5"/><path d="M4 20h16M6 17h12M9 14v3M15 14v3"/></svg>
+      </div>
+    </section>
+
+    <section id="imagen">
+      <p class="eyebrow">7</p>
+      <h2>Imagen y fotografía</h2>
+      <p>Las cuatro imágenes del sitio son <strong>imágenes sintéticas ilustrativas, generadas con IA</strong>, y se etiquetan siempre así. No representan lugares, equipos ni personas reales ni sirven como evidencia del estado de la red. Luz natural, horizonte bajo, la vía como línea que organiza el encuadre. Sin drama.</p>
+      <div class="grid">
+        <figure><img src="../../apps/web/public/brand/img/hero-pampa-768.webp" alt="Vía en la pampa"><figcaption>Imagen sintética ilustrativa · hero-pampa</figcaption></figure>
+        <figure><img src="../../apps/web/public/brand/img/robot-inspeccion-768.webp" alt="Robot de inspección"><figcaption>Imagen sintética ilustrativa · robot-inspeccion</figcaption></figure>
+        <figure><img src="../../apps/web/public/brand/img/estacion-renovada-768.webp" alt="Estación renovada"><figcaption>Imagen sintética ilustrativa · estacion-renovada</figcaption></figure>
+        <figure><img src="../../apps/web/public/brand/img/patron-red-768.webp" alt="Patrón de red"><figcaption>Imagen sintética ilustrativa · patron-red</figcaption></figure>
+      </div>
+      <p>Formatos: AVIF y WebP a 480, 768 y 1280 px con JPEG de respaldo. Las fuentes son de 1280×720: no se sirven por encima de ese ancho.</p>
+    </section>
+
+    <section id="patrones">
+      <p class="eyebrow">8</p>
+      <h2>Patrones</h2>
+      <h3>Diagrama de línea</h3>
+      <p>La firma de la marca: una vía con estaciones y la estación actual en oro. Se usa para hojas de ruta, estados y credenciales. Es un orden real, no decoración.</p>
+      <ol class="line-diagram">
+        <li class="now">Inspección como servicio</li>
+        <li>Última milla por estaciones</li>
+        <li>Trenes taquilla</li>
+        <li>Escenarios de carga</li>
+        <li>Conexión con Chile</li>
+      </ol>
+      <h3>Patrón de red</h3>
+      <p><code>patron-red</code> como textura de fondo a opacidad ≤ 0.35 en modo multiplicar. Nunca detrás de texto chico.</p>
+    </section>
+
+    <section id="componentes">
+      <p class="eyebrow">9</p>
+      <h2>Componentes UI</h2>
+      <p style="display:flex;gap:.75rem;flex-wrap:wrap"><a class="btn" href="#">Sumate al proyecto</a><a class="btn btn--ghost" href="#">Leer la bitácora</a><span style="background:var(--azul-riel);padding:.4rem;border-radius:999px;display:inline-flex"><a class="btn btn--sol" href="#">Preinscribirme</a></span></p>
+      <label class="field">Correo<input type="email" placeholder="nombre@dominio"></label>
+      <div class="clear"></div>
+      <div class="card">
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#1c5a88" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5M15 6.5V20"/><circle cx="12" cy="11" r="1.6" fill="#1c5a88" stroke="none"/></svg>
+        <h4>Mapa vivo</h4>
+        <p>Cada elemento de la red con ubicación, fotos, fecha de inspección, estado y qué necesita para volver a funcionar.</p>
+      </div>
+      <p>Todos los componentes están en <code>apps/web/app/globals.css</code>: botones, etiquetas, tarjetas, figuras, campos, casilla de consentimiento, estados, banda oscura, cabecera, diagrama de línea. Foco visible en todo, <code>prefers-reduced-motion</code> respetado, enlace "Ir al contenido".</p>
+    </section>
+
+    <section id="aplicaciones">
+      <p class="eyebrow">10</p>
+      <h2>Aplicaciones</h2>
+      <p>Plantillas HTML en <code>applications/</code>, renderizadas con Chrome headless. Marcadores en lugar de nombres y casillas de rol en lugar de correos personales.</p>
+      <div class="grid">
+        <figure><img src="assets/og.png" alt="OG image"><figcaption>OG image 1200×630 · apps/web/public/brand/og.png</figcaption></figure>
+        <figure><img src="assets/slide-portada.png" alt="Slide de portada"><figcaption>Slide de portada 16:9</figcaption></figure>
+        <figure><img src="assets/credencial.png" alt="Credencial del Hackatrain" style="max-width:320px"><figcaption>Credencial del Hackatrain</figcaption></figure>
+        <figure><img src="assets/firma-email.png" alt="Firma de correo"><figcaption>Firma de correo</figcaption></figure>
+      </div>
+    </section>
+
+    <section id="incorrectos">
+      <p class="eyebrow">11</p>
+      <h2>Usos incorrectos</h2>
+      <ul class="dont">
+        <li>No usar la bandera argentina, el sol con rostro, escarapelas ni franjas celeste-blanco-celeste.</li>
+        <li>No poner celeste-300 ni oro-500 como color de texto sobre fondo claro.</li>
+        <li>No rellenar el disco con otro color ni cambiar la proporción entre disco y rieles.</li>
+        <li>No separar el punto de oro de la i, ni usar el wordmark en mayúsculas.</li>
+        <li>No agregar sombras, degradados ni contornos al logo.</li>
+        <li>No usar el logo invertido sobre fotografía sin una banda sólida detrás.</li>
+        <li>No usar imágenes sintéticas sin su leyenda.</li>
+        <li>No usar signos de exclamación, mayúsculas enfáticas ni "revolucionar", "disrupción", "de punta".</li>
+        <li>No escribir fechas que no existen: mientras no haya un día, se escribe el mes.</li>
+      </ul>
+    </section>
+
+    <section id="capturas">
+      <p class="eyebrow">12</p>
+      <h2>Capturas</h2>
+      <div class="shots">
+        <figure><img src="screenshots/home-es-1440.png" alt="Home en escritorio"><figcaption>Home ES · 1440</figcaption></figure>
+        <figure><img src="screenshots/home-es-390.png" alt="Home en móvil"><figcaption>Home ES · 390</figcaption></figure>
+      </div>
+      <p>Más capturas en <code>screenshots/</code>: home EN, bitácora y artículo. El sitio anterior, como referencia, está en <code>.brand-input/brand-assets/</code>.</p>
+    </section>
+  </main>
+</div>
+</body>
+</html>

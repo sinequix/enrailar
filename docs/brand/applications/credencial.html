@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Credencial Hackatrain · Enrailar</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { width: 480px; height: 720px; padding: 40px; background: var(--niebla); }
+  .badge { width: 400px; height: 640px; background: var(--blanco); border-radius: 18px; overflow: hidden; position: relative; box-shadow: 0 8px 24px -12px rgba(14,42,66,.3); display: flex; flex-direction: column; }
+  .top { background: var(--azul-riel); color: var(--blanco); padding: 28px 28px 24px; position: relative; }
+  .top .eyebrow { color: var(--celeste-300); }
+  .top .eyebrow::before { background: var(--oro-300); }
+  .top h1 { font-size: 40px; color: var(--oro-300); margin-top: 10px; }
+  .top .when { font-family: var(--display); font-stretch: 112%; letter-spacing: .12em; text-transform: uppercase; font-size: 13px; color: var(--celeste-300); margin-top: 8px; }
+  .hole { position: absolute; top: 14px; left: 50%; width: 56px; height: 10px; margin-left: -28px; border-radius: 5px; background: var(--niebla); }
+  .mid { padding: 28px; flex: 1; }
+  .name { font-family: var(--display); font-weight: 640; font-size: 34px; letter-spacing: -.02em; line-height: 1.05; }
+  .role { color: var(--balasto); font-size: 17px; margin-top: 6px; }
+  .team { margin-top: 24px; font-family: var(--display); font-stretch: 112%; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--oro-700); }
+  .team b { display: block; font: 600 20px/1.2 var(--display); letter-spacing: 0; text-transform: none; color: var(--azul-riel); margin-top: 4px; font-stretch: 100%; }
+  .line { position: relative; height: 40px; margin: 0 28px; }
+  .line .rails { top: 18px; }
+  .line i { position: absolute; top: 10px; width: 20px; height: 20px; border-radius: 50%; background: var(--blanco); border: 4px solid var(--celeste-500); }
+  .line i.now { background: var(--oro-500); border-color: var(--oro-500); }
+  .bot { padding: 20px 28px 28px; display: flex; justify-content: space-between; align-items: center; }
+  .bot img { height: 32px; }
+  .bot span { font-family: var(--display); font-stretch: 112%; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--balasto); }
+</style></head>
+<body>
+  <div class="badge">
+    <div class="top">
+      <div class="hole"></div>
+      <p class="eyebrow">Lanzamiento público</p>
+      <h1>Hackatrain</h1>
+      <div class="when">Febrero 2027 · Tandil, Argentina</div>
+    </div>
+    <div class="mid">
+      <div class="name">Nombre Apellido</div>
+      <div class="role">Participante</div>
+      <div class="team">Equipo<b>Nombre del equipo</b></div>
+    </div>
+    <div class="line"><div class="rails"></div><i class="now" style="left:0"></i><i style="left:40%"></i><i style="right:0"></i></div>
+    <div class="bot"><img src="../../../apps/web/public/brand/logo-horizontal.svg" alt="Enrailar"><span>enrailar.com</span></div>
+  </div>
+</body></html>

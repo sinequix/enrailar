@@ -1,0 +1,15 @@
+/* Base compartida de las aplicaciones del manual. Fuentes auto-hosteadas de apps/web/public/fonts. */
+@font-face { font-family: "Archivo"; src: url("../../../apps/web/public/fonts/archivo-latin.woff2") format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+@font-face { font-family: "Chivo"; src: url("../../../apps/web/public/fonts/chivo-latin.woff2") format("woff2"); font-weight: 100 900; }
+:root {
+  --blanco: #fff; --niebla: #f3f7fa; --celeste-100: #d9eaf5; --celeste-300: #8dbee2; --celeste-500: #3e86bd;
+  --celeste-700: #1c5a88; --azul-riel: #0e2a42; --oro-300: #f2cc6b; --oro-500: #d9a520; --oro-700: #7e5e0b;
+  --balasto: #4a5a68; --gris-100: #e3eaf0; --gris-300: #b9c6d1;
+  --display: "Archivo", sans-serif; --body: "Chivo", sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--body); color: var(--azul-riel); background: var(--blanco); -webkit-font-smoothing: antialiased; }
+.eyebrow { font-family: var(--display); font-stretch: 112%; font-weight: 560; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--balasto); display: flex; align-items: center; gap: 12px; margin: 0; }
+.eyebrow::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--oro-500); }
+h1, h2 { font-family: var(--display); font-weight: 640; font-stretch: 94%; letter-spacing: -.025em; line-height: 1.02; margin: 0; }
+.rails { position: absolute; left: 0; right: 0; height: 4px; background: var(--celeste-500); border-radius: 2px; }
