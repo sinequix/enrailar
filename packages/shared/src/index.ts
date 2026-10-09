@@ -15,5 +15,5 @@ export {
 export type { ContactInput, ContactIntent, NewsletterInput, PreinscriptionInput } from "./forms.ts";
 export { mailJobSchema } from "./mail.ts";
 export type { MailJob } from "./mail.ts";
-export { HACKATRAIN_START, HACKATRAIN_START_DATE, ROLE_MAILBOXES } from "./project.ts";
+export { HACKATRAIN_START, HACKATRAIN_WHEN, ROLE_MAILBOXES } from "./project.ts";
 export type { RoleMailbox } from "./project.ts";

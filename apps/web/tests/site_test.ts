@@ -1,18 +1,28 @@
-import { HACKATRAIN_START } from "@enrailar/shared";
+import { HACKATRAIN_START, HACKATRAIN_WHEN } from "@enrailar/shared";
 import { assert, assertEquals } from "@std/assert";
 import { ARTICLE_URL, COPY } from "../src/copy.ts";
 import { POSTS } from "../src/posts.ts";
 import { apiOrigin, formPath, parseSubmission } from "../src/submit.ts";
 
-Deno.test("el primer post enlaza la nota y la cuenta usa el 1 de febrero", () => {
+Deno.test("el hackatrain muestra el mes y no una fecha", () => {
   assertEquals(ARTICLE_URL, "https://x.com/tebayoso/status/2107894676426559739");
-  assertEquals(HACKATRAIN_START, "2027-02-01T00:00:00-03:00");
+  assertEquals(HACKATRAIN_START, null);
+  assertEquals(HACKATRAIN_WHEN.es, "Febrero 2027");
+  assertEquals(HACKATRAIN_WHEN.en, "February 2027");
   for (const locale of ["es", "en"] as const) {
-    const text = POSTS[locale].paragraphs.join("\n");
+    const text = [
+      POSTS[locale].paragraphs.join("\n"),
+      COPY[locale].countdownNote,
+      COPY[locale].hackatrainTitle,
+      COPY[locale].description,
+    ].join("\n");
     assert(text.includes(ARTICLE_URL));
     assert(text.includes("Tandil"));
+    assert(text.includes(HACKATRAIN_WHEN[locale]));
     assert(!text.includes("$"));
-    assert(COPY[locale].countdownNote.length > 0);
+    assert(!text.includes("2027-02-01"));
+    assert(!text.includes("1 de febrero de 2027"));
+    assert(!text.includes("1 February 2027"));
   }
 });
 

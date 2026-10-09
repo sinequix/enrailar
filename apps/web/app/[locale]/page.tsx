@@ -1,4 +1,4 @@
-import { CONSENT_COPY } from "@enrailar/shared";
+import { CONSENT_COPY, HACKATRAIN_START, HACKATRAIN_WHEN } from "@enrailar/shared";
 import { notFound } from "next/navigation";
 import { Countdown } from "../countdown.tsx";
 import { PublicForm } from "../forms.tsx";
@@ -43,7 +43,14 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </div>
         <aside className="clock">
           <p className="kicker">{copy.countdownLabel}</p>
-          <Countdown labels={locale === "es" ? ["días", "horas", "min", "seg"] : ["days", "hours", "min", "sec"]} />
+          {HACKATRAIN_START
+            ? (
+              <Countdown
+                target={HACKATRAIN_START}
+                labels={locale === "es" ? ["días", "horas", "min", "seg"] : ["days", "hours", "min", "sec"]}
+              />
+            )
+            : <p className="when">{HACKATRAIN_WHEN[locale]}</p>}
           <p className="note">{copy.countdownNote}</p>
         </aside>
       </div>

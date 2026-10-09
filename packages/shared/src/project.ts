@@ -8,9 +8,16 @@ export const ROLE_MAILBOXES = [
 export type RoleMailbox = (typeof ROLE_MAILBOXES)[number];
 
 /**
- * El anuncio del Hackatrain no fija un día dentro de febrero 2027.
- * La cuenta regresiva usa el primer día de ese mes, hora de Argentina.
+ * Referencia del Hackatrain mientras no haya un día.
+ * Cambiar este objeto es el único lugar donde vive el mes.
  */
-export const HACKATRAIN_START = "2027-02-01T00:00:00-03:00";
+export const HACKATRAIN_WHEN = {
+  es: "Febrero 2027",
+  en: "February 2027",
+} as const;
 
-export const HACKATRAIN_START_DATE = new Date(HACKATRAIN_START);
+/**
+ * Día de inicio, ISO 8601 con offset, o null si todavía no hay día.
+ * La cuenta regresiva se renderiza solo cuando este valor es un string.
+ */
+export const HACKATRAIN_START: string | null = null;
