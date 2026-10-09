@@ -162,6 +162,7 @@ Deno.test("el recuerdo de Sumate no guarda el correo", () => {
   const forms = Deno.readTextFileSync(new URL("../app/forms.tsx", import.meta.url));
   assert(!forms.includes("removeItem"));
   assert(forms.includes("aria-live"));
+  assert(forms.includes('method="post"'));
   const layout = Deno.readTextFileSync(new URL("../app/layout.tsx", import.meta.url));
   assert(layout.includes("sumateBootScript"));
 });

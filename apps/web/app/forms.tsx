@@ -110,10 +110,15 @@ export function SumateForm({
   const [status, setStatus] = useState<{ text: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [live, setLive] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const memory = useSyncExternalStore(subscribeSumateMemory, getSumateMemory, getServerSumateMemory);
   const formActive = editing || memory === null;
   const ready = useTurnstileScript(siteKey && formActive ? siteKey : "");
+
+  useEffect(() => {
+    setLive(true);
+  }, []);
 
   useEffect(() => {
     const current = getSumateMemory();
@@ -257,7 +262,7 @@ export function SumateForm({
         <button className="btn btn--ghost" type="button" onClick={showAnother}>{labels.alreadyAgain}</button>
       </div>
     </section>
-    <form ref={formRef} className="form sumate-form" onSubmit={onSubmit} aria-labelledby="sumate-title" noValidate>
+    <form ref={formRef} className="form sumate-form" method="post" onSubmit={onSubmit} aria-labelledby="sumate-title" noValidate>
       {hint ? <p className="hint">{hint}</p> : null}
       <fieldset
         className="intent-set"
@@ -375,7 +380,7 @@ export function SumateForm({
         {fieldError("sumate-turnstile-error", errors.turnstileToken)}
       </div>
       <div>
-        <button className="btn" type="submit" disabled={busy}>{busy ? labels.sending : labels.send}</button>
+        <button className="btn" type="submit" disabled={!live || busy}>{busy ? labels.sending : labels.send}</button>
       </div>
       {status ? (
         <p className={`status ${status.ok ? "status--ok" : "status--error"}`} role="status">{status.text}</p>
