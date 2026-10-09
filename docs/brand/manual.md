@@ -1,6 +1,6 @@
 # Manual de marca · Enrailar
 
-Versión 1.0 · octubre de 2026 · Vista navegable en [`index.html`](index.html).
+Versión 1.1 · octubre de 2026 · Vista navegable en [`index.html`](index.html).
 
 Este manual define cómo se ve, cómo habla y cómo se aplica Enrailar. Los tokens viven en [`apps/web/app/globals.css`](../../apps/web/app/globals.css); los logos y las imágenes en [`apps/web/public/brand/`](../../apps/web/public/brand/). Los scripts que generan la paleta, el wordmark y los íconos están en [`scripts/brand/`](../../scripts/brand/).
 
@@ -64,35 +64,54 @@ Elegido: **"Primero ver, después mover."** En inglés: **"See first, then move.
 
 ## 3. Logo
 
-El logo son dos piezas: el **símbolo** (el nodo) y el **wordmark** (enrailar).
+El logo son dos piezas: el **símbolo** (el nodo) y el **wordmark** (enrailar). Versión 2 (octubre de 2026): redibujado en píxeles enteros para que la cabecera lo muestre nítido a 1× y 2×.
 
-**Símbolo.** Dos rieles horizontales y un disco de oro que los interrumpe, como una estación en un diagrama de línea. El disco es el sol de mayo reducido a su forma esencial: un círculo, sin rayos ni rostro. Los rieles son celeste profundo.
+**Símbolo.** Dos rieles horizontales y un disco de oro que los interrumpe, como una estación en un diagrama de línea. El disco es el sol de mayo reducido a su forma esencial: un círculo, sin rayos ni rostro. Los rieles son celeste profundo; el corte de los rieles es recto (el disco no lleva halo, así funciona sobre cualquier fondo).
 
-**Wordmark.** "enrailar" en minúsculas, trazado a partir de Archivo (peso 640, ancho 100) con fontTools y guardado como contornos propios en SVG, sin dependencia de la fuente instalada. El punto de la i es el mismo disco de oro del símbolo: el sol como tilde.
+**Wordmark.** "enrailar" en minúsculas, a partir de Archivo (peso 657, ancho 100), guardado como contornos propios en [`scripts/brand/wordmark.json`](../../scripts/brand/wordmark.json): no depende de la fuente instalada. El punto de la i es el mismo disco de oro del símbolo: el sol como tilde.
+
+### Construcción
+
+Todo está dibujado en su tamaño de uso, sin transforms, sin strokes, sin filtros ni imágenes: cada forma es un relleno. Las coordenadas son enteras en todo lo que define un borde; solo los puntos de control de las curvas del wordmark llevan un decimal.
+
+| Pieza | Grilla | Medidas |
+| --- | --- | --- |
+| Símbolo | 32 × 32 | Rieles de 4 px en y 8–12 y 20–24, tramos de 8 px (x 0–8 y 24–32) con punta exterior de radio 2 y corte interior recto. Disco en (16, 16), radio 6. Separación disco–riel: 2 px. |
+| Favicon | 16 × 16 | La mitad exacta: rieles de 2 px (y 4–6 y 10–12), tramos de 4 px, disco de radio 3. Es el archivo que usan los navegadores a 16 (1×) y 32 (2×). |
+| Wordmark | altura de x 16, fuste 4 | El peso de Archivo se elige para que el fuste de la "l" mida exactamente 4 px (igual que el riel). Línea base en y 24, altura de x en y 8 (la misma banda que los rieles), ascendente en y 2. Punto de la i: disco de radio 2 en (108, 4). Kerning de la fuente (GPOS) más 1 px en "ra". |
+| Lockup horizontal | 148 × 32 | Símbolo en x 0–32, aire de 8, wordmark en x 40–148. Es el archivo de la cabecera y el pie. |
+| Lockup apilado | 108 × 62 | Símbolo centrado arriba, 8 px de aire, wordmark debajo. |
+| Monocromo | igual | El disco se vuelve un anillo de 3 px (radio 6 y 3), sin stroke. |
+| Ícono con fondo | 40 × 40 | Fondo blanco con radio 8, símbolo con margen de 4 (80 %). Base de `apple-touch-icon.png` (180) e `icon-512.png`. |
+
+Cómo se "hintea" el wordmark: los puntos de ancla con tangente horizontal o vertical (los que fijan fustes, panzas, base y altura de x) y los extremos de las rectas se redondean al píxel; los rebases de la fuente (±12 unidades) se aplanan sobre la base y la altura de x; el resto de cada curva se guarda con un decimal para que no se quiebre. El resultado se ve en la lámina.
+
+![Lámina de logo](screenshots/logo-sheet.png)
 
 | Versión | Archivo | Uso |
 | --- | --- | --- |
-| Horizontal | `logo-horizontal.svg` | Principal. Cabecera, pie, documentos. |
-| Apilada | `logo-apilado.svg` | Formatos cuadrados o angostos: avatares, credenciales, sellos. |
+| Horizontal | `logo-horizontal.svg` (148 × 32) | Principal. Cabecera, pie, documentos. |
+| Apilada | `logo-apilado.svg` (108 × 62) | Formatos cuadrados o angostos: avatares, credenciales, sellos. |
 | Monocromo | `logo-mono.svg`, `simbolo-mono.svg` | Un solo color (azul riel o negro). Sellos, grabado, impresión a una tinta. |
-| Invertida | `logo-invertido.svg` | Sobre azul riel u otro fondo oscuro. Rieles celeste 300, sol oro 300, texto blanco. |
-| Símbolo | `simbolo.svg` | Solo, cuando el nombre ya está dicho. |
-| Wordmark | `wordmark.svg` | Solo en piezas donde el símbolo está aparte. |
-| Favicon e íconos | `favicon.svg`, `favicon.ico` (16/32/48), `apple-touch-icon.png` (180), `icon-512.png`, `icon.svg` | Navegador, pantalla de inicio, manifest. |
+| Blanca | `logo-blanco.svg` | Un solo color blanco, sobre azul riel o fotografía con banda sólida. |
+| Invertida | `logo-invertido.svg` | A color sobre azul riel: rieles celeste 300, sol oro 300, texto blanco. Sin fondo propio. |
+| Símbolo | `simbolo.svg` (32) | Solo, cuando el nombre ya está dicho. |
+| Wordmark | `wordmark.svg` (108 × 22) | Solo en piezas donde el símbolo está aparte. |
+| Favicon e íconos | `favicon.svg` (16), `favicon.ico` (16/32/48), `apple-touch-icon.png` (180), `icon-512.png`, `icon.svg` (40) | Navegador, pantalla de inicio, manifest. |
 
 ![Logo horizontal](../../apps/web/public/brand/logo-horizontal.svg)
 ![Logo apilado](../../apps/web/public/brand/logo-apilado.svg)
-![Logo invertido](../../apps/web/public/brand/logo-invertido.svg)
 ![Logo monocromo](../../apps/web/public/brand/logo-mono.svg)
 
-### Área de seguridad y tamaños mínimos
+### Área de resguardo y tamaños mínimos
 
-- **Área de seguridad:** el diámetro del disco (una "S") en todos los lados. Nada entra en esa zona: ni texto, ni bordes, ni otras marcas.
-- **Tamaños mínimos (pantalla):** horizontal 120 px de ancho; apilado 72 px; símbolo 16 px (favicon).
+- **Área de resguardo:** el diámetro del disco (una "S" = 12 px en la grilla de 32, o sea 3/8 de la altura del lockup) en todos los lados. Nada entra en esa zona: ni texto, ni bordes, ni otras marcas.
+- **Escalas en pantalla:** el lockup se muestra solo a múltiplos enteros: 148 × 32 (1×), 296 × 64 (2×), 444 × 96 (3×). Nunca con `height: auto` ni unidades relativas que den una escala fraccionaria: eso es lo que lo desenfocaba. El CSS de la cabecera y el pie fija `width: 148px; height: 32px`.
+- **Tamaños mínimos (pantalla):** horizontal 148 px de ancho (1×); apilado 108 px; símbolo 32 px; favicon 16 px.
 - **Tamaños mínimos (impreso):** horizontal 30 mm; apilado 18 mm; símbolo 5 mm.
-- Por debajo de 24 px de alto se usa el símbolo solo.
+- Por debajo de 32 px de alto se usa el símbolo solo (o el favicon a 16).
 
-Regeneración: `python3 scripts/brand/wordmark.py <Archivo.ttf> > wordmark.json && python3 scripts/brand/logo.py wordmark.json apps/web/public/brand && bash scripts/brand/raster.sh`.
+Regeneración: `python3 scripts/brand/logo.py` (lee `scripts/brand/wordmark.json`, escribe `apps/web/public/brand/`), luego `pnpm dlx svgo@4.1.0 --config scripts/brand/svgo.config.mjs -f apps/web/public/brand -o apps/web/public/brand` y `bash scripts/brand/raster.sh` (favicon.ico, íconos, OG, aplicaciones y lámina). El JSON solo se vuelve a generar si cambia la fuente o la construcción: `python3 scripts/brand/wordmark.py <Archivo[wdth,wght].ttf> > scripts/brand/wordmark.json` (necesita fontTools y uharfbuzz).
 
 ## 4. Paleta
 
@@ -218,7 +237,7 @@ Todos en [`globals.css`](../../apps/web/app/globals.css); clases, no framework.
 | Casilla de consentimiento | `.check` | Texto de la Ley 25.326 completo, nunca resumido. |
 | Estado | `.status--ok`, `.status--error` | Verde `exito` y rojo `error`, con `role="status"`. |
 | Banda oscura | `.section--dark` | `azul-riel`; texto blanco; acentos `oro-300` y `celeste-300`. |
-| Cabecera | `.site-header` | Fija, desenfoque, logo horizontal a 32 px de alto. |
+| Cabecera | `.site-header` | Fija, desenfoque, lockup horizontal a 148 × 32 px exactos (1:1; 2:1 en pantallas de 2×). |
 | Diagrama de línea | `.line-diagram` | Ver patrones. |
 
 Accesibilidad incorporada: foco visible en todo, `prefers-reduced-motion` desactiva animaciones, enlace "Ir al contenido", etiquetas con `for`/`id`, contraste AA verificado.
@@ -263,4 +282,7 @@ Las plantillas usan marcadores ("Nombre Apellido", "Nombre del equipo") y casill
 | Home EN, escritorio 1440 | [`screenshots/home-en-1440.png`](screenshots/home-en-1440.png) |
 | Bitácora ES, escritorio 1440 | [`screenshots/blog-es-1440.png`](screenshots/blog-es-1440.png) |
 | Artículo ES, escritorio 1440 | [`screenshots/post-es-1440.png`](screenshots/post-es-1440.png) |
+| Cabecera a 1× y 2× (logo v2) | [`screenshots/header-1x.png`](screenshots/header-1x.png), [`screenshots/header-2x.png`](screenshots/header-2x.png); recortes ampliados `header-1x-zoom.png`, `header-2x-zoom.png` |
+| Cabecera anterior (logo v1), referencia | `screenshots/header-antes-1x.png`, `header-antes-2x.png` y sus `-zoom` |
+| Lámina de logo | [`screenshots/logo-sheet.png`](screenshots/logo-sheet.png) |
 | Sitio anterior, referencia | [`../../.brand-input/brand-assets/enrailar-actual-1440.png`](../../.brand-input/brand-assets/enrailar-actual-1440.png) |

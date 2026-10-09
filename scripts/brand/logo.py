@@ -1,64 +1,95 @@
 #!/usr/bin/env python3
-"""Compone los SVG del logo de Enrailar a partir de wordmark.json.
+"""Compone los SVG del logo de Enrailar en píxeles enteros.
 
-Uso: python3 scripts/brand/logo.py <wordmark.json> <salida/>
-Genera: simbolo, wordmark, logo-horizontal, logo-apilado, logo-mono,
-logo-invertido, favicon. Los PNG/ICO se generan después con ImageMagick.
+Uso: python3 scripts/brand/logo.py [scripts/brand/wordmark.json] [apps/web/public/brand]
+
+Todo se dibuja a tamaño de uso: el símbolo en una grilla de 32 px (y una de 16 px para el
+favicon), el wordmark con altura de x 16 px y fuste 4 px. No hay transforms, strokes,
+filtros ni imágenes: cada forma es un relleno con coordenadas enteras, así el lockup
+horizontal (147 × 32) se ve nítido a 1× y 2× en la cabecera.
+
+Genera: simbolo, simbolo-mono, favicon (16), icon (fondo blanco, 40), wordmark,
+logo-horizontal, logo-apilado, logo-mono, logo-invertido, logo-blanco.
+Los PNG/ICO se generan después con scripts/brand/raster.sh.
 """
 import json
-import re
 import sys
 from pathlib import Path
 
-INK = "#0E2A42"        # azul-riel
-CELESTE = "#1C5A88"    # celeste-700
+INK = "#0E2A42"           # azul-riel
+CELESTE = "#1C5A88"       # celeste-700
 CELESTE_SOFT = "#8DBEE2"  # celeste-300
-GOLD = "#D9A520"       # oro-500
-GOLD_SOFT = "#F2CC6B"  # oro-300
+GOLD = "#D9A520"          # oro-500
+GOLD_SOFT = "#F2CC6B"     # oro-300
 WHITE = "#FFFFFF"
 
-
-def rnd(d):
-    return re.sub(r"(\d+\.\d{1})\d+", r"\1", d)
+GAP = 8  # px entre símbolo y wordmark en el lockup horizontal
 
 
-def symbol(rails, disc, halo, size=64, bare=False):
-    """Nodo: dos rieles y un disco. El disco interrumpe la vía como una estación en un diagrama de línea."""
-    body = (
-        f'<path d="M6 23H58" stroke="{rails}" stroke-width="5" stroke-linecap="round"/><path d="M6 41H58" stroke="{rails}" stroke-width="5" stroke-linecap="round"/>'
-        f'<circle cx="32" cy="32" r="16.5" fill="{halo}"/>'
-        f'<circle cx="32" cy="32" r="12" fill="{disc}"/>'
-    )
-    if bare:
-        return body
+def svg(w, h, body, label="Enrailar"):
     return (
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="{size}" height="{size}" '
-        f'role="img" aria-label="Enrailar">{body}</svg>'
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" '
+        f'role="img" aria-label="{label}"><title>{label}</title>{body}</svg>'
     )
 
 
-def symbol_mono(color, halo, bare=False):
-    body = (
-        f'<path d="M6 23H58" stroke="{color}" stroke-width="5" stroke-linecap="round"/><path d="M6 41H58" stroke="{color}" stroke-width="5" stroke-linecap="round"/>'
-        f'<circle cx="32" cy="32" r="16.5" fill="{halo}"/>'
-        f'<circle cx="32" cy="32" r="10" fill="none" stroke="{color}" stroke-width="4"/>'
+def rails(dx, dy, color, grid=32):
+    """Dos rieles cortados por la estación: cuatro tramos con punta exterior redonda."""
+    if grid == 32:
+        # riel 4 px, tramos 0..8 y 24..32, en y 8..12 y 20..24, radio exterior 2
+        d = ""
+        for y in (8, 20):
+            d += f"M{dx + 2} {dy + y}h6v4h-6a2 2 0 0 1 0-4z"
+            d += f"M{dx + 24} {dy + y}h6a2 2 0 0 1 0 4h-6z"
+    else:
+        # grilla 16: riel 2 px, tramos 0..4 y 12..16, en y 4..6 y 10..12, radio 1
+        d = ""
+        for y in (4, 10):
+            d += f"M{dx + 1} {dy + y}h3v2h-3a1 1 0 0 1 0-2z"
+            d += f"M{dx + 12} {dy + y}h3a1 1 0 0 1 0 2h-3z"
+    return f'<path fill="{color}" d="{d}"/>'
+
+
+def disc(dx, dy, color, grid=32, ring=False):
+    c, r = (16, 6) if grid == 32 else (8, 3)
+    cx, cy = dx + c, dy + c
+    if not ring:
+        return f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{color}"/>'
+    ri = r // 2  # anillo de 3 px en la grilla de 32
+    # anillo como un solo relleno (sentido invertido en el agujero, sin fill-rule)
+    d = (
+        f"M{cx} {cy - r}a{r} {r} 0 1 1 0 {2 * r}a{r} {r} 0 1 1 0 {-2 * r}z"
+        f"M{cx} {cy - ri}a{ri} {ri} 0 1 0 0 {2 * ri}a{ri} {ri} 0 1 0 0 {-2 * ri}z"
     )
-    if bare:
-        return body
-    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Enrailar">{body}</svg>'
+    return f'<path fill="{color}" d="{d}"/>'
 
 
-def wordmark_group(data, text, dot, scale, x, baseline):
-    """Letras en `text` y el punto de la i como disco en `dot`."""
-    paths = "".join(f'<path d="{rnd(p)}"/>' for p in data["paths"])
-    x0, y0, x1, y1 = data["dotBox"]
-    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
-    r = (x1 - x0) / 2 * 1.12
+def symbol(dx, dy, rail_color, disc_color, grid=32, ring=False):
+    return rails(dx, dy, rail_color, grid) + disc(dx, dy, disc_color, grid, ring)
+
+
+def path_d(contours, dx, dy):
+    out = []
+    for ops in contours:
+        for op, pts in ops:
+            if op == "moveTo":
+                out.append(f"M{pts[0][0] + dx} {pts[0][1] + dy}")
+            elif op == "lineTo":
+                out.append(f"L{pts[0][0] + dx} {pts[0][1] + dy}")
+            elif op == "qCurveTo":
+                (cx, cy), (x, y) = pts
+                out.append(f"Q{cx + dx} {cy + dy} {x + dx} {y + dy}")
+            elif op in ("closePath", "endPath"):
+                out.append("Z")
+    return "".join(out)
+
+
+def wordmark(data, dx, dy, text_color, dot_color):
+    d = "".join(path_d(g["contours"], dx, dy) for g in data["glyphs"])
+    dot = data["dot"]
     return (
-        f'<g transform="translate({x} {baseline}) scale({scale})">'
-        f'<g fill="{text}">{paths}</g>'
-        f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="{dot}"/>'
-        f"</g>"
+        f'<path fill="{text_color}" d="{d}"/>'
+        f'<circle cx="{dot["cx"] + dx}" cy="{dot["cy"] + dy}" r="{dot["r"]}" fill="{dot_color}"/>'
     )
 
 
@@ -66,60 +97,39 @@ def main(src, out):
     data = json.loads(Path(src).read_text())
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
-    adv = data["advance"]
-    cap = data["capHeight"]
+    ww = data["width"]           # ancho del wordmark
+    asc = data["ascender"]       # y del ascendente dentro de la caja de 32 (2)
+    base = data["baseline"]      # 24
 
-    # Wordmark solo. Altura de caja: 820 unidades (ascendente + margen), ancho = avance.
-    wm_scale = 1.0
-    wm = (
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -780 {adv:.0f} 840" width="{adv/8:.0f}" height="105" role="img" aria-label="enrailar">'
-        + wordmark_group(data, INK, GOLD, wm_scale, 0, 0) + "</svg>"
-    )
-    (out / "wordmark.svg").write_text(wm)
+    def horizontal(rail, disc_c, text, dot, ring=False):
+        w = 32 + GAP + ww
+        return svg(w, 32, symbol(0, 0, rail, disc_c, ring=ring) + wordmark(data, 32 + GAP, 0, text, dot))
 
-    # Horizontal: símbolo 64 + separación 16 + wordmark con capHeight 38.
-    s = 38 / cap
-    w = 64 + 16 + adv * s
-    h = 64
-    baseline = 32 + 38 / 2 + 2  # centrado óptico sobre el símbolo
-    def horizontal(rails, disc, halo, text, dot, bg=None, mono=False):
-        parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:.0f} {h}" width="{w:.0f}" height="{h}" role="img" aria-label="Enrailar">']
-        if bg:
-            parts.append(f'<rect width="{w:.0f}" height="{h}" fill="{bg}"/>')
-        parts.append("<g>" + (symbol_mono(text, halo, bare=True) if mono else symbol(rails, disc, halo, bare=True)) + "</g>")
-        parts.append(wordmark_group(data, text, dot, s, 80, baseline))
-        parts.append("</svg>")
-        return "".join(parts)
+    files = {
+        "logo-horizontal.svg": horizontal(CELESTE, GOLD, INK, GOLD),
+        "logo-mono.svg": horizontal(INK, INK, INK, INK, ring=True),
+        "logo-blanco.svg": horizontal(WHITE, WHITE, WHITE, WHITE, ring=True),
+        "logo-invertido.svg": horizontal(CELESTE_SOFT, GOLD_SOFT, WHITE, GOLD_SOFT),
+        "simbolo.svg": svg(32, 32, symbol(0, 0, CELESTE, GOLD)),
+        "simbolo-mono.svg": svg(32, 32, symbol(0, 0, INK, INK, ring=True)),
+        "favicon.svg": svg(16, 16, symbol(0, 0, CELESTE, GOLD, grid=16)),
+        # Ícono con fondo para pantalla de inicio y manifest: símbolo con margen de 4 (80 %).
+        "icon.svg": svg(40, 40, f'<rect width="40" height="40" rx="8" fill="{WHITE}"/>' + symbol(4, 4, CELESTE, GOLD)),
+    }
+    # Wordmark solo: caja ajustada del ascendente a la base.
+    files["wordmark.svg"] = svg(ww, base - asc, wordmark(data, 0, -asc, INK, GOLD), label="enrailar")
+    # Apilado: símbolo centrado sobre el wordmark, 8 px de aire.
+    W = ww + (ww % 2)              # ancho par para centrar el símbolo en entero
+    sx = (W - 32) // 2
+    wx = (W - ww) // 2
+    wy = 32 + 8 - asc
+    files["logo-apilado.svg"] = svg(W, wy + base, symbol(sx, 0, CELESTE, GOLD) + wordmark(data, wx, wy, INK, GOLD))
 
-    (out / "logo-horizontal.svg").write_text(horizontal(CELESTE, GOLD, WHITE, INK, GOLD))
-    (out / "logo-mono.svg").write_text(horizontal(INK, INK, WHITE, INK, INK, mono=True))
-    (out / "logo-invertido.svg").write_text(horizontal(CELESTE_SOFT, GOLD_SOFT, INK, WHITE, GOLD_SOFT, bg=INK))
-
-    # Apilado: símbolo arriba centrado, wordmark abajo con capHeight 30.
-    s2 = 30 / cap
-    ww = adv * s2
-    W = max(ww, 64) + 24
-    H = 64 + 14 + 44
-    sym_x = (W - 64) / 2
-    stacked = (
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W:.0f} {H}" width="{W:.0f}" height="{H}" role="img" aria-label="Enrailar">'
-        f'<g transform="translate({sym_x:.1f} 0)">{symbol(CELESTE, GOLD, WHITE, bare=True)}</g>'
-        + wordmark_group(data, INK, GOLD, s2, (W - ww) / 2, 64 + 14 + 30) + "</svg>"
-    )
-    (out / "logo-apilado.svg").write_text(stacked)
-
-    (out / "simbolo.svg").write_text(symbol(CELESTE, GOLD, WHITE))
-    (out / "simbolo-mono.svg").write_text(symbol_mono(INK, WHITE))
-    (out / "favicon.svg").write_text(symbol(CELESTE, GOLD, WHITE, size=64))
-    # Ícono con fondo (maskable / apple-touch): disco sobre blanco con margen.
-    icon = (
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512">'
-        f'<rect width="64" height="64" rx="14" fill="{WHITE}"/>'
-        f'<g transform="translate(8 8) scale(0.75)">{symbol(CELESTE, GOLD, WHITE, bare=True)}</g></svg>'
-    )
-    (out / "icon.svg").write_text(icon)
-    print("ok", sorted(p.name for p in out.iterdir()))
+    for name, content in files.items():
+        (out / name).write_text(content + "\n")
+    print("ok", sorted(files))
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    args = sys.argv[1:]
+    main(args[0] if args else "scripts/brand/wordmark.json", args[1] if len(args) > 1 else "apps/web/public/brand")

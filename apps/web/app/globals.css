@@ -306,8 +306,10 @@ a:hover {
 }
 
 .brand img {
-  height: 2rem;
-  width: auto;
+  /* Lockup de 148 × 32 a escala 1:1 (2:1 en pantallas de 2×): nunca fraccionaria. */
+  display: block;
+  width: 148px;
+  height: 32px;
 }
 
 .nav {
@@ -950,8 +952,9 @@ a:hover {
 }
 
 .site-footer img {
-  height: 2rem;
-  width: auto;
+  display: block;
+  width: 148px;
+  height: 32px;
   margin-bottom: var(--s-3);
 }
 

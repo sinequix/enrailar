@@ -8,7 +8,7 @@ export function SiteHeader({ locale, path = "" }: { locale: Locale; path?: strin
     <header className="site-header">
       <div className="wrap">
         <a className="brand" href={home}>
-          <img src="/brand/logo-horizontal.svg" width={273} height={64} alt="Enrailar" />
+          <img src="/brand/logo-horizontal.svg" width={148} height={32} alt="Enrailar" />
         </a>
         <nav className="nav" aria-label={locale === "es" ? "Principal" : "Main"}>
           <a className="nav-section" href={`${home}#vision`}>{copy.nav.vision}</a>
