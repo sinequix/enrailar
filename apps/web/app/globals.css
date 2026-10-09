@@ -1,0 +1,133 @@
+:root {
+  color: #f3ecdf;
+  background: #1b1712;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(228, 87, 46, 0.18), transparent 28rem),
+    #1b1712;
+}
+
+a { color: #f0a58a; }
+
+.wrap {
+  width: min(72rem, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+header.site {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid rgba(243, 236, 223, 0.16);
+}
+
+.mark {
+  font-family: Palatino, "Iowan Old Style", Georgia, serif;
+  letter-spacing: 0.18em;
+  text-decoration: none;
+  color: inherit;
+}
+
+.langs a { margin-left: 0.75rem; }
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 2rem;
+  padding: 3rem 0 2rem;
+}
+
+h1, h2 {
+  font-family: Palatino, "Iowan Old Style", Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+h1 { font-size: clamp(2.6rem, 6vw, 5rem); line-height: 0.95; margin: 0.2rem 0 1rem; }
+
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.78rem;
+  color: #e4572e;
+}
+
+.clock {
+  border: 1px solid rgba(243, 236, 223, 0.2);
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.digits {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.digits div {
+  background: #2a241c;
+  padding: 0.6rem 0.2rem;
+  text-align: center;
+}
+
+.digits strong { display: block; font-size: 1.6rem; }
+
+.digits span { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.note { color: #cbbba6; font-size: 0.92rem; }
+
+section { padding: 1rem 0 2rem; }
+
+.grid { display: grid; gap: 1rem; }
+
+form, .card {
+  border-top: 1px solid rgba(243, 236, 223, 0.16);
+  padding-top: 1rem;
+}
+
+label { display: block; margin: 0.8rem 0; }
+
+input, textarea, select {
+  width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.65rem 0.7rem;
+  color: inherit;
+  background: #241f19;
+  border: 1px solid rgba(243, 236, 223, 0.25);
+}
+
+textarea { min-height: 8rem; }
+
+button {
+  background: #e4572e;
+  color: #1b1712;
+  border: 0;
+  padding: 0.75rem 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hp {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.posts a { display: block; padding: 0.8rem 0; text-decoration: none; color: inherit; }
+
+@media (max-width: 800px) {
+  .hero { grid-template-columns: 1fr; }
+}
