@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Firma de correo · Enrailar</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { width: 640px; padding: 32px; background: var(--niebla); }
+  .card { background: var(--blanco); border: 1px solid var(--gris-100); border-radius: 10px; padding: 24px; }
+  table { border-collapse: collapse; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #0e2a42; }
+  td { vertical-align: top; }
+  .name { font-weight: 700; font-size: 16px; }
+  .role { color: #4a5a68; }
+  .rule { width: 2px; background: #8dbee2; }
+  a { color: #1c5a88; text-decoration: none; }
+  .tag { color: #7e5e0b; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+  .note { font-family: var(--display); font-size: 12px; color: var(--balasto); margin-top: 16px; }
+</style></head>
+<body>
+  <div class="card">
+    <!-- Firma: solo HTML de tabla, fuentes del sistema, logo PNG/SVG alojado en enrailar.com -->
+    <table cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding-right:16px"><img src="../../../apps/web/public/brand/simbolo.svg" width="40" height="40" alt="Enrailar"></td>
+        <td class="rule"></td>
+        <td style="padding-left:16px">
+          <div class="name">Nombre Apellido</div>
+          <div class="role">Rol en el proyecto · Enrailar</div>
+          <div style="margin-top:8px"><a href="mailto:hola@enrailar.com">hola@enrailar.com</a> · <a href="https://enrailar.com">enrailar.com</a></div>
+          <div class="tag" style="margin-top:8px">Primero ver, después mover</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <p class="note">Plantilla. El nombre y el rol son marcadores: la firma usa casillas de rol, no correos personales.</p>
+</body></html>

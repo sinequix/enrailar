@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Slide de portada · Enrailar</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { width: 1280px; height: 720px; overflow: hidden; position: relative; background: var(--azul-riel); color: var(--blanco); }
+  .img { position: absolute; right: 0; top: 0; width: 560px; height: 720px; background: url("../../../apps/web/public/brand/img/robot-inspeccion-1280.jpg") 62% center / cover no-repeat; }
+  .img::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--azul-riel) 0%, rgba(14,42,66,.1) 45%, rgba(14,42,66,0) 100%); }
+  .box { position: absolute; left: 72px; top: 64px; bottom: 64px; width: 640px; display: flex; flex-direction: column; justify-content: space-between; }
+  .logo { height: 48px; }
+  .eyebrow { color: var(--celeste-300); }
+  .eyebrow::before { background: var(--oro-300); }
+  h1 { font-size: 66px; margin-top: 16px; }
+  .sub { font-size: 22px; color: var(--celeste-300); margin: 18px 0 0; line-height: 1.4; max-width: 560px; }
+  .foot { display: flex; gap: 28px; font-family: var(--display); font-stretch: 112%; font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: var(--celeste-300); }
+  .foot b { color: var(--oro-300); }
+  .caption { position: absolute; right: 24px; bottom: 20px; font-family: var(--display); font-stretch: 112%; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--celeste-100); background: rgba(14,42,66,.6); padding: 6px 10px; border-radius: 999px; }
+</style></head>
+<body>
+  <div class="img"></div>
+  <div class="box">
+    <img class="logo" src="../../../apps/web/public/brand/logo-invertido.svg" alt="Enrailar">
+    <div>
+      <p class="eyebrow">Fase 1 · monitoreo</p>
+      <h1>Primero, saber qué hay</h1>
+      <p class="sub">Un mapa vivo de la red, gente en el terreno y prototipos de inspección.</p>
+    </div>
+    <div class="foot"><span>enrailar.com</span><span>Hackatrain · <b>Febrero 2027</b></span><span>Apache-2.0</span></div>
+  </div>
+  <div class="caption">Imagen sintética ilustrativa</div>
+</body></html>

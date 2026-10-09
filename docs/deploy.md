@@ -48,6 +48,12 @@ La API, el inbox, los workers de correo y la web ya tienen entrypoint propio. La
 
 `NEXT_PUBLIC_API_ORIGIN` y `NEXT_PUBLIC_TURNSTILE_SITE_KEY` son públicas. En [`.env.example`](../.env.example) quedan vacías. Si el origen no está, los formularios apuntan a `https://api.enrailar.com`. La clave de Turnstile es el sitekey del widget, no el secret.
 
+### Cómo llega el sitekey de Turnstile a la web
+
+Alchemy declara el binding `TURNSTILE_SITE_KEY` en el Worker de la web (`Cloudflare.Website.Vinext("Web", { env: { TURNSTILE_SITE_KEY: turnstile.sitekey } })`). La web no lo recibe en el build: `vite build` corre sin ese valor, y en `vinext` solo las variables `NEXT_PUBLIC_*` presentes en el entorno del build se inlinean. Por eso la página lo lee en tiempo de request con `process.env.TURNSTILE_SITE_KEY` ([`apps/web/src/turnstile.ts`](../apps/web/src/turnstile.ts)): con `nodejs_compat` y fecha de compatibilidad posterior a `2025-04-01`, el runtime de Workers puebla `process.env` con los bindings de texto. `NEXT_PUBLIC_TURNSTILE_SITE_KEY` queda como alternativa para desarrollo local.
+
+Si una página se sirviera prerenderizada (hoy `vinext()` no tiene `prerender` activado), el HTML no tendría la clave. Para ese caso el cliente la pide una vez a `GET /api/turnstile` ([`apps/web/app/api/turnstile/route.ts`](../apps/web/app/api/turnstile/route.ts)), una ruta `force-dynamic` sin caché que lee el mismo binding. El mensaje «Falta la clave pública de Turnstile en este entorno» solo aparece cuando ninguna de las dos vías devuelve un valor.
+
 ## Access
 
 `inbox` y `admin` exigen Cloudflare Access. La política deja pasar identidades del dominio `enrailar.com` y las direcciones de `ACCESS_ALLOWED_EMAILS`. El proveedor de identidad se configura en la cuenta, no en este repo. En `prod` los dos Workers entran en la misma aplicación. El `aud` de esa aplicación se carga en `POLICY_AUD`.
