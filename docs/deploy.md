@@ -46,7 +46,9 @@ El sitekey de Turnstile es público y sale del recurso. El secret también: Alch
 
 La API, el inbox, los workers de correo y la web ya tienen entrypoint propio. La web es `Cloudflare.Website.Vinext` sobre `apps/web`. El inbox es `Cloudflare.Website.Vite` sobre `apps/inbox` (`main: workers/app.ts`). Antes de `alchemy deploy`, `npm ci --prefix apps/inbox`: ese paquete no está en el workspace de pnpm y trae su propio lockfile. Ese `npm ci` no corre Wrangler. El admin sigue en `infra/stubs/`. Las tablas de D1 salen de `apps/api/migrations`. El detalle del correo está en [`email.md`](email.md) y el del inbox en [`inbox.md`](inbox.md).
 
-`NEXT_PUBLIC_API_ORIGIN` y `NEXT_PUBLIC_TURNSTILE_SITE_KEY` son públicas. En [`.env.example`](../.env.example) quedan vacías. Si el origen no está, los formularios apuntan a `https://api.enrailar.com`. La clave de Turnstile es el sitekey del widget, no el secret.
+`NEXT_PUBLIC_API_ORIGIN` y `NEXT_PUBLIC_TURNSTILE_SITE_KEY` son públicas. En [`.env.example`](../.env.example) quedan vacías. Si el origen no está, el formulario apunta a `https://api.enrailar.com`. La clave de Turnstile es el sitekey del widget, no el secret.
+
+La web manda una sola ficha a `POST /v1/sumate`. Cada opción queda como una intención en D1 (`submissions` y `submission_intents`). Si una de ellas es el boletín, el doble opt-in sigue por `newsletter.confirm`, igual que `POST /v1/newsletter`. Las rutas `POST /v1/preinscripcion`, `POST /v1/contacto` y `POST /v1/newsletter` siguen aceptando el contrato anterior. `0003_submissions.sql` copia las fichas ya guardadas y no borra las tablas de origen.
 
 ### Cómo llega el sitekey de Turnstile a la web
 

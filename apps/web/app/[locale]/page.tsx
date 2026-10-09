@@ -1,4 +1,4 @@
-import { CONSENT_COPY, HACKATRAIN_START, HACKATRAIN_WHEN } from "@enrailar/shared";
+import { HACKATRAIN_START, HACKATRAIN_WHEN } from "@enrailar/shared";
 import { notFound } from "next/navigation";
 import { Countdown } from "../countdown.tsx";
 import { HtmlLang } from "../components/html-lang.tsx";
@@ -8,6 +8,7 @@ import { SyntheticFigure } from "../components/picture.tsx";
 import { SiteFooter } from "../components/site-footer.tsx";
 import { SiteHeader } from "../components/site-header.tsx";
 import { COPY, isLocale, type Locale, OG_IMAGE, POST_SLUG, SITE_URL } from "../../src/copy.ts";
+import { SUMATE_PRESELECT } from "../../src/submit.ts";
 import { turnstileSiteKeyFromProcess } from "../../src/turnstile.ts";
 
 export function generateStaticParams() {
@@ -50,16 +51,20 @@ function HomePage({ locale }: { locale: Locale }) {
   // Binding del Worker en runtime (TURNSTILE_SITE_KEY) o .env local. Vacío en prerender.
   const siteKey = turnstileSiteKeyFromProcess();
   const labels = {
-    email: copy.email,
-    linkedin: copy.linkedin,
-    message: copy.message,
     intent: copy.intent,
     intents: copy.intents,
+    email: copy.email,
+    name: copy.name,
+    city: copy.city,
+    link: copy.link,
+    message: copy.message,
+    consent: copy.consent,
     send: copy.send,
     sending: copy.sending,
     accepted: copy.accepted,
+    acceptedNewsletter: copy.acceptedNewsletter,
     rejected: copy.rejected,
-    fields: copy.fields,
+    errors: copy.errors,
     turnstileMissing: copy.turnstileMissing,
     turnstileLoading: copy.turnstileLoading,
   };
@@ -81,7 +86,7 @@ function HomePage({ locale }: { locale: Locale }) {
                 <h1 className="reveal">{copy.visionTitle}</h1>
                 <p className="lede reveal reveal--2">{copy.heroLede}</p>
                 <div className="actions reveal reveal--2">
-                  <a className="btn" href="#sumate">{copy.ctaJoin}</a>
+                  <a className="btn" href={SUMATE_PRESELECT}>{copy.ctaJoin}</a>
                   <a className="btn btn--ghost" href={`/${locale}/blog/${POST_SLUG}`}>{copy.ctaBlog}</a>
                 </div>
               </div>
@@ -206,7 +211,7 @@ function HomePage({ locale }: { locale: Locale }) {
               <ul>
                 {copy.hackatrainPoints.map((point) => <li key={point}>{point}</li>)}
               </ul>
-              <a className="btn btn--sol" href="#sumate">{copy.hackatrainCta}</a>
+              <a className="btn btn--sol" href={SUMATE_PRESELECT}>{copy.hackatrainCta}</a>
             </div>
             <aside className="clock" aria-labelledby="clock-title">
               <p className="eyebrow" id="clock-title">{copy.countdownLabel}</p>
@@ -222,11 +227,11 @@ function HomePage({ locale }: { locale: Locale }) {
           <div className="wrap">
             <div className="section-head">
               <p className="eyebrow eyebrow--sol">{copy.nav.join}</p>
-              <h2>{copy.participate}</h2>
+              <h2 id="sumate-title">{copy.participate}</h2>
               <p className="lede">{copy.joinLede}</p>
-              <p className="consent-note">{CONSENT_COPY}</p>
+              <p className="consent-note">{copy.consent}</p>
             </div>
-            <JoinForms locale={locale} labels={labels} copy={copy} initialSiteKey={siteKey} />
+            <JoinForms locale={locale} labels={labels} hint={copy.formHint} initialSiteKey={siteKey} />
           </div>
         </section>
       </main>

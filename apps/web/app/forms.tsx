@@ -1,21 +1,31 @@
 "use client";
 
-import { CONSENT_COPY, type ContactIntent } from "@enrailar/shared";
+import { JOIN_INTENTS, type JoinIntent } from "@enrailar/shared";
 import { useEffect, useState, type FormEvent } from "react";
-import type { FormKind } from "../src/submit.ts";
-import { apiOrigin, formPath, parseSubmission } from "../src/submit.ts";
+import {
+  apiOrigin,
+  intentsFromHash,
+  parseSumate,
+  SUMATE_PATH,
+  sumateIssueFields,
+  type SumateField,
+} from "../src/submit.ts";
 
 export interface Labels {
-  email: string;
-  linkedin: string;
-  message: string;
   intent: string;
-  intents: Record<ContactIntent, string>;
+  intents: Record<JoinIntent, string>;
+  email: string;
+  name: string;
+  city: string;
+  link: string;
+  message: string;
+  consent: string;
   send: string;
   sending: string;
   accepted: string;
+  acceptedNewsletter: string;
   rejected: string;
-  fields: string;
+  errors: Record<SumateField, string>;
   turnstileMissing: string;
   turnstileLoading: string;
 }
@@ -30,8 +40,7 @@ function turnstileApi(): TurnstileApi | undefined {
 
 /**
  * Carga el script de Turnstile una sola vez. Con `render=explicit` el widget se
- * monta a mano en cada formulario, así no importa si el script llega antes o
- * después de que el DOM tenga los contenedores.
+ * monta a mano, así no importa si el script llega antes o después del contenedor.
  */
 function useTurnstileScript(siteKey: string) {
   const [ready, setReady] = useState(() => Boolean(turnstileApi()));
@@ -66,58 +75,105 @@ function TurnstileSlot({ siteKey, ready, labels, pending }: { siteKey: string; r
   return <div className="turnstile-slot" ref={setNode} />;
 }
 
-export function PublicForm({
-  kind,
-  title,
+function fieldError(id: string, text: string | undefined) {
+  if (!text) return null;
+  return <p id={id} className="field-error" role="alert">{text}</p>;
+}
+
+export function SumateForm({
   hint,
   locale,
   labels,
   siteKey,
   siteKeyPending = false,
 }: {
-  kind: FormKind;
-  title: string;
   hint?: string;
   locale: "es" | "en";
   labels: Labels;
   siteKey: string;
   siteKeyPending?: boolean;
 }) {
+  const [selected, setSelected] = useState<JoinIntent[]>([]);
+  const [errors, setErrors] = useState<Partial<Record<SumateField, string>>>({});
   const [status, setStatus] = useState<{ text: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const ready = useTurnstileScript(siteKey);
-  const showMessage = kind !== "newsletter";
-  const id = (field: string) => `${kind}-${field}`;
+
+  useEffect(() => {
+    const apply = () => {
+      const hash = window.location.hash;
+      if (hash === "#sumate" || hash.startsWith("#sumate?")) {
+        document.getElementById("sumate")?.scrollIntoView({ block: "start" });
+      }
+      const fromHash = intentsFromHash(hash);
+      if (fromHash.length > 0) setSelected(fromHash);
+    };
+    apply();
+    window.addEventListener("hashchange", apply);
+    return () => window.removeEventListener("hashchange", apply);
+  }, []);
+
+  function toggle(intent: JoinIntent) {
+    setSelected((current) => current.includes(intent) ? current.filter((item) => item !== intent) : [...current, intent]);
+    setErrors((current) => ({ ...current, intents: undefined }));
+  }
+
+  function clearField(field: SumateField) {
+    setErrors((current) => ({ ...current, [field]: undefined }));
+  }
+
+  function showIssues(names: readonly SumateField[]) {
+    const next: Partial<Record<SumateField, string>> = {};
+    for (const name of names) next[name] = labels.errors[name];
+    setErrors(next);
+    const first = names[0];
+    if (!first) return;
+    const target = first === "intents" ? "sumate-intent-hackatrain" : `sumate-${first}`;
+    document.getElementById(target)?.focus();
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    const intent = String(data.get("intent") ?? "");
-    const parsed = parseSubmission(kind, {
+    const parsed = parseSumate({
+      intents: selected,
       email: String(data.get("email") ?? ""),
-      linkedin: String(data.get("linkedin") ?? ""),
+      name: String(data.get("name") ?? ""),
+      city: String(data.get("city") ?? ""),
+      link: String(data.get("link") ?? ""),
       message: String(data.get("message") ?? ""),
       locale,
       consent: data.get("consent") === "on",
       turnstileToken: String(data.get("cf-turnstile-response") ?? ""),
       company_url: String(data.get("company_url") ?? ""),
-      intent: intent === "colaborar" || intent === "donar" || intent === "sumarme" ? intent : undefined,
     });
     if (!parsed.success) {
-      const names = parsed.error.issues.map((issue) => issue.path.map(String).join(".")).join(", ");
-      setStatus({ text: `${labels.rejected} ${labels.fields}: ${names}`, ok: false });
+      showIssues(sumateIssueFields(parsed.error.issues));
+      setStatus(null);
       return;
     }
+    setErrors({});
     setBusy(true);
+    const wantsNewsletter = parsed.data.intents.includes("boletin");
     try {
-      const response = await fetch(`${apiOrigin(process.env.NEXT_PUBLIC_API_ORIGIN)}${formPath(kind)}`, {
+      const response = await fetch(`${apiOrigin(process.env.NEXT_PUBLIC_API_ORIGIN)}${SUMATE_PATH}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-      setStatus({ text: response.ok ? labels.accepted : labels.rejected, ok: response.ok });
-      if (response.ok) form.reset();
+      if (!response.ok) {
+        const body: unknown = await response.json().catch(() => null);
+        const raw = body && typeof body === "object" && "fields" in body && Array.isArray(body.fields)
+          ? body.fields.filter((item): item is string => typeof item === "string")
+          : [];
+        showIssues(sumateIssueFields(raw.map((name) => ({ path: [name] }))));
+        setStatus({ text: labels.rejected, ok: false });
+        return;
+      }
+      setStatus({ text: wantsNewsletter ? labels.acceptedNewsletter : labels.accepted, ok: true });
+      setSelected([]);
+      form.reset();
     } catch {
       setStatus({ text: labels.rejected, ok: false });
     } finally {
@@ -125,45 +181,126 @@ export function PublicForm({
     }
   }
 
+  const intentErrorId = errors.intents ? "sumate-intents-error" : undefined;
+
   return (
-    <form className="form" onSubmit={onSubmit} aria-labelledby={id("title")}>
-      <h3 id={id("title")}>{title}</h3>
+    <form className="form" onSubmit={onSubmit} aria-labelledby="sumate-title" noValidate>
       {hint ? <p className="hint">{hint}</p> : null}
-      {kind === "contacto" ? (
-        <label className="field" htmlFor={id("intent")}>
-          {labels.intent}
-          <select id={id("intent")} name="intent" defaultValue="colaborar">
-            <option value="colaborar">{labels.intents.colaborar}</option>
-            <option value="donar">{labels.intents.donar}</option>
-            <option value="sumarme">{labels.intents.sumarme}</option>
-          </select>
-        </label>
-      ) : null}
-      <label className="field" htmlFor={id("email")}>
+      <fieldset
+        className="intent-set"
+        aria-invalid={errors.intents ? true : undefined}
+        aria-describedby={intentErrorId}
+      >
+        <legend>{labels.intent}</legend>
+        <div className="chips">
+          {JOIN_INTENTS.map((intent) => (
+            <label className="chip" key={intent}>
+              <input
+                id={intent === "hackatrain" ? "sumate-intent-hackatrain" : undefined}
+                type="checkbox"
+                name="intents"
+                value={intent}
+                checked={selected.includes(intent)}
+                onChange={() => toggle(intent)}
+              />
+              <span>{labels.intents[intent]}</span>
+            </label>
+          ))}
+        </div>
+        {fieldError("sumate-intents-error", errors.intents)}
+      </fieldset>
+      <label className="field" htmlFor="sumate-email">
         {labels.email}
-        <input id={id("email")} name="email" type="email" autoComplete="email" required />
+        <input
+          id="sumate-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          aria-invalid={errors.email ? true : undefined}
+          aria-describedby={errors.email ? "sumate-email-error" : undefined}
+          onChange={() => clearField("email")}
+        />
+        {fieldError("sumate-email-error", errors.email)}
       </label>
-      {showMessage ? (
-        <label className="field" htmlFor={id("linkedin")}>
-          {labels.linkedin}
-          <input id={id("linkedin")} name="linkedin" type="url" placeholder="https://www.linkedin.com/in/" />
-        </label>
-      ) : null}
-      {showMessage ? (
-        <label className="field" htmlFor={id("message")}>
-          {labels.message}
-          <textarea id={id("message")} name="message" required />
-        </label>
-      ) : null}
+      <label className="field" htmlFor="sumate-name">
+        {labels.name}
+        <input
+          id="sumate-name"
+          name="name"
+          type="text"
+          autoComplete="name"
+          maxLength={120}
+          aria-invalid={errors.name ? true : undefined}
+          aria-describedby={errors.name ? "sumate-name-error" : undefined}
+          onChange={() => clearField("name")}
+        />
+        {fieldError("sumate-name-error", errors.name)}
+      </label>
+      <label className="field" htmlFor="sumate-city">
+        {labels.city}
+        <input
+          id="sumate-city"
+          name="city"
+          type="text"
+          autoComplete="address-level2"
+          maxLength={120}
+          aria-invalid={errors.city ? true : undefined}
+          aria-describedby={errors.city ? "sumate-city-error" : undefined}
+          onChange={() => clearField("city")}
+        />
+        {fieldError("sumate-city-error", errors.city)}
+      </label>
+      <label className="field" htmlFor="sumate-link">
+        {labels.link}
+        <input
+          id="sumate-link"
+          name="link"
+          type="url"
+          autoComplete="url"
+          placeholder="https://"
+          aria-invalid={errors.link ? true : undefined}
+          aria-describedby={errors.link ? "sumate-link-error" : undefined}
+          onChange={() => clearField("link")}
+        />
+        {fieldError("sumate-link-error", errors.link)}
+      </label>
+      <label className="field" htmlFor="sumate-message">
+        {labels.message}
+        <textarea
+          id="sumate-message"
+          name="message"
+          maxLength={4000}
+          aria-invalid={errors.message ? true : undefined}
+          aria-describedby={errors.message ? "sumate-message-error" : undefined}
+          onChange={() => clearField("message")}
+        />
+        {fieldError("sumate-message-error", errors.message)}
+      </label>
       <label className="hp" aria-hidden="true">
         Company
         <input name="company_url" tabIndex={-1} autoComplete="off" />
       </label>
-      <label className="check" htmlFor={id("consent")}>
-        <input id={id("consent")} name="consent" type="checkbox" />
-        <span>{CONSENT_COPY}</span>
-      </label>
-      <TurnstileSlot siteKey={siteKey} ready={ready} labels={labels} pending={siteKeyPending} />
+      <div className="field">
+        <label className="check" htmlFor="sumate-consent">
+          <input
+            id="sumate-consent"
+            name="consent"
+            type="checkbox"
+            aria-invalid={errors.consent ? true : undefined}
+            aria-describedby={errors.consent ? "sumate-consent-error" : undefined}
+            onChange={() => clearField("consent")}
+          />
+          <span>{labels.consent}</span>
+        </label>
+        {fieldError("sumate-consent-error", errors.consent)}
+      </div>
+      <div
+        aria-invalid={errors.turnstileToken ? true : undefined}
+        aria-describedby={errors.turnstileToken ? "sumate-turnstile-error" : undefined}
+      >
+        <TurnstileSlot siteKey={siteKey} ready={ready} labels={labels} pending={siteKeyPending} />
+        {fieldError("sumate-turnstile-error", errors.turnstileToken)}
+      </div>
       <div>
         <button className="btn" type="submit" disabled={busy}>{busy ? labels.sending : labels.send}</button>
       </div>

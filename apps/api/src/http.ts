@@ -3,9 +3,11 @@ import {
   mailJobSchema,
   newsletterSchema,
   preinscriptionSchema,
+  sumateSchema,
   type ContactInput,
   type NewsletterInput,
   type PreinscriptionInput,
+  type SumateInput,
 } from "@enrailar/shared";
 import type { NextFunction, Request, Response, Router } from "express";
 import type { ApiDeps } from "./deps.ts";
@@ -83,6 +85,9 @@ export function mountRoutes(router: Router, deps: ApiDeps): void {
   router.post("/v1/newsletter", (req, res, next) => {
     handleNewsletter(deps, req, res).catch(next);
   });
+  router.post("/v1/sumate", (req, res, next) => {
+    handleSumate(deps, req, res).catch(next);
+  });
   router.get("/v1/newsletter/confirm", (req, res, next) => {
     handleConfirm(deps, req, res).catch(next);
   });
@@ -135,17 +140,17 @@ async function handleContact(deps: ApiDeps, req: Request, res: Response): Promis
   res.status(202).json({ ok: true });
 }
 
-async function handleNewsletter(deps: ApiDeps, req: Request, res: Response): Promise<void> {
-  const route = "POST /v1/newsletter";
-  const data = await readForm<NewsletterInput>(deps, req, res, route, newsletterSchema);
-  if (!data) return;
-  const now = deps.now();
+async function startNewsletter(
+  deps: ApiDeps,
+  input: { email: string; locale: "es" | "en" },
+  now: string,
+): Promise<string> {
   const confirmToken = randomToken();
   const unsubscribeToken = randomToken();
   const id = await deps.store.saveNewsletterPending({
     id: crypto.randomUUID(),
-    email: data.email,
-    locale: data.locale,
+    email: input.email,
+    locale: input.locale,
     confirmTokenHash: await sha256(confirmToken),
     unsubscribeTokenHash: await sha256(unsubscribeToken),
     consentAt: now,
@@ -153,13 +158,47 @@ async function handleNewsletter(deps: ApiDeps, req: Request, res: Response): Pro
   });
   const job = mailJobSchema.parse({
     kind: "newsletter.confirm",
-    to: data.email,
-    locale: data.locale,
+    to: input.email,
+    locale: input.locale,
     confirmPath: `/v1/newsletter/confirm?token=${confirmToken}`,
     unsubscribePath: `/v1/newsletter/unsubscribe?token=${unsubscribeToken}`,
   });
   await deps.enqueue(job);
   await deps.store.appendAudit({ recordId: id, kind: "newsletter.pending", createdAt: now });
+  return id;
+}
+
+async function handleNewsletter(deps: ApiDeps, req: Request, res: Response): Promise<void> {
+  const route = "POST /v1/newsletter";
+  const data = await readForm<NewsletterInput>(deps, req, res, route, newsletterSchema);
+  if (!data) return;
+  const id = await startNewsletter(deps, data, deps.now());
+  deps.log({ route, status: 202, recordId: id });
+  res.status(202).json({ ok: true });
+}
+
+async function handleSumate(deps: ApiDeps, req: Request, res: Response): Promise<void> {
+  const route = "POST /v1/sumate";
+  const data = await readForm<SumateInput>(deps, req, res, route, sumateSchema);
+  if (!data) return;
+  const id = crypto.randomUUID();
+  const now = deps.now();
+  await deps.store.insertSubmission({
+    id,
+    email: data.email,
+    name: data.name,
+    city: data.city,
+    link: data.link,
+    message: data.message,
+    locale: data.locale,
+    intents: data.intents,
+    consentAt: now,
+    createdAt: now,
+  });
+  await deps.store.appendAudit({ recordId: id, kind: "sumate.accepted", createdAt: now });
+  if (data.intents.includes("boletin")) {
+    await startNewsletter(deps, data, now);
+  }
   deps.log({ route, status: 202, recordId: id });
   res.status(202).json({ ok: true });
 }

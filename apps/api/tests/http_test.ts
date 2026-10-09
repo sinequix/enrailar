@@ -126,6 +126,88 @@ Deno.test("sin consentimiento o sin turno el formulario no entra", async () => {
   });
 });
 
+const sumate = {
+  intents: ["hackatrain", "ciudad"],
+  email: "hola@enrailar.com",
+  name: "",
+  city: "",
+  link: "https://enrailar.com",
+  message: "",
+  locale: "es",
+  consent: true,
+  turnstileToken: "token-ok",
+  company_url: "",
+};
+
+Deno.test("sumate registra cada intención y el boletín sigue con doble opt-in", async () => {
+  const { deps, logs, jobs } = harness();
+  await withServer(deps, async (base) => {
+    const plain = await fetch(`${base}/v1/sumate`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "cf-connecting-ip": "203.0.113.40" },
+      body: JSON.stringify(sumate),
+    });
+    assertEquals(plain.status, 202);
+    assertEquals(await plain.json(), { ok: true });
+    assertEquals(jobs.length, 0);
+
+    const news = await fetch(`${base}/v1/sumate`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "cf-connecting-ip": "203.0.113.41" },
+      body: JSON.stringify({ ...sumate, intents: ["boletin", "hackatrain", "boletin"] }),
+    });
+    assertEquals(news.status, 202);
+    assertEquals(jobs.length, 1);
+    const job = jobs[0];
+    assert(job);
+    assert(job.kind === "newsletter.confirm");
+    const confirm = await fetch(`${base}${job.confirmPath}`);
+    assertEquals(confirm.status, 200);
+
+    const empty = await fetch(`${base}/v1/sumate`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "cf-connecting-ip": "203.0.113.42" },
+      body: JSON.stringify({ ...sumate, intents: [] }),
+    });
+    assertEquals(empty.status, 400);
+    const denied = await empty.json();
+    assertEquals(denied.fields, ["intents"]);
+    assert(!JSON.stringify(denied).includes("@"));
+
+    const honeypot = await fetch(`${base}/v1/sumate`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "cf-connecting-ip": "203.0.113.43" },
+      body: JSON.stringify({ ...sumate, company_url: "https://spam.example" }),
+    });
+    assertEquals(honeypot.status, 200);
+    assertEquals(jobs.length, 1);
+
+    const bot = await fetch(`${base}/v1/sumate`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "cf-connecting-ip": "203.0.113.44" },
+      body: JSON.stringify({ ...sumate, turnstileToken: "falso" }),
+    });
+    assertEquals(bot.status, 400);
+  });
+  const dumped = JSON.stringify(logs);
+  assert(!dumped.includes("@"));
+  assert(!dumped.includes("token-ok"));
+});
+
+Deno.test("sumate corta por límite", async () => {
+  const { deps, jobs } = harness();
+  await withServer(deps, async (base) => {
+    const headers = { "content-type": "application/json", "cf-connecting-ip": "203.0.113.50" };
+    for (let i = 0; i < 3; i++) {
+      const response = await fetch(`${base}/v1/sumate`, { method: "POST", headers, body: JSON.stringify(sumate) });
+      assertEquals(response.status, 202);
+    }
+    const blocked = await fetch(`${base}/v1/sumate`, { method: "POST", headers, body: JSON.stringify(sumate) });
+    assertEquals(blocked.status, 429);
+  });
+  assertEquals(jobs.length, 0);
+});
+
 Deno.test("el límite corta antes de aceptar otra ficha", async () => {
   const { deps } = harness();
   await withServer(deps, async (base) => {

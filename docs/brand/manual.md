@@ -48,7 +48,7 @@ Reglas:
 | "El anuncio no fija un día. La referencia es Febrero 2027." | "¡Muy pronto! Grandes novedades en camino." |
 | "Prototipos sobre la vía, con energía solar y enlace donde no llega la cobertura." | "Robots autónomos con inteligencia artificial de última generación." |
 | "Cada intervención queda escrita: el defecto, la obra y la capacidad que se recupera." | "Soluciones integrales end-to-end para el ecosistema ferroviario." |
-| "Tres formas de entrar. Todas las lee una persona del proyecto." | "¡Unite a la comunidad más grande de amantes del tren!" |
+| "Una sola ficha. Marcá lo que querés hacer. La lee una persona del proyecto." | "¡Unite a la comunidad más grande de amantes del tren!" |
 
 ## 2. Naming y tagline
 
