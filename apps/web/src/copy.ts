@@ -1,3 +1,5 @@
+import { HACKATRAIN_WHEN } from "@enrailar/shared";
+
 export const LOCALES = ["es", "en"] as const;
 
 export type Locale = (typeof LOCALES)[number];
@@ -51,10 +53,10 @@ interface Copy {
 export const COPY: Record<Locale, Copy> = {
   es: {
     title: "Enrailar",
-    description: "Recuperar los trenes de Argentina. Fase 1: monitoreo. Hackatrain en febrero de 2027.",
+    description: `Recuperar los trenes de Argentina. Fase 1: monitoreo. Hackatrain en ${HACKATRAIN_WHEN.es}.`,
     phase: "Fase 1 · monitoreo",
     countdownLabel: "Hackatrain",
-    countdownNote: "El anuncio dice febrero de 2027 y no fija un día. La cuenta regresiva usa el 1 de febrero de 2027, hora de Argentina.",
+    countdownNote: `El anuncio no fija un día. La referencia es ${HACKATRAIN_WHEN.es}. La cuenta regresiva aparece cuando haya una fecha.`,
     visionTitle: "Una red que se pueda volver a usar",
     vision: [
       "Enrailar es un proyecto abierto para recuperar los trenes de Argentina y, más adelante, una empresa de tecnología ferroviaria: investigación, gestión, mantenimiento y explotación de infraestructura y material rodante.",
@@ -66,7 +68,7 @@ export const COPY: Record<Locale, Copy> = {
       "La fase 1 es monitoreo. Un mapa vivo de estaciones, playones, vías, puentes, túneles, desvíos, pasos a nivel y señalización, con lugar, fotos, fecha, estado y qué haría falta para que vuelva a servir.",
       "Parte de ese mapa lo arma la gente de cada pueblo, con un protocolo común y revisión técnica. La otra parte la recorren prototipos: robots sobre la vía y drones en el aire, con energía solar y enlace donde el corredor no llega de otra forma.",
     ],
-    hackatrainTitle: "Hackatrain, febrero 2027",
+    hackatrainTitle: `Hackatrain, ${HACKATRAIN_WHEN.es}`,
     hackatrain: [
       "El lanzamiento público es el primer Hackatrain, un hackathon abierto de tecnología ferroviaria. Hasta entonces el trabajo visible es el mapa, un prototipo de inspección y un corredor comercial que se pueda medir.",
     ],
@@ -95,10 +97,10 @@ export const COPY: Record<Locale, Copy> = {
   },
   en: {
     title: "Enrailar",
-    description: "Restoring Argentina's railways. Phase 1 is monitoring. Hackatrain is in February 2027.",
+    description: `Restoring Argentina's railways. Phase 1 is monitoring. Hackatrain is in ${HACKATRAIN_WHEN.en}.`,
     phase: "Phase 1 · monitoring",
     countdownLabel: "Hackatrain",
-    countdownNote: "The announcement says February 2027 and does not name a day. The countdown uses 1 February 2027, Argentina time.",
+    countdownNote: `The announcement does not name a day. The reference is ${HACKATRAIN_WHEN.en}. The countdown appears when a date is set.`,
     visionTitle: "A network that can be used again",
     vision: [
       "Enrailar is an open project to restore Argentina's railways and, later, a railway technology company: research, management, maintenance and operation of infrastructure and rolling stock.",
@@ -110,7 +112,7 @@ export const COPY: Record<Locale, Copy> = {
       "Phase 1 is monitoring. A living map of stations, yards, track, bridges, tunnels, sidings, level crossings and signaling, with place, photos, date, condition and what it would take to be useful again.",
       "People in each town build part of that map, under a shared protocol and a technical review. Prototypes cover the rest: robots on the track and drones overhead, with solar power and a link where the corridor has no other one.",
     ],
-    hackatrainTitle: "Hackatrain, February 2027",
+    hackatrainTitle: `Hackatrain, ${HACKATRAIN_WHEN.en}`,
     hackatrain: [
       "The public launch is the first Hackatrain, an open hackathon for railway technology. Until then the visible work is the map, an inspection prototype and a commercial corridor we can measure.",
     ],
