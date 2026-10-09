@@ -16,13 +16,11 @@ El worker no escribe direcciones en los logs. Si el inbox no acepta el mensaje, 
 
 ## Inbox
 
-`apps/inbox` guarda el raw en R2 (`raw/<sha256>`) y una fila en D1 (`inbound_messages`: buzón de rol, asunto, tamaño, fecha). No hay columna de remitente. El sobre del remitente queda solo dentro del objeto.
+`apps/inbox` es [agentic-inbox](https://github.com/cloudflare/agentic-inbox) en el commit `48039bb6785af34e592c2966f87cde2b255c4c80`, bajo Apache-2.0. El detalle de licencia y de por qué no entra al workspace de pnpm está en [`inbox.md`](inbox.md).
 
-También escribe `mailboxes/<casilla>.json` en el mismo R2. Es la marca que [agentic-inbox](https://github.com/cloudflare/agentic-inbox) (`48039bb6785af34e592c2966f87cde2b255c4c80`) exige para no ignorar el correo. El campo `forwarding.email` de esa marca queda vacío: el reenvío lo hace `email-in`, no esa app.
+El inbox propio (R2 `raw/<sha256>` y la tabla D1 `inbound_messages`) salió con ese reemplazo. La migración `0002_inbound.sql` sigue en `apps/api/migrations` porque borrar una migración ya aplicada no es lo que hace Alchemy en un stage nuevo: un stage nuevo igual la corre. Esa tabla no la usa agentic-inbox.
 
-La UI, los Durable Objects (`MailboxDO`, `EmailAgent`, `EmailMCP`) y Workers AI de agentic-inbox no están vendidos en este repo. Su entrypoint importa `virtual:react-router/server-build` y se despliega con Wrangler. Acá la única definición de despliegue es Alchemy, así que el inbox propio cubre guardar y leer, y deja esa marca en R2 para un reemplazo posterior del Worker `Inbox`.
-
-Cloudflare Access ya cubre el Worker `Inbox` y el de admin: pasa una identidad de `enrailar.com`. El service binding no atraviesa Access, por eso `email-in` puede publicar en `/internal/inbound`. El tráfico público de ese path sí queda detrás de Access.
+`email-in` todavía publica en `POST /internal/inbound` por el service binding. Ese path no existe en el árbol vendido. El cableado de Alchemy y la entrega al Durable Object `MailboxDO` van en los PRs siguientes. No despliegues este commit solo.
 
 ## Salida
 

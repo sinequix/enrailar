@@ -31,16 +31,6 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
-  apps/inbox:
-    dependencies:
-      '@enrailar/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
-    devDependencies:
-      typescript:
-        specifier: 7.0.2
-        version: 7.0.2
-
   apps/web:
     dependencies:
       '@enrailar/shared':

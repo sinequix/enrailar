@@ -1,5 +1,6 @@
 packages:
   - "packages/*"
-  - "apps/*"
+  - "apps/api"
+  - "apps/web"
   - "workers/*"
   - "infra"
