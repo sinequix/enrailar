@@ -67,14 +67,27 @@ export default Stack(
       },
     });
 
-    const inbox = yield* Cloudflare.Worker("Inbox", {
-      main: new URL("../apps/inbox/src/worker.ts", import.meta.url).pathname,
+    const inboxSend = yield* Cloudflare.Email.SendEmail("InboxSend", {
+      allowedSenderAddresses: [...ROLE_MAILBOXES],
+    });
+
+    const inbox = yield* Cloudflare.Website.Vite("Inbox", {
+      rootDir: decodeURIComponent(new URL("../apps/inbox/", import.meta.url).pathname),
+      main: "workers/app.ts",
       compatibility,
       access,
       ...domain(`inbox.${DOMAIN}`),
       env: {
-        DB: database,
         BUCKET: bucket,
+        AI: Cloudflare.Workers.AI(),
+        EMAIL: inboxSend,
+        DOMAINS: DOMAIN,
+        EMAIL_ADDRESSES: [...ROLE_MAILBOXES],
+        POLICY_AUD: Config.Redacted("POLICY_AUD"),
+        TEAM_DOMAIN: Config.Redacted("TEAM_DOMAIN"),
+        MAILBOX: Cloudflare.DurableObject("Mailbox", { className: "MailboxDO" }),
+        EMAIL_AGENT: Cloudflare.DurableObject("EmailAgent", { className: "EmailAgent" }),
+        EMAIL_MCP: Cloudflare.DurableObject("EmailMCP", { className: "EmailMCP" }),
       },
     });
 

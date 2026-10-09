@@ -20,7 +20,9 @@ El worker no escribe direcciones en los logs. Si el inbox no acepta el mensaje, 
 
 El inbox propio (R2 `raw/<sha256>` y la tabla D1 `inbound_messages`) salió con ese reemplazo. La migración `0002_inbound.sql` sigue en `apps/api/migrations` porque borrar una migración ya aplicada no es lo que hace Alchemy en un stage nuevo: un stage nuevo igual la corre. Esa tabla no la usa agentic-inbox.
 
-`email-in` todavía publica en `POST /internal/inbound` por el service binding. Ese path no existe en el árbol vendido. El cableado de Alchemy y la entrega al Durable Object `MailboxDO` van en los PRs siguientes. No despliegues este commit solo.
+Alchemy despliega ese árbol con `Cloudflare.Website.Vite`: bundle de React Router, Worker con assets, Durable Objects `MailboxDO` y `EmailAgent` (y `EmailMCP` para `/mcp`), R2 y Workers AI. Access cubre el Worker, o sea la UI y el MCP. El detalle está en [`inbox.md`](inbox.md).
+
+`email-in` todavía publica en `POST /internal/inbound` por el service binding. Ese path no existe en el árbol vendido. La entrega al Durable Object va en el PR siguiente. No despliegues esta rama sola.
 
 ## Salida
 

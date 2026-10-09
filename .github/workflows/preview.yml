@@ -36,6 +36,8 @@ jobs:
           cache: pnpm
       - name: Install
         run: pnpm install --frozen-lockfile
+      - name: Install inbox
+        run: npm ci --prefix apps/inbox
       - name: Fail closed
         run: bash scripts/ci/require-secrets.sh
       - name: Deploy pr stage
