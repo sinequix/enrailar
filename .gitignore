@@ -4,6 +4,9 @@
 .alchemy/
 node_modules/
 dist/
+.vinext/
+.vite/
+.next/
 .turbo/
 *.log
 .DS_Store

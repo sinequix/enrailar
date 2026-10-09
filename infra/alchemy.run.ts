@@ -107,8 +107,8 @@ export default Stack(
       },
     });
 
-    const web = yield* Cloudflare.Worker("Web", {
-      main: stubPath("web"),
+    const web = yield* Cloudflare.Website.Vinext("Web", {
+      rootDir: decodeURIComponent(new URL("../apps/web/", import.meta.url).pathname),
       compatibility,
       ...domain(DOMAIN, [`www.${DOMAIN}`]),
       env: {

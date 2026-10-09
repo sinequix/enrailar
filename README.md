@@ -16,7 +16,7 @@ Completá el formulario en [https://pox.me](https://pox.me).
 
 ## Desarrollo
 
-El monorepo usa pnpm y Turborepo. Los contratos compartidos están en `packages/shared`. Lint y tests corren con Deno. La decisión de runtime está en [docs/adr/0001-runtime.md](docs/adr/0001-runtime.md). El despliegue está declarado en [docs/deploy.md](docs/deploy.md) y no se ejecuta sin secretos.
+El monorepo usa pnpm y Turborepo. Los contratos compartidos están en `packages/shared`. La web está en `apps/web` (vinext, español e inglés). Lint y tests corren con Deno. La decisión de runtime está en [docs/adr/0001-runtime.md](docs/adr/0001-runtime.md). El despliegue está declarado en [docs/deploy.md](docs/deploy.md) y no se ejecuta sin secretos.
 
 ```bash
 pnpm install

@@ -40,7 +40,9 @@ El sitekey de Turnstile es público y sale del recurso. El secret no. Los hostna
 
 ## Qué queda apuntando a stubs
 
-La API, el inbox y los workers de correo ya tienen entrypoint propio (`apps/api`, `apps/inbox`, `workers/email-in`, `workers/email-out`). Las tablas de D1 salen de `apps/api/migrations`. La web y el admin siguen en `infra/stubs/`. El detalle del correo está en [`email.md`](email.md).
+La API, el inbox, los workers de correo y la web ya tienen entrypoint propio. La web es `Cloudflare.Website.Vinext` sobre `apps/web` (sin `wrangler.json` y sin `@vinext/cloudflare deploy`). El admin sigue en `infra/stubs/`. Las tablas de D1 salen de `apps/api/migrations`. El detalle del correo está en [`email.md`](email.md).
+
+`NEXT_PUBLIC_API_ORIGIN` y `NEXT_PUBLIC_TURNSTILE_SITE_KEY` son públicas. En [`.env.example`](../.env.example) quedan vacías. Si el origen no está, los formularios apuntan a `https://api.enrailar.com`. La clave de Turnstile es el sitekey del widget, no el secret.
 
 ## Access
 
