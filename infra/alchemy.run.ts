@@ -4,6 +4,7 @@ import * as Cloudflare from "alchemy/Cloudflare";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import { ROLE_MAILBOXES } from "@enrailar/shared";
+import { accessPolicies } from "./src/access.ts";
 import { DOMAIN, isProductionStage, stubPath } from "./src/stage.ts";
 
 const compatibility = {
@@ -12,18 +13,6 @@ const compatibility = {
 };
 
 const accessSession = "24h";
-
-/** Dominio del proyecto, más las direcciones de `ACCESS_ALLOWED_EMAILS` si el entorno las trae. */
-function accessInclude(extraEmails: string) {
-  const include: Array<{ emailDomain: string } | { email: string }> = [
-    { emailDomain: DOMAIN },
-  ];
-  for (const part of extraEmails.split(",")) {
-    const email = part.trim();
-    if (email.length > 0) include.push({ email });
-  }
-  return include;
-}
 
 export default Stack(
   "Enrailar",
@@ -35,13 +24,8 @@ export default Stack(
     const stage = yield* Stage;
     const production = isProductionStage(stage);
     const extraEmails = yield* Config.String("ACCESS_ALLOWED_EMAILS").pipe(Config.withDefault(""));
-    const include = accessInclude(extraEmails);
-    const accessPolicies = [
-      {
-        decision: "allow" as const,
-        include,
-      },
-    ];
+    const serviceTokenIds = yield* Config.String("ACCESS_SERVICE_TOKEN_IDS").pipe(Config.withDefault(""));
+    const policies = accessPolicies(extraEmails, serviceTokenIds);
     // En prod la app es compartida por inbox y admin. El `aud` entra como
     // `POLICY_AUD` desde el entorno. Un preview no tiene hostname propio:
     // la app dedicada del Worker nace con el destino `worker`.
@@ -53,11 +37,11 @@ export default Stack(
           // Cloudflare exige que `domain` esté incluido.
           destinations: [{ type: "public", uri: `inbox.${DOMAIN}` }],
           sessionDuration: accessSession,
-          policies: accessPolicies,
+          policies,
         })
       : undefined;
     const access = accessApp ?? {
-      policies: accessPolicies,
+      policies,
       sessionDuration: accessSession,
     };
 

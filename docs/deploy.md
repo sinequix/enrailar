@@ -35,6 +35,7 @@ Los valores no van en el repositorio, ni en ejemplos, ni en logs. [`.env.example
 | `ALCHEMY_PASSWORD` | Nombre reservado. Alchemy `2.0.0-beta.81` no lo lee: la clave del state store la crea el bootstrap en el Secrets Store de Cloudflare. |
 | `FORWARD_TO` | Binding secreto de `email-in`. El worker hace `message.forward` a ese destino. |
 | `ACCESS_ALLOWED_EMAILS` | Lista separada por comas. La política de Access deja pasar el dominio `enrailar.com` y, además, estas direcciones. Vacía, solo queda el dominio. El valor no se escribe en el repo. |
+| `ACCESS_SERVICE_TOKEN_IDS` | Lista separada por comas de ids de service tokens de Access. Opcional: vacía, la política no incluye tokens y `require-secrets.sh` no corta el deploy. Con ids, inbox y admin suman una política Service Auth para que un redeploy no los borre. El valor no se escribe en el repo. |
 | `POLICY_AUD` | Binding secreto del inbox. Es el `aud` de la aplicación de Access que crea Alchemy, leído del entorno. |
 | `TEAM_DOMAIN` | Binding secreto del inbox. URL del equipo de Access, o la URL completa de los certificados. Sale de la organización de Zero Trust que ya existe en la cuenta. |
 
@@ -58,7 +59,7 @@ Si una página se sirviera prerenderizada (hoy `vinext()` no tiene `prerender` a
 
 ## Access
 
-`inbox` y `admin` exigen Cloudflare Access. La política deja pasar identidades del dominio `enrailar.com` y las direcciones de `ACCESS_ALLOWED_EMAILS`. El proveedor de identidad se configura en la cuenta, no en este repo. En `prod` los dos Workers entran en la misma aplicación. El `aud` de esa aplicación se carga en `POLICY_AUD`.
+`inbox` y `admin` exigen Cloudflare Access. La política `allow` deja pasar identidades del dominio `enrailar.com` y las direcciones de `ACCESS_ALLOWED_EMAILS`. Si `ACCESS_SERVICE_TOKEN_IDS` trae ids, la misma aplicación suma una política Service Auth (`non_identity`) con esos tokens: Access no acepta un service token dentro de la política de correos. El proveedor de identidad se configura en la cuenta, no en este repo. En `prod` los dos Workers entran en la misma aplicación. El `aud` de esa aplicación se carga en `POLICY_AUD`.
 
 ## State
 

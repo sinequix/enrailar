@@ -33,4 +33,15 @@ Deno.test("con los nombres presentes el script sigue", async () => {
   const env = Object.fromEntries(names.map((name) => [name, "present"]));
   const result = await run(env);
   assertEquals(result.code, 0);
+  const text = new TextDecoder().decode(result.stdout);
+  assertEquals(text.includes("ACCESS_SERVICE_TOKEN_IDS vacío"), true);
+});
+
+Deno.test("el service token es opcional", async () => {
+  const env = Object.fromEntries(names.map((name) => [name, "present"]));
+  env.ACCESS_SERVICE_TOKEN_IDS = "present";
+  const result = await run(env);
+  assertEquals(result.code, 0);
+  const text = new TextDecoder().decode(result.stdout);
+  assertEquals(text.includes("ACCESS_SERVICE_TOKEN_IDS"), false);
 });
