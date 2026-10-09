@@ -52,6 +52,8 @@ Deno.test("el ejemplo de entorno deja los secretos vacíos", async () => {
     "ALCHEMY_PASSWORD",
     "TURNSTILE_SECRET_KEY",
     "FORWARD_TO",
+    "POLICY_AUD",
+    "TEAM_DOMAIN",
   ];
   for (const name of names) {
     assert(text.includes(`${name}=`), name);
