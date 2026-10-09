@@ -68,6 +68,9 @@ export default Stack(
 
     const domain = (name: string, aliases?: string[]) =>
       zone === undefined ? {} : { domain: { name, aliases, zoneId: zone.zoneId } };
+    // `false` apaga la URL estable de workers.dev y los preview URLs.
+    // Un preview no tiene dominio propio, así que solo se cierra en prod.
+    const closedDev = production ? { workersDev: false as const } : {};
 
     const api = yield* Cloudflare.Worker("Api", {
       main: new URL("../apps/api/src/worker.ts", import.meta.url).pathname,
@@ -91,6 +94,7 @@ export default Stack(
       main: "workers/app.ts",
       compatibility,
       access,
+      ...closedDev,
       ...domain(`inbox.${DOMAIN}`),
       env: {
         BUCKET: bucket,
@@ -110,6 +114,7 @@ export default Stack(
       main: stubPath("admin"),
       compatibility,
       access,
+      ...closedDev,
       ...domain(`admin.${DOMAIN}`),
       env: {
         DB: database,
@@ -119,6 +124,7 @@ export default Stack(
     const emailIn = yield* Cloudflare.Worker("EmailIn", {
       main: new URL("../workers/email-in/src/worker.ts", import.meta.url).pathname,
       compatibility,
+      ...closedDev,
       env: {
         FORWARD_TO: Config.Redacted("FORWARD_TO"),
         BUCKET: bucket,
@@ -137,6 +143,7 @@ export default Stack(
     const emailOut = yield* Cloudflare.Worker("EmailOut", {
       main: new URL("../workers/email-out/src/worker.ts", import.meta.url).pathname,
       compatibility,
+      ...closedDev,
       env: {
         DB: database,
         SEND_EMAIL: outbound,
