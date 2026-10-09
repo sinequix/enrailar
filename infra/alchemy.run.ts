@@ -106,7 +106,16 @@ export default Stack(
       compatibility,
       env: {
         FORWARD_TO: Config.Redacted("FORWARD_TO"),
-        INBOX: inbox,
+        BUCKET: bucket,
+        EMAIL_ADDRESSES: [...ROLE_MAILBOXES],
+        MAILBOX: Cloudflare.DurableObject("Mailbox", {
+          className: "MailboxDO",
+          scriptName: inbox.workerName,
+        }),
+        EMAIL_AGENT: Cloudflare.DurableObject("EmailAgent", {
+          className: "EmailAgent",
+          scriptName: inbox.workerName,
+        }),
       },
     });
 

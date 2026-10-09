@@ -7,12 +7,13 @@ Tres casillas de rol: `hola@enrailar.com`, `hackatrain@enrailar.com` y `prensa@e
 `workers/email-in` recibe el mensaje de Email Routing.
 
 1. Rechaza si `FORWARD_TO` está vacío o si el sobre no es una de esas tres casillas.
-2. Manda el MIME crudo al inbox por el service binding `INBOX`, a `POST /internal/inbound`.
-3. Reenvía con `message.forward()` al valor de `FORWARD_TO`.
+2. Asegura en R2 la marca `mailboxes/<casilla>.json` de las tres casillas de rol. `forwarding.email` queda vacío: el reenvío no lo hace esa marca.
+3. Llama a `receiveEmail` de agentic-inbox. Ese código escribe en el Durable Object `MailboxDO` del inbox (binding cruzado `MAILBOX`) y avisa a `EmailAgent`.
+4. Reenvía con `message.forward()` al valor de `FORWARD_TO`.
 
 Ese valor es un binding secreto de Alchemy. Tiene que ser una dirección ya verificada en Email Routing de la cuenta. Sin esa verificación Cloudflare rechaza el reenvío. Sirve para que un buzón externo lea la copia. El valor no está en el repo.
 
-El worker no escribe direcciones en los logs. Si el inbox no acepta el mensaje, no lo reenvía: Email Routing puede reintentar. El id del objeto es el SHA-256 del MIME, así un reintento pisa la misma fila.
+El worker no escribe direcciones en los logs. Si la entrega al Durable Object tira, no reenvía: Email Routing puede reintentar. `receiveEmail` elige el buzón por el destinatario del MIME, no por el sobre, y solo si está en `EMAIL_ADDRESSES`.
 
 ## Inbox
 
@@ -22,7 +23,7 @@ El inbox propio (R2 `raw/<sha256>` y la tabla D1 `inbound_messages`) salió con 
 
 Alchemy despliega ese árbol con `Cloudflare.Website.Vite`: bundle de React Router, Worker con assets, Durable Objects `MailboxDO` y `EmailAgent` (y `EmailMCP` para `/mcp`), R2 y Workers AI. Access cubre el Worker, o sea la UI y el MCP. El detalle está en [`inbox.md`](inbox.md).
 
-`email-in` todavía publica en `POST /internal/inbound` por el service binding. Ese path no existe en el árbol vendido. La entrega al Durable Object va en el PR siguiente. No despliegues esta rama sola.
+`email-in` no usa un service binding HTTP. El binding `MAILBOX` apunta a la clase `MailboxDO` del script del inbox, y `EMAIL_AGENT` a `EmailAgent`. Comparten el mismo R2.
 
 ## Salida
 

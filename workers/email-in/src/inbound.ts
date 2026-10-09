@@ -11,13 +11,13 @@ export interface InboundMessage {
   setReject(reason: string): void;
 }
 
-export interface InboxFetch {
-  fetch(input: Request): Promise<Response>;
+export interface MailboxDelivery {
+  deliver(input: { to: string; raw: Uint8Array }): Promise<void>;
 }
 
 export interface InboundEnv {
   readonly FORWARD_TO: string;
-  readonly INBOX: InboxFetch;
+  readonly MAILBOX: MailboxDelivery;
 }
 
 export interface InboundLog {
@@ -53,17 +53,10 @@ export async function handleInbound(
   }
 
   const bytes = new Uint8Array(await new Response(message.raw).arrayBuffer());
-  const stored = await env.INBOX.fetch(
-    new Request("https://inbox.internal/internal/inbound", {
-      method: "POST",
-      headers: {
-        "content-type": "message/rfc822",
-        "x-envelope-to": message.to.trim().toLowerCase(),
-      },
-      body: bytes,
-    }),
-  );
-  if (!stored.ok) {
+  const mailbox = message.to.trim().toLowerCase();
+  try {
+    await env.MAILBOX.deliver({ to: mailbox, raw: bytes });
+  } catch {
     message.setReject("inbox unavailable");
     log({ status: "rejected", reason: "inbox" });
     return;

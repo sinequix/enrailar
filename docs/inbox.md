@@ -32,6 +32,8 @@ Bindings:
 
 Cloudflare Access, con la política de `enrailar.com`, cubre el Worker entero: la UI y `/mcp`. El IdP se configura en la cuenta.
 
+`email-in` no entra por HTTP. Tiene bindings cruzados `MAILBOX` (`MailboxDO`) y `EMAIL_AGENT` al script de este Worker, y el mismo R2. Antes de llamar a `receiveEmail` escribe `mailboxes/<casilla>.json` si falta. `forwarding.email` queda `""`: el `message.forward()` de `email-in` es el único reenvío, y el destino sale de `FORWARD_TO`.
+
 ### Incompatibilidad con Alchemy beta
 
 `Website.Vite` inyecta `@alchemy.run/cloudflare-runtime/vite` y setea `ALCHEMY_CLOUDFLARE_VITE_INJECTED=1`. El `vite.config.ts` de upstream registra además `@cloudflare/vite-plugin`. Alchemy documenta que los dos plugins, con el mismo nombre, se pisan: en dev hay dos workerd y uno solo tiene los bindings.
