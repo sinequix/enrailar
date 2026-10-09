@@ -1,0 +1,71 @@
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: preview
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
+      TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+      FORWARD_TO: ${{ secrets.FORWARD_TO }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.3
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.2
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Fail closed
+        run: bash scripts/ci/require-secrets.sh
+      - name: Deploy pr stage
+        run: pnpm --filter @enrailar/infra exec alchemy deploy --no-input --stage "pr-${{ github.event.pull_request.number }}"
+
+  destroy:
+    name: destroy preview
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
+      TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+      FORWARD_TO: ${{ secrets.FORWARD_TO }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.3
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.2
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Fail closed
+        run: bash scripts/ci/require-secrets.sh
+      - name: Destroy pr stage
+        run: pnpm --filter @enrailar/infra exec alchemy destroy --no-input --stage "pr-${{ github.event.pull_request.number }}"
