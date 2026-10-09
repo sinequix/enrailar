@@ -1,0 +1,19 @@
+{
+  "nodeModulesDir": "auto",
+  "tasks": {
+    "lint": "deno lint",
+    "test": "deno test --allow-env"
+  },
+  "lint": {
+    "include": ["packages"],
+    "exclude": ["**/node_modules"]
+  },
+  "fmt": {
+    "include": ["packages", "docs/adr"],
+    "exclude": ["**/node_modules"]
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.19",
+    "zod": "npm:zod@4.6.5"
+  }
+}
