@@ -103,6 +103,10 @@ interface Copy {
   sending: string;
   accepted: string;
   acceptedNewsletter: string;
+  alreadyTitle: string;
+  alreadyIntents: string;
+  alreadyNewsletter: string;
+  alreadyAgain: string;
   rejected: string;
   errors: {
     intents: string;
@@ -249,6 +253,10 @@ export const COPY: Record<Locale, Copy> = {
     sending: "Enviando…",
     accepted: "Recibimos la solicitud.",
     acceptedNewsletter: "Recibimos la solicitud. Si pediste el boletín, te llega un correo para confirmarlo.",
+    alreadyTitle: "Ya te anotaste. Pronto nos vamos a contactar.",
+    alreadyIntents: "Elegiste",
+    alreadyNewsletter: "Revisá el correo para confirmar el boletín.",
+    alreadyAgain: "Enviar otro mensaje",
     rejected: "No se pudo enviar. Revisá los campos.",
     errors: {
       intents: "Elegí al menos una opción.",
@@ -400,6 +408,10 @@ export const COPY: Record<Locale, Copy> = {
     sending: "Sending…",
     accepted: "We received the request.",
     acceptedNewsletter: "We received the request. If you asked for the newsletter, a message arrives to confirm it.",
+    alreadyTitle: "You're already signed up. We'll be in touch soon.",
+    alreadyIntents: "You chose",
+    alreadyNewsletter: "Check your inbox to confirm the newsletter.",
+    alreadyAgain: "Send another message",
     rejected: "Could not send. Check the fields.",
     errors: {
       intents: "Choose at least one option.",
