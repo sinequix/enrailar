@@ -1,7 +1,15 @@
 "use client";
 
 import { JOIN_INTENTS, type JoinIntent } from "@enrailar/shared";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import {
+  applySumateFlags,
+  createSumateMemory,
+  getServerSumateMemory,
+  getSumateMemory,
+  saveSumateMemory,
+  subscribeSumateMemory,
+} from "../src/sumate-memory.ts";
 import {
   apiOrigin,
   intentsFromHash,
@@ -24,6 +32,10 @@ export interface Labels {
   sending: string;
   accepted: string;
   acceptedNewsletter: string;
+  alreadyTitle: string;
+  alreadyIntents: string;
+  alreadyNewsletter: string;
+  alreadyAgain: string;
   rejected: string;
   errors: Record<SumateField, string>;
   turnstileMissing: string;
@@ -97,21 +109,53 @@ export function SumateForm({
   const [errors, setErrors] = useState<Partial<Record<SumateField, string>>>({});
   const [status, setStatus] = useState<{ text: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
-  const ready = useTurnstileScript(siteKey);
+  const [editing, setEditing] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const memory = useSyncExternalStore(subscribeSumateMemory, getSumateMemory, getServerSumateMemory);
+  const formActive = editing || memory === null;
+  const ready = useTurnstileScript(siteKey && formActive ? siteKey : "");
 
   useEffect(() => {
-    const apply = () => {
+    const current = getSumateMemory();
+    if (!current || document.documentElement.dataset.sumate === "editing") return;
+    applySumateFlags(current, "saved");
+  }, []);
+
+  useEffect(() => {
+    const onHash = () => {
       const hash = window.location.hash;
-      if (hash === "#sumate" || hash.startsWith("#sumate?")) {
-        document.getElementById("sumate")?.scrollIntoView({ block: "start" });
+      const targetsSumate = hash === "#sumate" || hash.startsWith("#sumate?");
+      if (!targetsSumate) return;
+      document.getElementById("sumate")?.scrollIntoView({ block: "start" });
+      if (document.documentElement.dataset.sumate === "saved") {
+        document.getElementById("sumate-saved-title")?.focus({ preventScroll: true });
+        return;
       }
       const fromHash = intentsFromHash(hash);
       if (fromHash.length > 0) setSelected(fromHash);
     };
-    apply();
-    window.addEventListener("hashchange", apply);
-    return () => window.removeEventListener("hashchange", apply);
+    const hash = window.location.hash;
+    const targetsSumate = hash === "#sumate" || hash.startsWith("#sumate?");
+    if (targetsSumate) document.getElementById("sumate")?.scrollIntoView({ block: "start" });
+    if (document.documentElement.dataset.sumate === "saved") {
+      if (targetsSumate) document.getElementById("sumate-saved-title")?.focus({ preventScroll: true });
+    } else {
+      const fromHash = intentsFromHash(hash);
+      if (fromHash.length > 0) setSelected(fromHash);
+    }
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
   }, []);
+
+  function showAnother() {
+    setEditing(true);
+    setSelected([]);
+    setErrors({});
+    setStatus(null);
+    applySumateFlags(getSumateMemory(), "editing");
+    formRef.current?.reset();
+    document.getElementById("sumate-intent-hackatrain")?.focus();
+  }
 
   function toggle(intent: JoinIntent) {
     setSelected((current) => current.includes(intent) ? current.filter((item) => item !== intent) : [...current, intent]);
@@ -155,7 +199,6 @@ export function SumateForm({
     }
     setErrors({});
     setBusy(true);
-    const wantsNewsletter = parsed.data.intents.includes("boletin");
     try {
       const response = await fetch(`${apiOrigin(process.env.NEXT_PUBLIC_API_ORIGIN)}${SUMATE_PATH}`, {
         method: "POST",
@@ -171,9 +214,22 @@ export function SumateForm({
         setStatus({ text: labels.rejected, ok: false });
         return;
       }
-      setStatus({ text: wantsNewsletter ? labels.acceptedNewsletter : labels.accepted, ok: true });
+      const memoryNext = createSumateMemory({
+        at: new Date().toISOString(),
+        intents: parsed.data.intents,
+        email: parsed.data.email,
+      });
+      if (!memoryNext) {
+        setStatus({ text: labels.rejected, ok: false });
+        return;
+      }
+      saveSumateMemory(memoryNext);
+      applySumateFlags(memoryNext, "saved");
+      setEditing(false);
       setSelected([]);
       form.reset();
+      setStatus(null);
+      document.getElementById("sumate-saved-title")?.focus();
     } catch {
       setStatus({ text: labels.rejected, ok: false });
     } finally {
@@ -184,7 +240,24 @@ export function SumateForm({
   const intentErrorId = errors.intents ? "sumate-intents-error" : undefined;
 
   return (
-    <form className="form" onSubmit={onSubmit} aria-labelledby="sumate-title" noValidate>
+    <>
+    <section className="form sumate-saved" aria-labelledby="sumate-saved-title" aria-live="polite" aria-atomic="true">
+      <h3 id="sumate-saved-title" tabIndex={-1}>{labels.alreadyTitle}</h3>
+      <p className="hint">{labels.alreadyIntents}</p>
+      <ul className="saved-intents">
+        {JOIN_INTENTS.map((intent) => (
+          <li key={intent} data-intent={intent}>{labels.intents[intent]}</li>
+        ))}
+      </ul>
+      <p className="sumate-confirm">
+        {labels.alreadyNewsletter}
+        <span className="sumate-mask">{memory?.emailMask ?? ""}</span>
+      </p>
+      <div>
+        <button className="btn btn--ghost" type="button" onClick={showAnother}>{labels.alreadyAgain}</button>
+      </div>
+    </section>
+    <form ref={formRef} className="form sumate-form" onSubmit={onSubmit} aria-labelledby="sumate-title" noValidate>
       {hint ? <p className="hint">{hint}</p> : null}
       <fieldset
         className="intent-set"
@@ -298,7 +371,7 @@ export function SumateForm({
         aria-invalid={errors.turnstileToken ? true : undefined}
         aria-describedby={errors.turnstileToken ? "sumate-turnstile-error" : undefined}
       >
-        <TurnstileSlot siteKey={siteKey} ready={ready} labels={labels} pending={siteKeyPending} />
+        <TurnstileSlot siteKey={formActive ? siteKey : ""} ready={ready} labels={labels} pending={siteKeyPending} />
         {fieldError("sumate-turnstile-error", errors.turnstileToken)}
       </div>
       <div>
@@ -308,5 +381,6 @@ export function SumateForm({
         <p className={`status ${status.ok ? "status--ok" : "status--error"}`} role="status">{status.text}</p>
       ) : null}
     </form>
+    </>
   );
 }

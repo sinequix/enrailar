@@ -830,6 +830,78 @@ a:hover {
   font-size: var(--t-lg);
 }
 
+.sumate-saved {
+  display: none;
+}
+
+html[data-sumate="saved"] .sumate-form {
+  display: none;
+}
+
+html[data-sumate="saved"] .sumate-saved {
+  display: grid;
+}
+
+html[data-sumate="editing"] .sumate-form {
+  display: grid;
+}
+
+html[data-sumate="editing"] .sumate-saved {
+  display: none;
+}
+
+.saved-intents {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+}
+
+.saved-intents li {
+  display: none;
+  align-items: center;
+  border: 1.5px solid var(--accent);
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  background: color-mix(in oklab, var(--accent) 16%, var(--bg));
+  font-size: var(--t-sm);
+}
+
+html[data-sumate-hackatrain="1"] .saved-intents li[data-intent="hackatrain"],
+html[data-sumate-ciudad="1"] .saved-intents li[data-intent="ciudad"],
+html[data-sumate-colaborar="1"] .saved-intents li[data-intent="colaborar"],
+html[data-sumate-donar="1"] .saved-intents li[data-intent="donar"],
+html[data-sumate-equipo="1"] .saved-intents li[data-intent="equipo"],
+html[data-sumate-boletin="1"] .saved-intents li[data-intent="boletin"] {
+  display: inline-flex;
+}
+
+.sumate-confirm {
+  display: none;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+
+html[data-sumate-boletin="1"] .sumate-confirm {
+  display: block;
+}
+
+.sumate-mask:not(:empty),
+.sumate-mask:empty::before {
+  display: block;
+  margin-top: var(--s-2);
+  font-family: var(--font-display);
+  font-weight: 620;
+  color: var(--ink);
+}
+
+.sumate-mask:empty::before {
+  content: none;
+}
+
 .form .hint {
   color: var(--ink-2);
   font-size: var(--t-sm);
