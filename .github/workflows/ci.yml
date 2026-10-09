@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.3
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.2
+          cache: pnpm
+      - name: Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Test
+        run: pnpm test
+      - name: Build web
+        run: pnpm --filter @enrailar/web build

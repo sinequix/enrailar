@@ -14,13 +14,15 @@ Este repositorio no despliega solo. `prod` no se toca hasta que existan los secr
 
 La zona y el correo son únicos en la cuenta. Por eso solo el stage `prod` los declara. Un preview no puede adoptar `enrailar.com`.
 
+Alchemy CLI pide Node `>=22.15` (`module.registerHooks`). En `infra` están `@effect/platform-node` y `@alchemy.run/frontend-frameworks`, que el comando necesita para arrancar y para `Website.Vinext`.
+
 ```bash
-pnpm exec alchemy deploy --config infra/alchemy.run.ts --stage preview
-pnpm exec alchemy deploy --config infra/alchemy.run.ts --stage prod
-pnpm exec alchemy destroy --config infra/alchemy.run.ts --stage pr-12
+pnpm --filter @enrailar/infra exec alchemy deploy --no-input --stage preview
+pnpm --filter @enrailar/infra exec alchemy deploy --no-input --stage prod
+pnpm --filter @enrailar/infra exec alchemy destroy --no-input --stage pr-12
 ```
 
-`alchemy destroy` de `prod` no entra en el workflow de CI.
+Los workflows están en `.github/workflows/`. `ci.yml` corre lint, typecheck, tests y el build de la web, sin token de Cloudflare. `preview.yml` despliega el stage `pr-<número>` y lo destruye al cerrar el PR. `prod.yml` despliega `prod` en cada push a `main`. Los dos últimos llaman a `scripts/ci/require-secrets.sh` antes de Alchemy: si falta un secreto, salen con error y no despliegan. `alchemy destroy` de `prod` no está en ningún workflow.
 
 ## Secretos
 
