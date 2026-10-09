@@ -1,0 +1,14 @@
+[
+  { "name": "bug", "color": "d73a4a", "description": "Algo no funciona como debería" },
+  { "name": "enhancement", "color": "a2eeef", "description": "Mejora o capacidad nueva" },
+  { "name": "documentation", "color": "0075ca", "description": "Documentación" },
+  { "name": "good first issue", "color": "7057ff", "description": "Buen punto de entrada" },
+  { "name": "help wanted", "color": "008672", "description": "Hace falta una mano" },
+  { "name": "question", "color": "d876e3", "description": "Hace falta más información" },
+  { "name": "security", "color": "b60205", "description": "Seguridad" },
+  { "name": "dependencies", "color": "0366d6", "description": "Actualización de dependencias" },
+  { "name": "area: infra", "color": "fbca04", "description": "Infraestructura y despliegue" },
+  { "name": "area: api", "color": "c5def5", "description": "API" },
+  { "name": "area: web", "color": "bfdadc", "description": "Sitio web" },
+  { "name": "area: email", "color": "f9d0c4", "description": "Correo" }
+]

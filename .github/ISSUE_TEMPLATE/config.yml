@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Vulnerabilidad de seguridad
+    url: https://github.com/sinequix/enrailar/security/advisories/new
+    about: Reportá vulnerabilidades en privado. No abras un issue público.
