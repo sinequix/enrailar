@@ -8,6 +8,8 @@ const names = [
   "ALCHEMY_PASSWORD",
   "TURNSTILE_SECRET_KEY",
   "FORWARD_TO",
+  "POLICY_AUD",
+  "TEAM_DOMAIN",
 ];
 
 function run(env: Record<string, string>) {
@@ -27,7 +29,7 @@ Deno.test("sin secretos el script corta antes de desplegar", async () => {
   for (const name of names) assertEquals(text.includes(`falta ${name}`), true);
 });
 
-Deno.test("con los cinco nombres presentes el script sigue", async () => {
+Deno.test("con los nombres presentes el script sigue", async () => {
   const env = Object.fromEntries(names.map((name) => [name, "present"]));
   const result = await run(env);
   assertEquals(result.code, 0);

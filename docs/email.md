@@ -7,22 +7,23 @@ Tres casillas de rol: `hola@enrailar.com`, `hackatrain@enrailar.com` y `prensa@e
 `workers/email-in` recibe el mensaje de Email Routing.
 
 1. Rechaza si `FORWARD_TO` está vacío o si el sobre no es una de esas tres casillas.
-2. Manda el MIME crudo al inbox por el service binding `INBOX`, a `POST /internal/inbound`.
-3. Reenvía con `message.forward()` al valor de `FORWARD_TO`.
+2. Asegura en R2 la marca `mailboxes/<casilla>.json` de las tres casillas de rol. `forwarding.email` queda vacío: el reenvío no lo hace esa marca.
+3. Llama a `receiveEmail` de agentic-inbox. Ese código escribe en el Durable Object `MailboxDO` del inbox (binding cruzado `MAILBOX`) y avisa a `EmailAgent`.
+4. Reenvía con `message.forward()` al valor de `FORWARD_TO`.
 
 Ese valor es un binding secreto de Alchemy. Tiene que ser una dirección ya verificada en Email Routing de la cuenta. Sin esa verificación Cloudflare rechaza el reenvío. Sirve para que un buzón externo lea la copia. El valor no está en el repo.
 
-El worker no escribe direcciones en los logs. Si el inbox no acepta el mensaje, no lo reenvía: Email Routing puede reintentar. El id del objeto es el SHA-256 del MIME, así un reintento pisa la misma fila.
+El worker no escribe direcciones en los logs. Si la entrega al Durable Object tira, no reenvía: Email Routing puede reintentar. `receiveEmail` elige el buzón por el destinatario del MIME, no por el sobre, y solo si está en `EMAIL_ADDRESSES`.
 
 ## Inbox
 
-`apps/inbox` guarda el raw en R2 (`raw/<sha256>`) y una fila en D1 (`inbound_messages`: buzón de rol, asunto, tamaño, fecha). No hay columna de remitente. El sobre del remitente queda solo dentro del objeto.
+`apps/inbox` es [agentic-inbox](https://github.com/cloudflare/agentic-inbox) en el commit `48039bb6785af34e592c2966f87cde2b255c4c80`, bajo Apache-2.0. El detalle de licencia y de por qué no entra al workspace de pnpm está en [`inbox.md`](inbox.md).
 
-También escribe `mailboxes/<casilla>.json` en el mismo R2. Es la marca que [agentic-inbox](https://github.com/cloudflare/agentic-inbox) (`48039bb6785af34e592c2966f87cde2b255c4c80`) exige para no ignorar el correo. El campo `forwarding.email` de esa marca queda vacío: el reenvío lo hace `email-in`, no esa app.
+El inbox propio (R2 `raw/<sha256>` y la tabla D1 `inbound_messages`) salió con ese reemplazo. La migración `0002_inbound.sql` sigue en `apps/api/migrations` porque borrar una migración ya aplicada no es lo que hace Alchemy en un stage nuevo: un stage nuevo igual la corre. Esa tabla no la usa agentic-inbox.
 
-La UI, los Durable Objects (`MailboxDO`, `EmailAgent`, `EmailMCP`) y Workers AI de agentic-inbox no están vendidos en este repo. Su entrypoint importa `virtual:react-router/server-build` y se despliega con Wrangler. Acá la única definición de despliegue es Alchemy, así que el inbox propio cubre guardar y leer, y deja esa marca en R2 para un reemplazo posterior del Worker `Inbox`.
+Alchemy despliega ese árbol con `Cloudflare.Website.Vite`: bundle de React Router, Worker con assets, Durable Objects `MailboxDO` y `EmailAgent` (y `EmailMCP` para `/mcp`), R2 y Workers AI. Access cubre el Worker, o sea la UI y el MCP. El detalle está en [`inbox.md`](inbox.md).
 
-Cloudflare Access ya cubre el Worker `Inbox` y el de admin: pasa una identidad de `enrailar.com`. El service binding no atraviesa Access, por eso `email-in` puede publicar en `/internal/inbound`. El tráfico público de ese path sí queda detrás de Access.
+`email-in` no usa un service binding HTTP. El binding `MAILBOX` apunta a la clase `MailboxDO` del script del inbox, y `EMAIL_AGENT` a `EmailAgent`. Comparten el mismo R2.
 
 ## Salida
 

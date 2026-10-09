@@ -35,6 +35,8 @@ Los valores no van en el repositorio, ni en ejemplos, ni en logs. [`.env.example
 | `ALCHEMY_PASSWORD` | Nombre reservado. Alchemy `2.0.0-beta.81` no lo lee: la clave del state store la crea el bootstrap en el Secrets Store de Cloudflare. |
 | `TURNSTILE_SECRET_KEY` | Binding secreto del Worker de la API (`Config.Redacted`). Tiene que ser el secret del widget de Turnstile de ese stage. |
 | `FORWARD_TO` | Binding secreto de `email-in`. El worker hace `message.forward` a ese destino. |
+| `POLICY_AUD` | Binding secreto del inbox. Lo exige la app vendida para validar el JWT de Access. |
+| `TEAM_DOMAIN` | Binding secreto del inbox. URL del equipo de Access, o la URL completa de los certificados. |
 
 `FORWARD_TO` tiene que ser una dirección ya verificada en Email Routing de la cuenta. Sin esa verificación, Cloudflare rechaza el reenvío. El binding existe para que un buzón externo (por ejemplo un cliente de correo) reciba copia de `hola@`, `hackatrain@` y `prensa@enrailar.com`. El valor no se escribe en la definición ni en un recurso `Email.Address`.
 
@@ -42,7 +44,7 @@ El sitekey de Turnstile es público y sale del recurso. El secret no. Los hostna
 
 ## Qué queda apuntando a stubs
 
-La API, el inbox, los workers de correo y la web ya tienen entrypoint propio. La web es `Cloudflare.Website.Vinext` sobre `apps/web` (sin `wrangler.json` y sin `@vinext/cloudflare deploy`). El admin sigue en `infra/stubs/`. Las tablas de D1 salen de `apps/api/migrations`. El detalle del correo está en [`email.md`](email.md).
+La API, el inbox, los workers de correo y la web ya tienen entrypoint propio. La web es `Cloudflare.Website.Vinext` sobre `apps/web`. El inbox es `Cloudflare.Website.Vite` sobre `apps/inbox` (`main: workers/app.ts`). Antes de `alchemy deploy`, `npm ci --prefix apps/inbox`: ese paquete no está en el workspace de pnpm y trae su propio lockfile. Ese `npm ci` no corre Wrangler. El admin sigue en `infra/stubs/`. Las tablas de D1 salen de `apps/api/migrations`. El detalle del correo está en [`email.md`](email.md) y el del inbox en [`inbox.md`](inbox.md).
 
 `NEXT_PUBLIC_API_ORIGIN` y `NEXT_PUBLIC_TURNSTILE_SITE_KEY` son públicas. En [`.env.example`](../.env.example) quedan vacías. Si el origen no está, los formularios apuntan a `https://api.enrailar.com`. La clave de Turnstile es el sitekey del widget, no el secret.
 

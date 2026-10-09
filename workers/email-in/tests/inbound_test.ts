@@ -27,10 +27,10 @@ Deno.test("reenvía la casilla de rol y guarda una copia", async () => {
   let postedTo = "";
   await handleInbound(inbound, {
     FORWARD_TO: "  binding-value  ",
-    INBOX: {
-      fetch(input) {
-        postedTo = input.headers.get("x-envelope-to") ?? "";
-        return Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 202 }));
+    MAILBOX: {
+      deliver(input) {
+        postedTo = input.to;
+        return Promise.resolve();
       },
     },
   }, (event) => logs.push(event));
@@ -46,10 +46,10 @@ Deno.test("sin destino no reenvía", async () => {
   let called = false;
   await handleInbound(inbound, {
     FORWARD_TO: " ",
-    INBOX: {
-      fetch() {
+    MAILBOX: {
+      deliver() {
         called = true;
-        return Promise.resolve(new Response(null, { status: 202 }));
+        return Promise.resolve();
       },
     },
   }, () => undefined);
@@ -58,11 +58,25 @@ Deno.test("sin destino no reenvía", async () => {
   assert(!called);
 });
 
+Deno.test("si el buzón falla no reenvía", async () => {
+  const { inbound, rejected, forwarded } = message("hola@enrailar.com");
+  await handleInbound(inbound, {
+    FORWARD_TO: "binding-value",
+    MAILBOX: {
+      deliver() {
+        return Promise.reject(new Error("unavailable"));
+      },
+    },
+  }, () => undefined);
+  assertEquals(rejected, ["inbox unavailable"]);
+  assertEquals(forwarded, []);
+});
+
 Deno.test("una casilla ajena se rechaza", async () => {
   const { inbound, rejected, forwarded } = message("otro@example.com");
   await handleInbound(inbound, {
     FORWARD_TO: "binding-value",
-    INBOX: { fetch: () => Promise.resolve(new Response(null, { status: 202 })) },
+    MAILBOX: { deliver: () => Promise.resolve() },
   }, () => undefined);
   assertEquals(rejected, ["mailbox not accepted"]);
   assertEquals(forwarded, []);
