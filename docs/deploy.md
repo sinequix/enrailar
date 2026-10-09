@@ -40,7 +40,7 @@ El sitekey de Turnstile es público y sale del recurso. El secret no. Los hostna
 
 ## Qué queda apuntando a stubs
 
-Los Workers declaran `main` en `infra/stubs/`. La API, la web, el inbox y los workers de correo los reemplazan en sus propios cambios. D1 todavía no tiene las tablas: las migraciones llegan con la API.
+La API ya no es un stub: su entrypoint es `apps/api/src/worker.ts` y las tablas de D1 salen de `apps/api/migrations`. El inbox, la web y los workers de correo siguen en `infra/stubs/` hasta sus propios cambios.
 
 ## Access
 

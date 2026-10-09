@@ -1,0 +1,19 @@
+{
+  "name": "@enrailar/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "deno lint src tests",
+    "typecheck": "tsc --noEmit",
+    "test": "deno test --allow-env --allow-net --allow-read tests"
+  },
+  "dependencies": {
+    "@enrailar/shared": "workspace:*",
+    "express": "5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "typescript": "7.0.2"
+  }
+}

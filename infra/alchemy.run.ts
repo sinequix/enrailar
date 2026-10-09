@@ -35,7 +35,9 @@ export default Stack(
       ? yield* Cloudflare.Zone.Zone("Zone", { name: DOMAIN }).pipe(adopt(true))
       : undefined;
 
-    const database = yield* Cloudflare.D1.Database("Database");
+    const database = yield* Cloudflare.D1.Database("Database", {
+      migrations: new URL("../apps/api/migrations", import.meta.url).pathname,
+    });
     const bucket = yield* Cloudflare.R2.Bucket("Objects");
     const mail = yield* Cloudflare.Queues.Queue("Mail");
     const mailDeadLetter = yield* Cloudflare.Queues.Queue("MailDeadLetter");
@@ -53,7 +55,7 @@ export default Stack(
       zone === undefined ? {} : { domain: { name, aliases, zoneId: zone.zoneId } };
 
     const api = yield* Cloudflare.Worker("Api", {
-      main: stubPath("api"),
+      main: new URL("../apps/api/src/worker.ts", import.meta.url).pathname,
       compatibility,
       ...domain(`api.${DOMAIN}`),
       env: {
