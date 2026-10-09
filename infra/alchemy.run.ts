@@ -50,6 +50,9 @@ export default Stack(
       ? yield* Cloudflare.Access.Application("Access", {
           type: "self_hosted",
           domain: `inbox.${DOMAIN}`,
+          // Los Workers suman destinos `worker`. Con la lista no vacía,
+          // Cloudflare exige que `domain` esté incluido.
+          destinations: [{ type: "public", uri: `inbox.${DOMAIN}` }],
           sessionDuration: accessSession,
           policies: accessPolicies,
         })
@@ -70,7 +73,8 @@ export default Stack(
     const mail = yield* Cloudflare.Queues.Queue("Mail");
     const mailDeadLetter = yield* Cloudflare.Queues.Queue("MailDeadLetter");
     const audit = yield* Cloudflare.Queues.Queue("Audit");
-    const auditDeadLetter = yield* Cloudflare.Queues.Queue("AuditDeadLetter");
+    // La API no exporta `queue`. La cola muerta queda creada, sin consumidor.
+    yield* Cloudflare.Queues.Queue("AuditDeadLetter");
     const turnstile = yield* Cloudflare.Turnstile.Widget("Turnstile", {
       domains: [DOMAIN, "localhost"],
       mode: "managed",
@@ -171,13 +175,6 @@ export default Stack(
       scriptName: emailOut.workerName,
       deadLetterQueue: mailDeadLetter.queueName,
       settings: { batchSize: 10, maxRetries: 5 },
-    });
-
-    yield* Cloudflare.Queues.Consumer("AuditConsumer", {
-      queueId: audit.queueId,
-      scriptName: api.workerName,
-      deadLetterQueue: auditDeadLetter.queueName,
-      settings: { batchSize: 20, maxRetries: 8 },
     });
 
     if (zone !== undefined) {
