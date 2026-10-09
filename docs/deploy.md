@@ -35,7 +35,7 @@ Los valores no van en el repositorio, ni en ejemplos, ni en logs. [`.env.example
 | `ALCHEMY_PASSWORD` | Nombre reservado. Alchemy `2.0.0-beta.81` no lo lee: la clave del state store la crea el bootstrap en el Secrets Store de Cloudflare. |
 | `FORWARD_TO` | Binding secreto de `email-in`. El worker hace `message.forward` a ese destino. |
 | `ACCESS_ALLOWED_EMAILS` | Lista separada por comas. La política de Access deja pasar el dominio `enrailar.com` y, además, estas direcciones. Vacía, solo queda el dominio. El valor no se escribe en el repo. |
-| `POLICY_AUD` | Binding secreto del inbox. En `prod` sale del `aud` de la aplicación de Access que crea Alchemy. En `preview` y `pr-N` sigue leyéndose del entorno, porque esa app nace con el Worker y todavía no hay hostname. |
+| `POLICY_AUD` | Binding secreto del inbox. Es el `aud` de la aplicación de Access que crea Alchemy, leído del entorno. |
 | `TEAM_DOMAIN` | Binding secreto del inbox. URL del equipo de Access, o la URL completa de los certificados. Sale de la organización de Zero Trust que ya existe en la cuenta. |
 
 `FORWARD_TO` tiene que ser una dirección ya verificada en Email Routing de la cuenta. Sin esa verificación, Cloudflare rechaza el reenvío. El binding existe para que un buzón externo (por ejemplo un cliente de correo) reciba copia de `hola@`, `hackatrain@` y `prensa@enrailar.com`. El valor no se escribe en la definición ni en un recurso `Email.Address`.
@@ -56,7 +56,7 @@ Si una página se sirviera prerenderizada (hoy `vinext()` no tiene `prerender` a
 
 ## Access
 
-`inbox` y `admin` exigen Cloudflare Access. La política deja pasar identidades del dominio `enrailar.com` y las direcciones de `ACCESS_ALLOWED_EMAILS`. El proveedor de identidad se configura en la cuenta, no en este repo. En `prod` los dos Workers entran en la misma aplicación, y el `aud` de esa aplicación es el `POLICY_AUD` del inbox.
+`inbox` y `admin` exigen Cloudflare Access. La política deja pasar identidades del dominio `enrailar.com` y las direcciones de `ACCESS_ALLOWED_EMAILS`. El proveedor de identidad se configura en la cuenta, no en este repo. En `prod` los dos Workers entran en la misma aplicación. El `aud` de esa aplicación se carga en `POLICY_AUD`.
 
 ## State
 

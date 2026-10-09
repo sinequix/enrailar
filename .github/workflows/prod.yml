@@ -7,10 +7,17 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     name: production
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://enrailar.com
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -21,7 +28,7 @@ jobs:
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -38,4 +45,4 @@ jobs:
       - name: Fail closed
         run: bash scripts/ci/require-secrets.sh
       - name: Deploy prod
-        run: pnpm --filter @enrailar/infra exec alchemy deploy --no-input --stage prod
+        run: pnpm --filter @enrailar/infra exec alchemy deploy --yes --no-input --stage prod
