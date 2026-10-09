@@ -5,7 +5,7 @@
     "test": "deno test --allow-env"
   },
   "lint": {
-    "include": ["packages"],
+    "include": ["packages", "infra"],
     "exclude": ["**/node_modules"]
   },
   "fmt": {

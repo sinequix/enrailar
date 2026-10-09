@@ -1,0 +1,19 @@
+{
+  "name": "@enrailar/infra",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "deno lint --config ../deno.json alchemy.run.ts src stubs tests",
+    "typecheck": "tsc --noEmit",
+    "test": "deno test --allow-env --allow-read --config ../deno.json tests"
+  },
+  "dependencies": {
+    "@enrailar/shared": "workspace:*",
+    "alchemy": "2.0.0-beta.81",
+    "effect": "4.0.2"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}
