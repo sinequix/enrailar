@@ -43,7 +43,7 @@ jobs:
       - name: Fail closed
         run: bash scripts/ci/require-secrets.sh
       - name: Deploy pr stage
-        run: pnpm --filter @enrailar/infra exec alchemy deploy --no-input --stage "pr-${{ github.event.pull_request.number }}"
+        run: pnpm --filter @enrailar/infra exec alchemy deploy --yes --no-input --stage "pr-${{ github.event.pull_request.number }}"
 
   destroy:
     name: destroy preview
@@ -74,4 +74,4 @@ jobs:
       - name: Fail closed
         run: bash scripts/ci/require-secrets.sh
       - name: Destroy pr stage
-        run: pnpm --filter @enrailar/infra exec alchemy destroy --no-input --stage "pr-${{ github.event.pull_request.number }}"
+        run: pnpm --filter @enrailar/infra exec alchemy destroy --yes --no-input --stage "pr-${{ github.event.pull_request.number }}"
