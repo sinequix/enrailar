@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "deno lint --config ../../deno.json src tests",
     "typecheck": "tsc --noEmit",
-    "test": "deno test --allow-env --config ../../deno.json tests"
+    "test": "deno test --allow-env --allow-read --config ../../deno.json tests"
   },
   "dependencies": {
     "@enrailar/shared": "workspace:*",

@@ -1,29 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { type Labels, PublicForm } from "../forms.tsx";
-
-interface JoinCopy {
-  preinscription: string;
-  contact: string;
-  newsletter: string;
-  formHints: { preinscripcion: string; contacto: string; newsletter: string };
-}
+import { type Labels, SumateForm } from "../forms.tsx";
 
 /**
- * Los tres formularios comparten una sola clave de Turnstile. Si el servidor
- * no la tuvo al renderizar (por ejemplo, una página prerenderizada), se pide
- * una vez a `/api/turnstile`, que la lee del binding del Worker en cada request.
+ * Una sola ficha y una sola clave de Turnstile. Si el servidor no la tuvo al
+ * renderizar, se pide una vez a `/api/turnstile`, que la lee del binding del Worker.
  */
 export function JoinForms({
   locale,
   labels,
-  copy,
+  hint,
   initialSiteKey,
 }: {
   locale: "es" | "en";
   labels: Labels;
-  copy: JoinCopy;
+  hint: string;
   initialSiteKey: string;
 }) {
   const [siteKey, setSiteKey] = useState(initialSiteKey);
@@ -44,12 +36,9 @@ export function JoinForms({
       cancelled = true;
     };
   }, [initialSiteKey]);
-  const shared = { locale, labels, siteKey, siteKeyPending: pending };
   return (
     <div className="forms">
-      <PublicForm kind="preinscripcion" title={copy.preinscription} hint={copy.formHints.preinscripcion} {...shared} />
-      <PublicForm kind="contacto" title={copy.contact} hint={copy.formHints.contacto} {...shared} />
-      <PublicForm kind="newsletter" title={copy.newsletter} hint={copy.formHints.newsletter} {...shared} />
+      <SumateForm locale={locale} labels={labels} hint={hint} siteKey={siteKey} siteKeyPending={pending} />
     </div>
   );
 }

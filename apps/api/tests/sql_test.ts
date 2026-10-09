@@ -76,3 +76,50 @@ Deno.test("confirmar y darse de baja no guarda el token en claro", async () => {
   assertEquals(await store.unsubscribeNewsletter("hash-baja", "2026-10-09T00:02:00.000Z"), "sub-1");
   db.close();
 });
+
+Deno.test("la migración copia fichas viejas y deja las tablas de origen", async () => {
+  const { db, sql } = open();
+  db.exec(`
+    INSERT INTO preinscriptions (id, email, linkedin, message, locale, consent_at, created_at)
+    VALUES ('pre-1', 'hola@enrailar.com', 'https://www.linkedin.com/in/ejemplo', 'Quiero el mapa.', 'es', '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z');
+    INSERT INTO contacts (id, intent, email, linkedin, message, locale, consent_at, created_at)
+    VALUES ('con-1', 'sumarme', 'hola@enrailar.com', NULL, 'Quiero sumarme.', 'es', '2026-10-02T00:00:00.000Z', '2026-10-02T00:00:00.000Z');
+    INSERT INTO newsletter_subscribers
+      (id, email, locale, status, confirm_token_hash, unsubscribe_token_hash, consent_at, confirmed_at, unsubscribed_at, created_at)
+    VALUES ('news-1', 'prensa@enrailar.com', 'es', 'confirmed', 'hash-c', 'hash-u', '2026-10-03T00:00:00.000Z', '2026-10-03T00:00:00.000Z', NULL, '2026-10-03T00:00:00.000Z');
+  `);
+  db.exec(Deno.readTextFileSync(new URL("../migrations/0003_submissions.sql", import.meta.url)));
+  const submissions = db.prepare("SELECT id, message FROM submissions ORDER BY id").all() as Array<{ id: string; message: string }>;
+  assertEquals(submissions, [
+    { id: "con-1", message: "Quiero sumarme." },
+    { id: "pre-1", message: "Quiero el mapa." },
+  ]);
+  const intents = db.prepare("SELECT submission_id, intent FROM submission_intents ORDER BY submission_id, intent").all();
+  assertEquals(intents, [
+    { submission_id: "con-1", intent: "equipo" },
+    { submission_id: "pre-1", intent: "ciudad" },
+    { submission_id: "pre-1", intent: "hackatrain" },
+  ]);
+  const stillPre = db.prepare("SELECT COUNT(*) AS n FROM preinscriptions").get() as { n: number };
+  const stillContact = db.prepare("SELECT COUNT(*) AS n FROM contacts").get() as { n: number };
+  const stillNews = db.prepare("SELECT COUNT(*) AS n FROM newsletter_subscribers").get() as { n: number };
+  assertEquals(stillPre.n, 1);
+  assertEquals(stillContact.n, 1);
+  assertEquals(stillNews.n, 1);
+  const store = createD1Store(sql);
+  await store.insertSubmission({
+    id: "sum-1",
+    email: "hackatrain@enrailar.com",
+    name: undefined,
+    city: "Tandil",
+    link: "https://enrailar.com",
+    message: undefined,
+    locale: "en",
+    intents: ["donar", "boletin"],
+    consentAt: "2026-10-09T00:00:00.000Z",
+    createdAt: "2026-10-09T00:00:00.000Z",
+  });
+  const added = db.prepare("SELECT intent FROM submission_intents WHERE submission_id = 'sum-1' ORDER BY intent").all() as Array<{ intent: string }>;
+  assertEquals(added.map((row) => row.intent), ["boletin", "donar"]);
+  db.close();
+});
