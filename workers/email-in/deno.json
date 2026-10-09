@@ -1,0 +1,7 @@
+{
+  "nodeModulesDir": "auto",
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.19",
+    "@enrailar/shared": "../../packages/shared/src/index.ts"
+  }
+}

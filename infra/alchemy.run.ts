@@ -68,7 +68,7 @@ export default Stack(
     });
 
     const inbox = yield* Cloudflare.Worker("Inbox", {
-      main: stubPath("inbox"),
+      main: new URL("../apps/inbox/src/worker.ts", import.meta.url).pathname,
       compatibility,
       access,
       ...domain(`inbox.${DOMAIN}`),
@@ -89,7 +89,7 @@ export default Stack(
     });
 
     const emailIn = yield* Cloudflare.Worker("EmailIn", {
-      main: stubPath("email-in"),
+      main: new URL("../workers/email-in/src/worker.ts", import.meta.url).pathname,
       compatibility,
       env: {
         FORWARD_TO: Config.Redacted("FORWARD_TO"),
@@ -98,11 +98,12 @@ export default Stack(
     });
 
     const emailOut = yield* Cloudflare.Worker("EmailOut", {
-      main: stubPath("email-out"),
+      main: new URL("../workers/email-out/src/worker.ts", import.meta.url).pathname,
       compatibility,
       env: {
         DB: database,
         SEND_EMAIL: outbound,
+        PUBLIC_API_ORIGIN: production ? `https://api.${DOMAIN}` : "",
       },
     });
 

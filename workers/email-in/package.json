@@ -1,0 +1,17 @@
+{
+  "name": "@enrailar/email-in",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "deno lint src tests",
+    "typecheck": "tsc --noEmit",
+    "test": "deno test --allow-env --allow-read tests"
+  },
+  "dependencies": {
+    "@enrailar/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

@@ -40,7 +40,7 @@ El sitekey de Turnstile es público y sale del recurso. El secret no. Los hostna
 
 ## Qué queda apuntando a stubs
 
-La API ya no es un stub: su entrypoint es `apps/api/src/worker.ts` y las tablas de D1 salen de `apps/api/migrations`. El inbox, la web y los workers de correo siguen en `infra/stubs/` hasta sus propios cambios.
+La API, el inbox y los workers de correo ya tienen entrypoint propio (`apps/api`, `apps/inbox`, `workers/email-in`, `workers/email-out`). Las tablas de D1 salen de `apps/api/migrations`. La web y el admin siguen en `infra/stubs/`. El detalle del correo está en [`email.md`](email.md).
 
 ## Access
 

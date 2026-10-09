@@ -31,6 +31,16 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
+  apps/inbox:
+    dependencies:
+      '@enrailar/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+    devDependencies:
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
   infra:
     dependencies:
       '@enrailar/shared':
@@ -52,6 +62,26 @@ importers:
       zod:
         specifier: 4.6.5
         version: 4.6.5
+    devDependencies:
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
+  workers/email-in:
+    dependencies:
+      '@enrailar/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+    devDependencies:
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
+  workers/email-out:
+    dependencies:
+      '@enrailar/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
     devDependencies:
       typescript:
         specifier: 7.0.2
