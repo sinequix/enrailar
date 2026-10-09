@@ -1,0 +1,30 @@
+name: Error
+description: Algo no funciona como debería
+title: "[error] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: que
+    attributes:
+      label: Qué pasa
+      description: Qué esperabas y qué ocurrió.
+    validations:
+      required: true
+  - type: textarea
+    id: reproducir
+    attributes:
+      label: Cómo reproducirlo
+      description: Pasos, comandos o una captura del flujo. Sin correos, nombres ni secretos.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: entorno
+    attributes:
+      label: Entorno
+      description: Sistema, versión del navegador o commit.
+    validations:
+      required: false
