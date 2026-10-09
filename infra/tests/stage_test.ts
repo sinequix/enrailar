@@ -52,6 +52,7 @@ Deno.test("el ejemplo de entorno deja los secretos vacíos", async () => {
     "ALCHEMY_PASSWORD",
     "FORWARD_TO",
     "ACCESS_ALLOWED_EMAILS",
+    "ACCESS_SERVICE_TOKEN_IDS",
     "POLICY_AUD",
     "TEAM_DOMAIN",
   ];

@@ -1,4 +1,4 @@
-import { HACKATRAIN_WHEN } from "@enrailar/shared";
+import { CONSENT_COPY, HACKATRAIN_WHEN } from "@enrailar/shared";
 
 export const LOCALES = ["es", "en"] as const;
 
@@ -83,20 +83,41 @@ interface Copy {
   postSource: string;
   participate: string;
   joinLede: string;
-  preinscription: string;
-  contact: string;
-  newsletter: string;
-  formHints: { preinscripcion: string; contacto: string; newsletter: string };
+  formHint: string;
+  consent: string;
   email: string;
-  linkedin: string;
+  name: string;
+  city: string;
+  link: string;
   message: string;
   intent: string;
-  intents: { colaborar: string; donar: string; sumarme: string };
+  intents: {
+    hackatrain: string;
+    ciudad: string;
+    colaborar: string;
+    donar: string;
+    equipo: string;
+    boletin: string;
+  };
   send: string;
   sending: string;
   accepted: string;
+  acceptedNewsletter: string;
+  alreadyTitle: string;
+  alreadyIntents: string;
+  alreadyNewsletter: string;
+  alreadyAgain: string;
   rejected: string;
-  fields: string;
+  errors: {
+    intents: string;
+    email: string;
+    name: string;
+    city: string;
+    link: string;
+    message: string;
+    consent: string;
+    turnstileToken: string;
+  };
   turnstileMissing: string;
   turnstileLoading: string;
   language: string;
@@ -211,29 +232,42 @@ export const COPY: Record<Locale, Copy> = {
     postDeck: "Mapa, inspección y un corredor que funcione. El texto de origen está en X.",
     postSource: "Texto de origen",
     participate: "Sumate",
-    joinLede: "Tres formas de entrar. Todas las lee una persona del proyecto.",
-    preinscription: "Preinscripción",
-    contact: "Contacto",
-    newsletter: "Boletín",
-    formHints: {
-      preinscripcion: "Para el Hackatrain y para el relevamiento en tu ciudad.",
-      contacto: "Para colaborar, donar o sumarte al equipo.",
-      newsletter: "Novedades del proyecto, sin frecuencia fija.",
-    },
+    joinLede: "Una sola ficha. Marcá lo que querés hacer. La lee una persona del proyecto.",
+    formHint: "Podés elegir más de una opción.",
+    consent: CONSENT_COPY,
     email: "Correo",
-    linkedin: "LinkedIn (opcional)",
-    message: "Mensaje",
-    intent: "Quiero",
+    name: "Nombre (opcional)",
+    city: "Ciudad (opcional)",
+    link: "LinkedIn o web (opcional)",
+    message: "Mensaje (opcional)",
+    intent: "Quiero…",
     intents: {
-      colaborar: "colaborar",
-      donar: "donar",
-      sumarme: "sumarme al equipo",
+      hackatrain: "Preinscribirme al Hackatrain",
+      ciudad: "Relevar en mi ciudad",
+      colaborar: "Colaborar",
+      donar: "Donar",
+      equipo: "Sumarme al equipo",
+      boletin: "Recibir el boletín",
     },
     send: "Enviar",
     sending: "Enviando…",
     accepted: "Recibimos la solicitud.",
+    acceptedNewsletter: "Recibimos la solicitud. Si pediste el boletín, te llega un correo para confirmarlo.",
+    alreadyTitle: "Ya te anotaste. Pronto nos vamos a contactar.",
+    alreadyIntents: "Elegiste",
+    alreadyNewsletter: "Revisá el correo para confirmar el boletín.",
+    alreadyAgain: "Enviar otro mensaje",
     rejected: "No se pudo enviar. Revisá los campos.",
-    fields: "Campos",
+    errors: {
+      intents: "Elegí al menos una opción.",
+      email: "El correo es obligatorio y tiene que ser válido.",
+      name: "El nombre es demasiado largo.",
+      city: "La ciudad es demasiado larga.",
+      link: "El enlace tiene que ser https.",
+      message: "El mensaje es demasiado largo.",
+      consent: "Hace falta el consentimiento para tratar los datos según la Ley 25.326.",
+      turnstileToken: "Falta la verificación.",
+    },
     turnstileMissing: "Falta la clave pública de Turnstile en este entorno.",
     turnstileLoading: "Cargando la verificación…",
     language: "Idioma",
@@ -352,29 +386,43 @@ export const COPY: Record<Locale, Copy> = {
     postDeck: "A map, an inspection, and a corridor that works. The source note is on X.",
     postSource: "Source note",
     participate: "Join",
-    joinLede: "Three ways in. A person from the project reads all of them.",
-    preinscription: "Pre-registration",
-    contact: "Contact",
-    newsletter: "Newsletter",
-    formHints: {
-      preinscripcion: "For the Hackatrain and for the survey in your city.",
-      contacto: "To collaborate, donate or join the team.",
-      newsletter: "Project news, no fixed schedule.",
-    },
+    joinLede: "One form. Mark what you want to do. A person from the project reads it.",
+    formHint: "You can choose more than one.",
+    consent:
+      "I agree that Enrailar may process my email and the rest of this data under Law 25.326 to answer this request and, if I subscribe, send me updates. I can ask for access, correction or deletion.",
     email: "Email",
-    linkedin: "LinkedIn (optional)",
-    message: "Message",
-    intent: "I want to",
+    name: "Name (optional)",
+    city: "City (optional)",
+    link: "LinkedIn or website (optional)",
+    message: "Message (optional)",
+    intent: "I want to…",
     intents: {
-      colaborar: "collaborate",
-      donar: "donate",
-      sumarme: "join the team",
+      hackatrain: "Pre-register for the Hackatrain",
+      ciudad: "Survey in my city",
+      colaborar: "Collaborate",
+      donar: "Donate",
+      equipo: "Join the team",
+      boletin: "Get the newsletter",
     },
     send: "Send",
     sending: "Sending…",
     accepted: "We received the request.",
+    acceptedNewsletter: "We received the request. If you asked for the newsletter, a message arrives to confirm it.",
+    alreadyTitle: "You're already signed up. We'll be in touch soon.",
+    alreadyIntents: "You chose",
+    alreadyNewsletter: "Check your inbox to confirm the newsletter.",
+    alreadyAgain: "Send another message",
     rejected: "Could not send. Check the fields.",
-    fields: "Fields",
+    errors: {
+      intents: "Choose at least one option.",
+      email: "Email is required and has to be valid.",
+      name: "The name is too long.",
+      city: "The city is too long.",
+      link: "The link has to be https.",
+      message: "The message is too long.",
+      consent: "Consent is required to process this data under Law 25.326.",
+      turnstileToken: "Verification is missing.",
+    },
     turnstileMissing: "This environment has no Turnstile site key.",
     turnstileLoading: "Loading verification…",
     language: "Language",

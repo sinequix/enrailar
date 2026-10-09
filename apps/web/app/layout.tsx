@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { SITE_URL } from "../src/copy.ts";
+import { sumateBootScript } from "../src/sumate-memory.ts";
 import "./globals.css";
 
 export const metadata = {
@@ -36,7 +37,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/chivo-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </head>
-      <body>{children}</body>
+      <body>
+        <script dangerouslySetInnerHTML={{ __html: sumateBootScript() }} />
+        {children}
+      </body>
     </html>
   );
 }

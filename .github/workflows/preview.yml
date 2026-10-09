@@ -22,6 +22,7 @@ jobs:
       ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
       FORWARD_TO: ${{ secrets.FORWARD_TO }}
       ACCESS_ALLOWED_EMAILS: ${{ secrets.ACCESS_ALLOWED_EMAILS }}
+      ACCESS_SERVICE_TOKEN_IDS: ${{ secrets.ACCESS_SERVICE_TOKEN_IDS }}
       POLICY_AUD: ${{ secrets.POLICY_AUD }}
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
     steps:
@@ -63,6 +64,7 @@ jobs:
       ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
       FORWARD_TO: ${{ secrets.FORWARD_TO }}
       ACCESS_ALLOWED_EMAILS: ${{ secrets.ACCESS_ALLOWED_EMAILS }}
+      ACCESS_SERVICE_TOKEN_IDS: ${{ secrets.ACCESS_SERVICE_TOKEN_IDS }}
       POLICY_AUD: ${{ secrets.POLICY_AUD }}
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
     steps:

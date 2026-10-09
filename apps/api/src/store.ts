@@ -1,8 +1,11 @@
+import type { JoinIntent } from "@enrailar/shared";
+
 export interface AuditEvent {
   recordId: string;
   kind:
     | "preinscription.accepted"
     | "contact.accepted"
+    | "sumate.accepted"
     | "newsletter.pending"
     | "newsletter.confirmed"
     | "newsletter.unsubscribed"
@@ -34,9 +37,23 @@ export interface NewsletterPending {
   createdAt: string;
 }
 
+export interface SubmissionRow {
+  id: string;
+  email: string;
+  name: string | undefined;
+  city: string | undefined;
+  link: string | undefined;
+  message: string | undefined;
+  locale: "es" | "en";
+  intents: readonly JoinIntent[];
+  consentAt: string;
+  createdAt: string;
+}
+
 export interface Store {
   insertPreinscription(row: PreinscriptionRow): Promise<void>;
   insertContact(row: ContactRow): Promise<void>;
+  insertSubmission(row: SubmissionRow): Promise<void>;
   saveNewsletterPending(row: NewsletterPending): Promise<string>;
   confirmNewsletter(tokenHash: string, at: string): Promise<string | undefined>;
   unsubscribeNewsletter(tokenHash: string, at: string): Promise<string | undefined>;
@@ -65,6 +82,7 @@ export function rateDecision(
 export function createMemoryStore(): Store {
   const preinscriptions: PreinscriptionRow[] = [];
   const contacts: ContactRow[] = [];
+  const submissions: SubmissionRow[] = [];
   const newsletter = new Map<string, NewsletterPending & { status: string; confirmedAt?: string; unsubscribedAt?: string }>();
   const audit: AuditEvent[] = [];
   const rates = new Map<string, RateRow>();
@@ -76,6 +94,10 @@ export function createMemoryStore(): Store {
     },
     insertContact(row) {
       contacts.push(row);
+      return Promise.resolve();
+    },
+    insertSubmission(row) {
+      submissions.push({ ...row, intents: [...new Set(row.intents)] });
       return Promise.resolve();
     },
     saveNewsletterPending(row) {
@@ -143,6 +165,27 @@ export function createD1Store(database: SqlDatabase): Store {
         `INSERT INTO contacts (id, intent, email, linkedin, message, locale, consent_at, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       ).bind(row.id, row.intent, row.email, row.linkedin ?? null, row.message, row.locale, row.consentAt, row.createdAt).run();
+    },
+    async insertSubmission(row) {
+      await database.prepare(
+        `INSERT INTO submissions (id, email, name, city, link, message, locale, consent_at, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).bind(
+        row.id,
+        row.email,
+        row.name ?? null,
+        row.city ?? null,
+        row.link ?? null,
+        row.message ?? null,
+        row.locale,
+        row.consentAt,
+        row.createdAt,
+      ).run();
+      for (const intent of new Set(row.intents)) {
+        await database.prepare(
+          `INSERT INTO submission_intents (submission_id, intent) VALUES (?, ?)`,
+        ).bind(row.id, intent).run();
+      }
     },
     async saveNewsletterPending(row) {
       await database.prepare(
