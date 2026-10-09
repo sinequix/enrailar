@@ -17,7 +17,7 @@ jobs:
       present: ${{ steps.detect.outputs.present }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Look for JavaScript or TypeScript
         id: detect
         run: |
@@ -39,7 +39,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
