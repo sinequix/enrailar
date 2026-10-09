@@ -45,4 +45,6 @@ jobs:
       - name: Fail closed
         run: bash scripts/ci/require-secrets.sh
       - name: Deploy prod
+        env:
+          NODE_OPTIONS: --import ${{ github.workspace }}/scripts/ci/inbox-vite-hooks.mjs
         run: pnpm --filter @enrailar/infra exec alchemy deploy --yes --no-input --stage prod

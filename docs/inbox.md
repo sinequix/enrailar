@@ -39,3 +39,5 @@ Cloudflare Access cubre el Worker entero: la UI y `/mcp`. La política deja pasa
 `Website.Vite` inyecta `@alchemy.run/cloudflare-runtime/vite` y setea `ALCHEMY_CLOUDFLARE_VITE_INJECTED=1`. El `vite.config.ts` de upstream registra además `@cloudflare/vite-plugin`. Alchemy documenta que los dos plugins, con el mismo nombre, se pisan: en dev hay dos workerd y uno solo tiene los bindings.
 
 La alternativa chica es el corte que ya está en `apps/inbox/vite.config.ts`: si esa variable vale `1`, no se carga el plugin oficial. Un `vite build` suelto (sin Alchemy) sigue usando el plugin de upstream. No reescribimos la app.
+
+El hijo de Vite de Alchemy carga ese config con el loader Oxc. En Node 22 el loader no puede enlazar `@react-router/dev` (el bundle CJS termina pidiendo el build ESM de `react-router`) y tampoco devuelve fuente para los `.js` de `apps/inbox/node_modules`. Vite solo muestra `failed to load config from apps/inbox/vite.config.ts`. `npm ci --prefix apps/inbox` deja las dependencias en su sitio; el loader igual las rompe. Los workflows pasan `scripts/ci/inbox-vite-hooks.mjs` en `NODE_OPTIONS` para corregir esa resolución antes de `alchemy deploy`.
