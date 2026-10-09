@@ -50,8 +50,8 @@ Deno.test("el ejemplo de entorno deja los secretos vacíos", async () => {
     "CLOUDFLARE_API_TOKEN",
     "CLOUDFLARE_ACCOUNT_ID",
     "ALCHEMY_PASSWORD",
-    "TURNSTILE_SECRET_KEY",
     "FORWARD_TO",
+    "ACCESS_ALLOWED_EMAILS",
     "POLICY_AUD",
     "TEAM_DOMAIN",
   ];

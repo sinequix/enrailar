@@ -3,6 +3,7 @@ import { adopt } from "alchemy/AdoptPolicy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
+import * as Redacted from "effect/Redacted";
 import { ROLE_MAILBOXES } from "@enrailar/shared";
 import { DOMAIN, isProductionStage, stubPath } from "./src/stage.ts";
 
@@ -11,15 +12,19 @@ const compatibility = {
   flags: ["nodejs_compat" as const],
 };
 
-const access = {
-  policies: [
-    {
-      decision: "allow" as const,
-      include: [{ emailDomain: DOMAIN }],
-    },
-  ],
-  sessionDuration: "24h",
-};
+const accessSession = "24h";
+
+/** Dominio del proyecto, más las direcciones de `ACCESS_ALLOWED_EMAILS` si el entorno las trae. */
+function accessInclude(extraEmails: string) {
+  const include: Array<{ emailDomain: string } | { email: string }> = [
+    { emailDomain: DOMAIN },
+  ];
+  for (const part of extraEmails.split(",")) {
+    const email = part.trim();
+    if (email.length > 0) include.push({ email });
+  }
+  return include;
+}
 
 export default Stack(
   "Enrailar",
@@ -30,6 +35,29 @@ export default Stack(
   Effect.gen(function* () {
     const stage = yield* Stage;
     const production = isProductionStage(stage);
+    const extraEmails = yield* Config.String("ACCESS_ALLOWED_EMAILS").pipe(Config.withDefault(""));
+    const include = accessInclude(extraEmails);
+    const accessPolicies = [
+      {
+        decision: "allow" as const,
+        include,
+      },
+    ];
+    // En prod la app se declara acá para poder atar `POLICY_AUD` a su `aud`.
+    // Un preview no tiene hostname propio todavía: la app dedicada del Worker
+    // sigue naciendo con el destino `worker`, y el aud entra por el entorno.
+    const accessApp = production
+      ? yield* Cloudflare.Access.Application("Access", {
+          type: "self_hosted",
+          domain: `inbox.${DOMAIN}`,
+          sessionDuration: accessSession,
+          policies: accessPolicies,
+        })
+      : undefined;
+    const access = accessApp ?? {
+      policies: accessPolicies,
+      sessionDuration: accessSession,
+    };
 
     const zone = production
       ? yield* Cloudflare.Zone.Zone("Zone", { name: DOMAIN }).pipe(adopt(true))
@@ -63,7 +91,7 @@ export default Stack(
         MAIL_QUEUE: mail,
         AUDIT_QUEUE: audit,
         TURNSTILE_SITE_KEY: turnstile.sitekey,
-        TURNSTILE_SECRET_KEY: Config.Redacted("TURNSTILE_SECRET_KEY"),
+        TURNSTILE_SECRET_KEY: turnstile.secret,
       },
     });
 
@@ -83,7 +111,7 @@ export default Stack(
         EMAIL: inboxSend,
         DOMAINS: DOMAIN,
         EMAIL_ADDRESSES: [...ROLE_MAILBOXES],
-        POLICY_AUD: Config.Redacted("POLICY_AUD"),
+        POLICY_AUD: accessApp ? Redacted.make(accessApp.aud) : Config.Redacted("POLICY_AUD"),
         TEAM_DOMAIN: Config.Redacted("TEAM_DOMAIN"),
         MAILBOX: Cloudflare.DurableObject("Mailbox", { className: "MailboxDO" }),
         EMAIL_AGENT: Cloudflare.DurableObject("EmailAgent", { className: "EmailAgent" }),

@@ -30,7 +30,7 @@ Bindings:
 | `EMAIL_ADDRESSES` | Las tres casillas de rol, como JSON. |
 | `POLICY_AUD`, `TEAM_DOMAIN` | Secretos. La app vendida, fuera de `vite dev`, responde 500 si faltan. El valor no está en el repo. |
 
-Cloudflare Access, con la política de `enrailar.com`, cubre el Worker entero: la UI y `/mcp`. El IdP se configura en la cuenta.
+Cloudflare Access cubre el Worker entero: la UI y `/mcp`. La política deja pasar el dominio `enrailar.com` y las direcciones de `ACCESS_ALLOWED_EMAILS`. El IdP se configura en la cuenta. En `prod`, `POLICY_AUD` es el `aud` de la aplicación que crea Alchemy.
 
 `email-in` no entra por HTTP. Tiene bindings cruzados `MAILBOX` (`MailboxDO`) y `EMAIL_AGENT` al script de este Worker, y el mismo R2. Antes de llamar a `receiveEmail` escribe `mailboxes/<casilla>.json` si falta. `forwarding.email` queda `""`: el `message.forward()` de `email-in` es el único reenvío, y el destino sale de `FORWARD_TO`.
 
