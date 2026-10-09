@@ -21,7 +21,7 @@
   :focus-visible { outline: 3px solid var(--celeste-700); outline-offset: 3px; }
   .layout { display: grid; grid-template-columns: 16rem minmax(0,1fr); min-height: 100vh; }
   nav.toc { position: sticky; top: 0; height: 100vh; overflow: auto; padding: 2rem 1.5rem; border-right: 1px solid var(--gris-100); background: var(--niebla); font-family: var(--display); font-size: 14px; }
-  nav.toc img { height: 32px; margin-bottom: 1.5rem; }
+  nav.toc img { width: 148px; height: 32px; margin-bottom: 1.5rem; }
   nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
   nav.toc a { text-decoration: none; color: var(--azul-riel); display: block; padding: .25rem .5rem; border-radius: 4px; }
   nav.toc a:hover { background: var(--celeste-100); }
@@ -44,8 +44,8 @@
   .tile { border: 1px solid var(--gris-100); border-radius: 10px; padding: 1.5rem; background: var(--blanco); }
   .tile.dark { background: var(--azul-riel); }
   .tile.pattern { background: var(--niebla); background-image: repeating-linear-gradient(45deg, transparent 0 12px, var(--gris-100) 12px 13px); }
-  .tile img { width: 100%; height: 64px; object-fit: contain; object-position: left; }
-  .tile.center img { object-position: center; height: 120px; }
+  .tile img { display: block; height: 64px; width: auto; max-width: 100%; } /* 2:1 sobre la grilla de 32 */
+  .tile.center img { margin: 0 auto; height: 124px; }
   .tile small { display: block; margin-top: .75rem; font-family: var(--display); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--balasto); }
   .tile.dark small { color: var(--celeste-300); }
   .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 1rem; margin: 1rem 0 2rem; }
@@ -88,7 +88,7 @@
   .dont li { margin: .35rem 0; }
   .clear { height: 1rem; }
   .safe { position: relative; display: inline-block; padding: 24px; border: 1px dashed var(--celeste-500); }
-  .safe img { height: 48px; }
+  .safe img { display: block; width: 296px; height: 64px; }
   .safe span { position: absolute; top: -.7em; left: 1rem; background: #fff; padding: 0 .4rem; font: 560 11px var(--display); letter-spacing: .1em; color: var(--celeste-700); }
   @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } nav.toc { position: static; height: auto; } .shots, .yesno { grid-template-columns: 1fr; } .line-diagram { grid-template-columns: 1fr; } }
 </style>
@@ -166,24 +166,26 @@
     <section id="logo">
       <p class="eyebrow">3</p>
       <h2>Logo</h2>
-      <p>Dos rieles y un disco de oro que los interrumpe, como una estación en un diagrama de línea. El sol de mayo reducido a su forma esencial, sin rayos ni rostro. En el wordmark, el punto de la i es ese mismo disco.</p>
+      <p>Dos rieles y un disco de oro que los interrumpe, como una estación en un diagrama de línea. El sol de mayo reducido a su forma esencial, sin rayos ni rostro. En el wordmark, el punto de la i es ese mismo disco. Todo está dibujado en píxeles enteros: símbolo en grilla de 32 (favicon en 16), wordmark con altura de x 16 y fuste 4, lockup de 148 × 32 que la cabecera muestra a 1× y 2×.</p>
       <div class="grid">
         <div class="tile"><img src="../../apps/web/public/brand/logo-horizontal.svg" alt="Logo horizontal"><small>Horizontal · principal</small></div>
         <div class="tile center"><img src="../../apps/web/public/brand/logo-apilado.svg" alt="Logo apilado"><small>Apilado</small></div>
         <div class="tile"><img src="../../apps/web/public/brand/logo-mono.svg" alt="Logo monocromo"><small>Monocromo</small></div>
         <div class="tile dark"><img src="../../apps/web/public/brand/logo-invertido.svg" alt="Logo invertido"><small>Invertido sobre azul riel</small></div>
-        <div class="tile"><img src="../../apps/web/public/brand/simbolo.svg" alt="Símbolo" style="height:64px"><small>Símbolo · favicon</small></div>
-        <div class="tile"><img src="../../apps/web/public/brand/wordmark.svg" alt="Wordmark"><small>Wordmark</small></div>
+        <div class="tile dark"><img src="../../apps/web/public/brand/logo-blanco.svg" alt="Logo blanco"><small>Blanco sobre fondo oscuro</small></div>
+        <div class="tile"><img src="../../apps/web/public/brand/simbolo.svg" alt="Símbolo" style="display:inline-block;margin-right:16px"><img src="../../apps/web/public/brand/favicon.svg" alt="Favicon" style="display:inline-block;height:32px;vertical-align:top"><small>Símbolo 32 · favicon 16</small></div>
+        <div class="tile"><img src="../../apps/web/public/brand/wordmark.svg" alt="Wordmark" style="height:44px"><small>Wordmark</small></div>
       </div>
       <h3>Área de seguridad y tamaños mínimos</h3>
-      <p class="safe"><span>S = diámetro del disco</span><img src="../../apps/web/public/brand/logo-horizontal.svg" alt=""></p>
+      <p class="safe"><span>S = diámetro del disco (12 px en la grilla de 32)</span><img src="../../apps/web/public/brand/logo-horizontal.svg" alt=""></p>
       <table>
         <tr><th>Versión</th><th>Mínimo en pantalla</th><th>Mínimo impreso</th></tr>
-        <tr><td>Horizontal</td><td>120 px de ancho</td><td>30 mm</td></tr>
-        <tr><td>Apilado</td><td>72 px de ancho</td><td>18 mm</td></tr>
-        <tr><td>Símbolo</td><td>16 px</td><td>5 mm</td></tr>
+        <tr><td>Horizontal</td><td>148 × 32 px (1×); solo múltiplos enteros</td><td>30 mm</td></tr>
+        <tr><td>Apilado</td><td>108 × 62 px (1×)</td><td>18 mm</td></tr>
+        <tr><td>Símbolo</td><td>32 px; favicon 16 px</td><td>5 mm</td></tr>
       </table>
-      <p>Por debajo de 24 px de alto se usa el símbolo solo. Archivos: <code>apps/web/public/brand/</code>. Regeneración: <code>scripts/brand/wordmark.py</code>, <code>logo.py</code>, <code>raster.sh</code>.</p>
+      <p>Por debajo de 32 px de alto se usa el símbolo solo. En pantalla el lockup se muestra a 1×, 2× o 3× exactos (148, 296 o 444 px de ancho), nunca a una escala fraccionaria. Archivos: <code>apps/web/public/brand/</code>. Regeneración: <code>scripts/brand/logo.py</code> (desde <code>wordmark.json</code>), <code>svgo.config.mjs</code>, <code>raster.sh</code>.</p>
+      <figure><img src="screenshots/logo-sheet.png" alt="Lámina de logo ampliada"><figcaption>Lámina: lockup a 1× y 2× ampliado, símbolo y favicon ×8, construcción sobre grilla, variantes</figcaption></figure>
     </section>
 
     <section id="paleta">

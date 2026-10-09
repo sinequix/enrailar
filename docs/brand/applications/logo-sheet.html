@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Lámina de logo · Enrailar</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+  /* raster.sh reemplaza __PX__ por una carpeta con renders a 1× y 2× (PNG) para los bloques ampliados. */
+  body { width: 1200px; padding: 48px 56px 56px; } /* contenido útil: 1088 px */
+  h1 { font-size: 34px; margin: 10px 0 6px; }
+  .sub { color: var(--balasto); font-size: 15px; margin: 0 0 32px; }
+  section { margin-top: 30px; }
+  h2 { font-size: 15px; font-stretch: 112%; font-weight: 560; letter-spacing: .12em; text-transform: uppercase; color: var(--celeste-700); margin: 0 0 12px; }
+  .row { display: flex; gap: 32px; align-items: flex-start; }
+  .cell { display: grid; gap: 8px; }
+  .cell small { font-family: var(--display); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--balasto); }
+  .px { image-rendering: pixelated; display: block; border: 1px solid var(--gris-100); }
+  .grid { background-color: #fff; background-image: linear-gradient(var(--gris-100) 1px, transparent 1px), linear-gradient(90deg, var(--gris-100) 1px, transparent 1px); background-size: 7px 7px; border: 1px solid var(--gris-300); display: inline-block; line-height: 0; }
+  .dark { background: var(--azul-riel); padding: 16px; border-radius: 8px; line-height: 0; }
+  .light { background: #fff; padding: 16px; border: 1px solid var(--gris-100); border-radius: 8px; line-height: 0; }
+</style></head>
+<body>
+  <p class="eyebrow">Manual de marca · Logo</p>
+  <h1>Lámina de logo</h1>
+  <p class="sub">Todo en píxeles enteros. Símbolo en grilla de 32 (favicon en 16), wordmark con altura de x 16 y fuste 4, lockup horizontal de 148 × 32 para la cabecera a 1× y 2×.</p>
+
+  <section>
+    <h2>Cabecera: lockup a 1× ampliado ×3 y a 2× ampliado ×2 (vecino más cercano)</h2>
+    <div class="row">
+      <div class="cell"><img class="px" src="__PX__/logo-horizontal-1x.png" width="444" height="96" alt=""><small>1× · 148 × 32 px</small></div>
+      <div class="cell"><img class="px" src="__PX__/logo-horizontal-2x.png" width="592" height="128" alt=""><small>2× · 296 × 64 px</small></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Símbolo y favicon, ampliados ×8</h2>
+    <div class="row">
+      <div class="cell"><img class="px" src="__PX__/simbolo-1x.png" width="256" height="256" alt=""><small>Símbolo 32 · 1×</small></div>
+      <div class="cell"><img class="px" src="__PX__/favicon-1x.png" width="128" height="128" alt=""><small>Favicon 16 · 1×</small></div>
+      <div class="cell"><img class="px" src="__PX__/favicon-2x.png" width="256" height="256" alt=""><small>Favicon 16 · 2×</small></div>
+      <div class="cell"><img class="px" src="__PX__/simbolo-mono-1x.png" width="256" height="256" alt=""><small>Símbolo mono 32 · 1×</small></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Construcción: lockup sobre grilla de 1 px (×7)</h2>
+    <div class="grid"><img src="../../../apps/web/public/brand/logo-horizontal.svg" width="1036" height="224" alt=""></div>
+  </section>
+
+  <section>
+    <h2>Variantes (vector, 2×)</h2>
+    <div class="row">
+      <div class="cell"><div class="light"><img src="../../../apps/web/public/brand/logo-apilado.svg" width="216" height="124" alt=""></div><small>Apilado 108 × 62</small></div>
+      <div class="cell"><div class="light"><img src="../../../apps/web/public/brand/logo-mono.svg" width="296" height="64" alt=""></div><small>Monocromo tinta</small></div>
+      <div class="cell"><div class="dark"><img src="../../../apps/web/public/brand/logo-invertido.svg" width="296" height="64" alt=""></div><small>Invertido (celeste 300 · oro 300 · blanco)</small></div>
+    </div>
+    <div class="row" style="margin-top:24px">
+      <div class="cell"><div class="dark"><img src="../../../apps/web/public/brand/logo-blanco.svg" width="296" height="64" alt=""></div><small>Blanco para fondos oscuros</small></div>
+      <div class="cell"><div class="light"><img src="../../../apps/web/public/brand/wordmark.svg" width="216" height="44" alt=""></div><small>Wordmark 108 × 22</small></div>
+      <div class="cell"><div class="light"><img src="../../../apps/web/public/brand/icon.svg" width="80" height="80" alt=""></div><small>Ícono con fondo 40</small></div>
+    </div>
+  </section>
+</body></html>
