@@ -1,0 +1,45 @@
+name: ClickUp sync
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Calcula la sync y no escribe
+        type: boolean
+        default: false
+
+permissions:
+  issues: write
+  pull-requests: read
+  contents: read
+
+concurrency:
+  group: clickup-github-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: clickup-to-github
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
+      - name: Sync
+        env:
+          CLICKUP_API_TOKEN: ${{ secrets.CLICKUP_API_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            deno run --allow-net --allow-env --allow-read scripts/clickup-sync/cli.ts to-github --dry-run
+          else
+            deno run --allow-net --allow-env --allow-read scripts/clickup-sync/cli.ts to-github
+          fi
