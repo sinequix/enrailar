@@ -106,7 +106,7 @@ export function sumateScriptHash(): string {
 
 export function inlineScriptHashes(html: string): string[] {
   const hashes: string[] = [];
-  for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+  for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\b[^>]*>/gi)) {
     const attrs = match[1] ?? "";
     if (/(?:^|\s)src\s*=/i.test(attrs)) continue;
     const body = match[2] ?? "";
