@@ -1,4 +1,39 @@
-/* Enrailar · sistema de diseño. Tokens en docs/brand/manual.md. */
+/* Enrailar · sistema de diseño. Tokens en docs/brand/manual.md.
+   Tailwind solo aporta theme y utilities (sin preflight) para shadcn.
+   --accent sigue siendo el celeste de marca; el acento suave de shadcn es --sh-accent. */
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --color-background: var(--sh-background);
+  --color-foreground: var(--sh-foreground);
+  --color-primary: var(--sh-primary);
+  --color-primary-foreground: var(--sh-primary-foreground);
+  --color-secondary: var(--sh-secondary);
+  --color-secondary-foreground: var(--sh-secondary-foreground);
+  --color-muted: var(--sh-muted);
+  --color-muted-foreground: var(--sh-muted-foreground);
+  --color-accent: var(--sh-accent);
+  --color-accent-foreground: var(--sh-accent-foreground);
+  --color-destructive: var(--sh-destructive);
+  --color-border: var(--sh-border);
+  --color-input: var(--sh-input);
+  --color-ring: var(--sh-ring);
+  --color-card: var(--sh-card);
+  --color-card-foreground: var(--sh-card-foreground);
+  --color-popover: var(--sh-card);
+  --color-popover-foreground: var(--sh-card-foreground);
+  --color-sol: var(--oro-500);
+  --color-celeste: var(--celeste-500);
+  --color-riel: var(--azul-riel);
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Chivo", "Helvetica Neue", Arial, sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+}
 
 @font-face {
   font-family: "Archivo";
@@ -71,6 +106,24 @@
   --sol-text: var(--oro-700);
   --focus: var(--celeste-700);
 
+  /* shadcn, modo claro. No redefinen --accent. */
+  --sh-background: var(--bg);
+  --sh-foreground: var(--ink);
+  --sh-primary: var(--accent);
+  --sh-primary-foreground: var(--blanco);
+  --sh-secondary: var(--celeste-100);
+  --sh-secondary-foreground: var(--azul-riel);
+  --sh-muted: var(--niebla);
+  --sh-muted-foreground: var(--balasto);
+  --sh-accent: var(--celeste-100);
+  --sh-accent-foreground: var(--azul-riel);
+  --sh-destructive: var(--error);
+  --sh-border: var(--line);
+  --sh-input: var(--line-strong);
+  --sh-ring: var(--focus);
+  --sh-card: var(--bg);
+  --sh-card-foreground: var(--ink);
+
   /* Tipografía */
   --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --font-body: "Chivo", "Helvetica Neue", Arial, sans-serif;
@@ -128,6 +181,22 @@
   --accent-ui: #5a9ccc;
   --sol-text: #f2cc6b;
   --focus: #f2cc6b;
+  --sh-background: var(--bg);
+  --sh-foreground: var(--ink);
+  --sh-primary: var(--accent);
+  --sh-primary-foreground: var(--azul-riel);
+  --sh-secondary: #143a5a;
+  --sh-secondary-foreground: var(--niebla);
+  --sh-muted: var(--bg-alt);
+  --sh-muted-foreground: var(--ink-2);
+  --sh-accent: #143a5a;
+  --sh-accent-foreground: var(--niebla);
+  --sh-destructive: #e07a68;
+  --sh-border: var(--line);
+  --sh-input: var(--line-strong);
+  --sh-ring: var(--focus);
+  --sh-card: var(--bg-alt);
+  --sh-card-foreground: var(--ink);
   color-scheme: dark;
 }
 
@@ -948,13 +1017,15 @@ html[data-sumate-boletin="1"] .sumate-confirm {
   border-color: var(--accent-ui);
 }
 
-.chip:has(input:checked) {
+.chip:has(input:checked),
+.chip:has([data-state="checked"]) {
   border-color: var(--accent);
   background: color-mix(in oklab, var(--accent) 16%, var(--bg));
   color: var(--ink);
 }
 
-.chip:has(input:focus-visible) {
+.chip:has(input:focus-visible),
+.chip:has(:focus-visible) {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }

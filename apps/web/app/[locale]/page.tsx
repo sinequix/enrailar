@@ -7,6 +7,8 @@ import { JoinForms } from "../components/join.tsx";
 import { SyntheticFigure } from "../components/picture.tsx";
 import { SiteFooter } from "../components/site-footer.tsx";
 import { SiteHeader } from "../components/site-header.tsx";
+import { Button } from "../components/ui/button.tsx";
+import { Card } from "../components/ui/card.tsx";
 import { COPY, isLocale, type Locale, OG_IMAGE, POST_SLUG, SITE_URL } from "../../src/copy.ts";
 import { SUMATE_PRESELECT } from "../../src/submit.ts";
 import { turnstileSiteKeyFromProcess } from "../../src/turnstile.ts";
@@ -90,8 +92,12 @@ function HomePage({ locale }: { locale: Locale }) {
                 <h1 className="reveal">{copy.visionTitle}</h1>
                 <p className="lede reveal reveal--2">{copy.heroLede}</p>
                 <div className="actions reveal reveal--2">
-                  <a className="btn" href={SUMATE_PRESELECT}>{copy.ctaJoin}</a>
-                  <a className="btn btn--ghost" href={`/${locale}/blog/${POST_SLUG}`}>{copy.ctaBlog}</a>
+                  <Button asChild>
+                    <a href={SUMATE_PRESELECT}>{copy.ctaJoin}</a>
+                  </Button>
+                  <Button variant="ghost" asChild>
+                    <a href={`/${locale}/blog/${POST_SLUG}`}>{copy.ctaBlog}</a>
+                  </Button>
                 </div>
               </div>
               <aside className="hero-aside reveal reveal--3">
@@ -160,11 +166,11 @@ function HomePage({ locale }: { locale: Locale }) {
               {copy.phaseCards.map((card, index) => {
                 const Icon = CARD_ICONS[index];
                 return (
-                  <article className="card" key={card.title}>
+                  <Card key={card.title}>
                     <Icon className="icon" />
                     <h3>{card.title}</h3>
                     <p>{card.body}</p>
-                  </article>
+                  </Card>
                 );
               })}
             </div>
@@ -215,7 +221,9 @@ function HomePage({ locale }: { locale: Locale }) {
               <ul>
                 {copy.hackatrainPoints.map((point) => <li key={point}>{point}</li>)}
               </ul>
-              <a className="btn btn--sol" href={SUMATE_PRESELECT}>{copy.hackatrainCta}</a>
+              <Button variant="sol" asChild>
+                <a href={SUMATE_PRESELECT}>{copy.hackatrainCta}</a>
+              </Button>
             </div>
             <aside className="clock" aria-labelledby="clock-title">
               <p className="eyebrow" id="clock-title">{copy.countdownLabel}</p>
