@@ -10,5 +10,10 @@
   { "name": "area: infra", "color": "fbca04", "description": "Infraestructura y despliegue" },
   { "name": "area: api", "color": "c5def5", "description": "API" },
   { "name": "area: web", "color": "bfdadc", "description": "Sitio web" },
-  { "name": "area: email", "color": "f9d0c4", "description": "Correo" }
+  { "name": "area: email", "color": "f9d0c4", "description": "Correo" },
+  { "name": "clickup", "color": "6f42c1", "description": "Sincronizada desde ClickUp" },
+  { "name": "priority/urgent", "color": "b60205", "description": "Prioridad urgente" },
+  { "name": "priority/high", "color": "d93f0b", "description": "Prioridad alta" },
+  { "name": "priority/normal", "color": "fbca04", "description": "Prioridad normal" },
+  { "name": "priority/low", "color": "0e8a16", "description": "Prioridad baja" }
 ]

@@ -1,0 +1,35 @@
+name: GitHub to ClickUp
+
+on:
+  issues:
+    types: [opened, closed, reopened]
+  pull_request:
+    types: [opened, closed, reopened, ready_for_review]
+
+permissions:
+  issues: read
+  pull-requests: read
+  contents: read
+
+concurrency:
+  group: clickup-github-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: github-to-clickup
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
+      - name: Sync
+        env:
+          CLICKUP_API_TOKEN: ${{ secrets.CLICKUP_API_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: deno run --allow-net --allow-env --allow-read scripts/clickup-sync/cli.ts to-clickup
