@@ -885,6 +885,14 @@ a:hover {
   margin-top: var(--s-6);
 }
 
+.account-page {
+  max-width: 40rem;
+}
+
+.account-page h1 {
+  margin-bottom: var(--s-5);
+}
+
 .form {
   background: var(--bg);
   border: 1px solid var(--line);

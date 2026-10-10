@@ -1,4 +1,5 @@
 import { COPY, type Locale } from "../../src/copy.ts";
+import { Button } from "./ui/button.tsx";
 
 export function SiteHeader({ locale, path = "" }: { locale: Locale; path?: string }) {
   const copy = COPY[locale];
@@ -17,6 +18,12 @@ export function SiteHeader({ locale, path = "" }: { locale: Locale; path?: strin
           <a className="nav-section" href={`${home}#hackatrain`}>{copy.nav.hackatrain}</a>
           <a href={`${home}/blog`}>{copy.nav.blog}</a>
           <a className="nav-section" href={`${home}#sumate`}>{copy.nav.join}</a>
+          <Button variant="ghost" asChild>
+            <a href={`/${locale}/cuenta/ingresar`}>{copy.account.signIn}</a>
+          </Button>
+          <Button asChild>
+            <a href={`/${locale}/cuenta/crear`}>{copy.account.signUp}</a>
+          </Button>
           <a className="lang" href={`/${other}${path}`} lang={other} hrefLang={other} aria-label={`${copy.language}: ${other.toUpperCase()}`}>
             {other.toUpperCase()}
           </a>

@@ -95,6 +95,12 @@ Deno.test("la ficha única preselecciona desde el hash y exige una intención", 
   const header = Deno.readTextFileSync(new URL("../app/components/site-header.tsx", import.meta.url));
   assert(header.includes("#sumate"));
   assert(!header.includes("quiero="));
+  assert(header.includes("/cuenta/ingresar"));
+  assert(header.includes("/cuenta/crear"));
+  assertEquals(COPY.es.account.signIn, "Ingresar");
+  assertEquals(COPY.en.account.signIn, "Sign in");
+  assertEquals(COPY.es.account.signUp, "Crear cuenta");
+  assertEquals(COPY.en.account.signUp, "Create account");
   for (const locale of ["es", "en"] as const) {
     assert(!COPY[locale].joinLede.includes("Tres formas"));
     assert(!COPY[locale].joinLede.includes("Three ways"));
