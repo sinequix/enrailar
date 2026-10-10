@@ -2,6 +2,11 @@
 
 import { JOIN_INTENTS, type JoinIntent } from "@enrailar/shared";
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { Button } from "./components/ui/button.tsx";
+import { Checkbox } from "./components/ui/checkbox.tsx";
+import { Input } from "./components/ui/input.tsx";
+import { Label } from "./components/ui/label.tsx";
+import { Textarea } from "./components/ui/textarea.tsx";
 import {
   applySumateFlags,
   createSumateMemory,
@@ -111,6 +116,7 @@ export function SumateForm({
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [live, setLive] = useState(false);
+  const [consent, setConsent] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const memory = useSyncExternalStore(subscribeSumateMemory, getSumateMemory, getServerSumateMemory);
   const formActive = editing || memory === null;
@@ -155,6 +161,7 @@ export function SumateForm({
   function showAnother() {
     setEditing(true);
     setSelected([]);
+    setConsent(false);
     setErrors({});
     setStatus(null);
     applySumateFlags(getSumateMemory(), "editing");
@@ -193,7 +200,7 @@ export function SumateForm({
       link: String(data.get("link") ?? ""),
       message: String(data.get("message") ?? ""),
       locale,
-      consent: data.get("consent") === "on",
+      consent,
       turnstileToken: String(data.get("cf-turnstile-response") ?? ""),
       company_url: String(data.get("company_url") ?? ""),
     });
@@ -232,6 +239,7 @@ export function SumateForm({
       applySumateFlags(memoryNext, "saved");
       setEditing(false);
       setSelected([]);
+      setConsent(false);
       form.reset();
       setStatus(null);
       document.getElementById("sumate-saved-title")?.focus();
@@ -259,7 +267,7 @@ export function SumateForm({
         <span className="sumate-mask">{memory?.emailMask ?? ""}</span>
       </p>
       <div>
-        <button className="btn btn--ghost" type="button" onClick={showAnother}>{labels.alreadyAgain}</button>
+        <Button variant="ghost" type="button" onClick={showAnother}>{labels.alreadyAgain}</Button>
       </div>
     </section>
     <form ref={formRef} className="form sumate-form" method="post" onSubmit={onSubmit} aria-labelledby="sumate-title" noValidate>
@@ -272,24 +280,21 @@ export function SumateForm({
         <legend>{labels.intent}</legend>
         <div className="chips">
           {JOIN_INTENTS.map((intent) => (
-            <label className="chip" key={intent}>
-              <input
-                id={intent === "hackatrain" ? "sumate-intent-hackatrain" : undefined}
-                type="checkbox"
-                name="intents"
-                value={intent}
+            <Label className="chip" key={intent}>
+              <Checkbox
+                id={intent === "hackatrain" ? "sumate-intent-hackatrain" : `sumate-intent-${intent}`}
                 checked={selected.includes(intent)}
-                onChange={() => toggle(intent)}
+                onCheckedChange={() => toggle(intent)}
               />
               <span>{labels.intents[intent]}</span>
-            </label>
+            </Label>
           ))}
         </div>
         {fieldError("sumate-intents-error", errors.intents)}
       </fieldset>
-      <label className="field" htmlFor="sumate-email">
+      <Label className="field" htmlFor="sumate-email">
         {labels.email}
-        <input
+        <Input
           id="sumate-email"
           name="email"
           type="email"
@@ -299,10 +304,10 @@ export function SumateForm({
           onChange={() => clearField("email")}
         />
         {fieldError("sumate-email-error", errors.email)}
-      </label>
-      <label className="field" htmlFor="sumate-name">
+      </Label>
+      <Label className="field" htmlFor="sumate-name">
         {labels.name}
-        <input
+        <Input
           id="sumate-name"
           name="name"
           type="text"
@@ -313,10 +318,10 @@ export function SumateForm({
           onChange={() => clearField("name")}
         />
         {fieldError("sumate-name-error", errors.name)}
-      </label>
-      <label className="field" htmlFor="sumate-city">
+      </Label>
+      <Label className="field" htmlFor="sumate-city">
         {labels.city}
-        <input
+        <Input
           id="sumate-city"
           name="city"
           type="text"
@@ -327,10 +332,10 @@ export function SumateForm({
           onChange={() => clearField("city")}
         />
         {fieldError("sumate-city-error", errors.city)}
-      </label>
-      <label className="field" htmlFor="sumate-link">
+      </Label>
+      <Label className="field" htmlFor="sumate-link">
         {labels.link}
-        <input
+        <Input
           id="sumate-link"
           name="link"
           type="url"
@@ -341,10 +346,10 @@ export function SumateForm({
           onChange={() => clearField("link")}
         />
         {fieldError("sumate-link-error", errors.link)}
-      </label>
-      <label className="field" htmlFor="sumate-message">
+      </Label>
+      <Label className="field" htmlFor="sumate-message">
         {labels.message}
-        <textarea
+        <Textarea
           id="sumate-message"
           name="message"
           maxLength={4000}
@@ -353,23 +358,25 @@ export function SumateForm({
           onChange={() => clearField("message")}
         />
         {fieldError("sumate-message-error", errors.message)}
-      </label>
+      </Label>
       <label className="hp" aria-hidden="true">
         Company
         <input name="company_url" tabIndex={-1} autoComplete="off" />
       </label>
       <div className="field">
-        <label className="check" htmlFor="sumate-consent">
-          <input
+        <Label className="check">
+          <Checkbox
             id="sumate-consent"
-            name="consent"
-            type="checkbox"
+            checked={consent}
             aria-invalid={errors.consent ? true : undefined}
             aria-describedby={errors.consent ? "sumate-consent-error" : undefined}
-            onChange={() => clearField("consent")}
+            onCheckedChange={(value) => {
+              setConsent(value === true);
+              clearField("consent");
+            }}
           />
           <span>{labels.consent}</span>
-        </label>
+        </Label>
         {fieldError("sumate-consent-error", errors.consent)}
       </div>
       <div
@@ -380,7 +387,7 @@ export function SumateForm({
         {fieldError("sumate-turnstile-error", errors.turnstileToken)}
       </div>
       <div>
-        <button className="btn" type="submit" disabled={!live || busy}>{busy ? labels.sending : labels.send}</button>
+        <Button type="submit" disabled={!live || busy}>{busy ? labels.sending : labels.send}</Button>
       </div>
       {status ? (
         <p className={`status ${status.ok ? "status--ok" : "status--error"}`} role="status">{status.text}</p>

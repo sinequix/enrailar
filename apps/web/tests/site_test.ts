@@ -85,6 +85,13 @@ Deno.test("la ficha única preselecciona desde el hash y exige una intención", 
   }).success);
   const page = Deno.readTextFileSync(new URL("../app/[locale]/page.tsx", import.meta.url));
   assertEquals(page.match(/href=\{SUMATE_PRESELECT\}/g)?.length, 2);
+  assert(page.includes("components/ui/button.tsx"));
+  assert(page.includes("components/ui/card.tsx"));
+  const css = Deno.readTextFileSync(new URL("../app/globals.css", import.meta.url));
+  assert(css.includes("--azul-riel: #0e2a42"));
+  assert(css.includes("--sh-accent: var(--celeste-100)"));
+  assert(css.includes("--sh-accent: #143a5a"));
+  assert(!css.includes("@import \"tailwindcss/preflight\""));
   const header = Deno.readTextFileSync(new URL("../app/components/site-header.tsx", import.meta.url));
   assert(header.includes("#sumate"));
   assert(!header.includes("quiero="));
@@ -163,6 +170,9 @@ Deno.test("el recuerdo de Sumate no guarda el correo", () => {
   assert(!forms.includes("removeItem"));
   assert(forms.includes("aria-live"));
   assert(forms.includes('method="post"'));
+  assert(forms.includes("components/ui/input.tsx"));
+  assert(forms.includes("components/ui/checkbox.tsx"));
+  assert(forms.includes("components/ui/button.tsx"));
   const layout = Deno.readTextFileSync(new URL("../app/layout.tsx", import.meta.url));
   assert(layout.includes("sumateBootScript"));
 });
