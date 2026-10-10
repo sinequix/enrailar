@@ -58,6 +58,10 @@ export function sumateIssueFields(issues: ReadonlyArray<{ path: ReadonlyArray<Pr
 
 export type FormKind = "preinscripcion" | "contacto" | "newsletter";
 
+export function isTurnstileRejection(body: unknown): boolean {
+  return typeof body === "object" && body !== null && "error" in body && body.error === "turnstile";
+}
+
 export function apiOrigin(value: string | undefined): string {
   if (value && value.trim().length > 0) return value.replace(/\/$/, "");
   return "https://api.enrailar.com";

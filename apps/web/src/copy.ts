@@ -120,6 +120,8 @@ interface Copy {
   };
   turnstileMissing: string;
   turnstileLoading: string;
+  turnstileFailed: string;
+  turnstileRetry: string;
   language: string;
   footer: { about: string; mailboxes: string; project: string; code: string; license: string };
 }
@@ -270,6 +272,8 @@ export const COPY: Record<Locale, Copy> = {
     },
     turnstileMissing: "Falta la clave pública de Turnstile en este entorno.",
     turnstileLoading: "Cargando la verificación…",
+    turnstileFailed: "No se pudo verificar. Reintentá.",
+    turnstileRetry: "Reintentar la verificación",
     language: "Idioma",
     footer: {
       about: "Enrailar es una iniciativa de Sinequix para recuperar los trenes de Argentina. Proyecto abierto, con código Apache-2.0.",
@@ -425,6 +429,8 @@ export const COPY: Record<Locale, Copy> = {
     },
     turnstileMissing: "This environment has no Turnstile site key.",
     turnstileLoading: "Loading verification…",
+    turnstileFailed: "Verification failed. Try again.",
+    turnstileRetry: "Retry verification",
     language: "Language",
     footer: {
       about: "Enrailar is a Sinequix initiative to restore Argentina's railways. An open project, with Apache-2.0 code.",
