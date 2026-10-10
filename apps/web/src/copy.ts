@@ -150,6 +150,27 @@ interface Copy {
     mismatch: string;
     failed: string;
   };
+  app: {
+    home: string;
+    profile: string;
+    security: string;
+    admin: string;
+    nav: string;
+    intents: string;
+    intentsEmpty: string;
+    news: string;
+    users: string;
+    submissions: string;
+    subscribers: string;
+    audit: string;
+    empty: string;
+    ban: string;
+    makeAdmin: string;
+    makeUser: string;
+    forbidden: string;
+    banned: string;
+    twoFactor: string;
+  };
   language: string;
   footer: { about: string; mailboxes: string; project: string; code: string; license: string };
 }
@@ -329,6 +350,27 @@ export const COPY: Record<Locale, Copy> = {
       signedOut: "Entrá para ver las sesiones, las passkeys y el segundo factor.",
       mismatch: "Las contraseñas no coinciden.",
       failed: "No se pudo completar. Revisá los datos.",
+    },
+    app: {
+      home: "Inicio",
+      profile: "Perfil",
+      security: "Seguridad",
+      admin: "Administración",
+      nav: "Cuenta",
+      intents: "Intenciones de Sumate",
+      intentsEmpty: "Todavía no hay una ficha de Sumate con este correo.",
+      news: "Novedades",
+      users: "Usuarios",
+      submissions: "Fichas de Sumate",
+      subscribers: "Suscriptores",
+      audit: "Auditoría",
+      empty: "Nada para mostrar.",
+      ban: "Banear",
+      makeAdmin: "Hacer admin",
+      makeUser: "Hacer user",
+      forbidden: "No tenés acceso.",
+      banned: "Baneada",
+      twoFactor: "2FA",
     },
     language: "Idioma",
     footer: {
@@ -514,6 +556,27 @@ export const COPY: Record<Locale, Copy> = {
       signedOut: "Sign in to see sessions, passkeys and the second factor.",
       mismatch: "The passwords do not match.",
       failed: "Could not finish. Check the fields.",
+    },
+    app: {
+      home: "Home",
+      profile: "Profile",
+      security: "Security",
+      admin: "Administration",
+      nav: "Account",
+      intents: "Sumate intents",
+      intentsEmpty: "There is no Sumate form for this email yet.",
+      news: "News",
+      users: "Users",
+      submissions: "Sumate forms",
+      subscribers: "Subscribers",
+      audit: "Audit log",
+      empty: "Nothing to show.",
+      ban: "Ban",
+      makeAdmin: "Make admin",
+      makeUser: "Make user",
+      forbidden: "You do not have access.",
+      banned: "Banned",
+      twoFactor: "2FA",
     },
     language: "Language",
     footer: {
