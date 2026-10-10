@@ -3,6 +3,7 @@ import {
   areaLocale,
   gateDecision,
   requestArea,
+  sessionFactor,
   type GateDecision,
   type RequestArea,
 } from "./auth-policy.ts";
@@ -20,33 +21,21 @@ export type Access =
   | { decision: "missing"; user: null }
   | { decision: Exclude<GateDecision, "missing">; user: AccessUser };
 
-function countOf(value: unknown): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "bigint") return Number(value);
-  return 0;
-}
-
-function flag(value: unknown): boolean {
-  return value === true || value === 1 || value === 1n;
-}
-
-async function loadUser(db: AppDatabase, userId: string): Promise<AccessUser | null> {
+async function loadUser(db: AppDatabase, userId: string, token: string): Promise<AccessUser | null> {
   const row = await db.prepare(
-    'SELECT email, name, role, "twoFactorEnabled" AS twoFactorEnabled FROM "user" WHERE id = ?',
-  ).bind(userId).first<{
+    `SELECT u.email AS email, u.name AS name, u.role AS role, s."authMethod" AS authMethod
+     FROM "user" u JOIN "session" s ON s."userId" = u.id
+     WHERE u.id = ? AND s.token = ?`,
+  ).bind(userId, token).first<{
     email: string;
     name: string;
     role: string | null;
-    twoFactorEnabled: number | boolean | null;
+    authMethod: string | null;
   }>();
   if (!row || typeof row.email !== "string") return null;
-  const passkeys = await db.prepare(
-    'SELECT COUNT(*) AS total FROM passkey WHERE "userId" = ?',
-  ).bind(userId).first<{ total: number }>();
   const decision = gateDecision({
     role: typeof row.role === "string" ? row.role : "user",
-    twoFactorEnabled: flag(row.twoFactorEnabled),
-    passkeys: countOf(passkeys?.total),
+    sessionFactor: sessionFactor(row.authMethod),
   });
   if (decision === "missing") return null;
   return {
@@ -74,8 +63,9 @@ export async function decideAccess(request: Request, env: AuthEnv): Promise<Acce
   const auth = createAuth(env, origin);
   const session = await auth.api.getSession({ headers: request.headers });
   const userId = session?.user && "id" in session.user && typeof session.user.id === "string" ? session.user.id : "";
-  if (userId.length === 0) return { decision: "missing", user: null };
-  const user = await loadUser(db, userId);
+  const token = session?.session && "token" in session.session && typeof session.session.token === "string" ? session.session.token : "";
+  if (userId.length === 0 || token.length === 0) return { decision: "missing", user: null };
+  const user = await loadUser(db, userId, token);
   if (!user || user.decision === "missing") return { decision: "missing", user: null };
   return { decision: user.decision, user };
 }
@@ -87,6 +77,12 @@ function forbidden(locale: "es" | "en"): Response {
     status: 403,
     headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
   });
+}
+
+export async function requireAdminAccess(request: Request, env: AuthEnv): Promise<Response | null> {
+  const access = await decideAccess(request, env);
+  if (access.decision === "ok") return null;
+  return forbidden(areaLocale(new URL(request.url).pathname));
 }
 
 export async function guardRequest(request: Request, env: AuthEnv): Promise<Response | null> {

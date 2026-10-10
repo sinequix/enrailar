@@ -7,8 +7,19 @@ import { guardRequest } from "../src/app-guard.ts";
 import { handleAuth } from "../src/auth-http.ts";
 import { requestArea } from "../src/auth-policy.ts";
 import { bindDb } from "../src/request-db.ts";
-import { securityHeaders } from "../src/security-headers.ts";
+import { inlineScriptHashes, securityHeaders, sumateScriptHash } from "../src/security-headers.ts";
 import { createMemoryDatabase } from "./memory-db.ts";
+
+function headContentType(args: unknown[] | null): string {
+  if (!args) return "";
+  for (const arg of args) {
+    if (!arg || typeof arg !== "object") continue;
+    for (const [key, value] of Object.entries(arg)) {
+      if (key.toLowerCase() === "content-type" && typeof value === "string") return value;
+    }
+  }
+  return "";
+}
 
 function migrationSql(): string {
   const dir = new URL("../../api/migrations/", import.meta.url);
@@ -66,8 +77,53 @@ export function authDevPlugin(): Plugin {
           },
         },
       };
+      // Vinext manda writeHead antes del HTML. Se retrasa para hashear los scripts inline.
       server.middlewares.use((_req, res, next) => {
-        for (const [name, value] of securityHeaders(false)) res.setHeader(name, value);
+        const chunks: Buffer[] = [];
+        const originalWrite = res.write;
+        const originalEnd = res.end;
+        const originalWriteHead = res.writeHead;
+        let ended = false;
+        let headArgs: unknown[] | null = null;
+        const take = (chunk: unknown) => {
+          if (Buffer.isBuffer(chunk)) chunks.push(chunk);
+          else if (chunk instanceof Uint8Array) chunks.push(Buffer.from(chunk));
+          else chunks.push(Buffer.from(String(chunk)));
+        };
+        res.writeHead = ((...args: unknown[]) => {
+          headArgs = args;
+          return res;
+        }) as typeof res.writeHead;
+        res.write = ((chunk: unknown) => {
+          if (chunk) take(chunk);
+          return true;
+        }) as typeof res.write;
+        res.end = ((chunk?: unknown, encoding?: unknown, callback?: unknown) => {
+          if (ended) return res;
+          ended = true;
+          const finish = typeof chunk === "function" ? chunk : typeof encoding === "function" ? encoding : typeof callback === "function" ? callback : undefined;
+          try {
+            if (typeof chunk !== "function" && chunk) take(chunk);
+            const body = Buffer.concat(chunks);
+            const declared = [String(res.getHeader("content-type") ?? ""), headContentType(headArgs)].join(" ");
+            const looksHtml = declared.includes("text/html") || body.subarray(0, 240).toString("utf8").toLowerCase().includes("<html");
+            const hashes = looksHtml
+              ? [...new Set([sumateScriptHash(), ...inlineScriptHashes(body.toString("utf8"))])]
+              : [sumateScriptHash()];
+            for (const [name, value] of securityHeaders(false, hashes)) res.setHeader(name, value);
+            res.write = originalWrite;
+            res.writeHead = originalWriteHead;
+            if (headArgs) originalWriteHead.apply(res, headArgs as []);
+            if (finish) return originalEnd.call(res, body, finish);
+            return originalEnd.call(res, body);
+          } catch (error) {
+            console.error(error);
+            res.write = originalWrite;
+            res.writeHead = originalWriteHead;
+            if (!res.headersSent) res.statusCode = 500;
+            return originalEnd.call(res, "csp");
+          }
+        }) as typeof res.end;
         next();
       });
       server.middlewares.use(async (req, res, next) => {
