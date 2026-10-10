@@ -139,6 +139,7 @@ Deno.test({
 
       const token = await mailToken();
       await page.goto(`${base}/es/cuenta/verificar?token=${encodeURIComponent(token)}`, { waitUntil: "domcontentloaded" });
+      await page.waitForSelector("form[data-live='1']");
       const verifyResponse = await clickAndWait(page, "button[type=submit]", "/api/auth/verify-email");
       await expectOk(verifyResponse);
 
