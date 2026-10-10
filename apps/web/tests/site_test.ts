@@ -99,6 +99,13 @@ Deno.test("la ficha única preselecciona desde el hash y exige una intención", 
   assert(header.includes("/cuenta/crear"));
   assertEquals(COPY.es.account.signIn, "Ingresar");
   assertEquals(COPY.en.account.signIn, "Sign in");
+  assertEquals(COPY.es.app.home, "Inicio");
+  assertEquals(COPY.en.app.home, "Home");
+  assertEquals(COPY.es.app.forbidden, "No tenés acceso.");
+  const sidebar = Deno.readTextFileSync(new URL("../app/components/ui/sidebar.tsx", import.meta.url));
+  assert(sidebar.includes('data-slot="sidebar"'));
+  const guard = Deno.readTextFileSync(new URL("../src/app-guard.ts", import.meta.url));
+  assert(guard.includes("status: 403"));
   assertEquals(COPY.es.account.signUp, "Crear cuenta");
   assertEquals(COPY.en.account.signUp, "Create account");
   for (const locale of ["es", "en"] as const) {

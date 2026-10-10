@@ -7,6 +7,7 @@ import {
   needsTurnstile,
   originAllowed,
   parseAdminEmails,
+  requestArea,
   roleForEmail,
   rpIdFor,
 } from "../src/auth-policy.ts";
@@ -52,6 +53,18 @@ Deno.test("login, registro y OTP tienen límite, y Turnstile va en registro y re
   assert(needsTurnstile("/sign-up/email"));
   assert(needsTurnstile("/forget-password"));
   assert(!needsTurnstile("/sign-in/email"));
+});
+
+Deno.test("el área de /app y /api/admin se decide por el path", () => {
+  assertEquals(requestArea("/es"), "public");
+  assertEquals(requestArea("/es/cuenta/ingresar"), "public");
+  assertEquals(requestArea("/es/app"), "session");
+  assertEquals(requestArea("/en/app/perfil"), "session");
+  assertEquals(requestArea("/en/app/seguridad"), "session");
+  assertEquals(requestArea("/es/app/admin"), "admin");
+  assertEquals(requestArea("/en/app/admin/usuarios"), "admin");
+  assertEquals(requestArea("/api/admin/role"), "admin");
+  assertEquals(requestArea("/api/auth/sign-in/email"), "public");
 });
 
 Deno.test("un user no pasa el guard de admin y un admin sin segundo factor tampoco", () => {
