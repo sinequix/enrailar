@@ -10,13 +10,39 @@ const job = {
   unsubscribePath: "/v1/newsletter/unsubscribe?token=def",
 };
 
+const origins = { api: "https://api.enrailar.com", web: "https://enrailar.com" };
+
 Deno.test("el correo de confirmación trae la baja en un clic", () => {
-  const rendered = renderMail(job, "https://api.enrailar.com");
-  assert(rendered);
-  assertEquals(rendered.from, "hola@enrailar.com");
-  assert(rendered.mime.includes("List-Unsubscribe: <https://api.enrailar.com/v1/newsletter/unsubscribe?token=def>"));
-  assert(rendered.mime.includes("List-Unsubscribe-Post: List-Unsubscribe=One-Click"));
-  assert(rendered.mime.includes("https://api.enrailar.com/v1/newsletter/confirm?token=abc"));
+  const rendered = renderMail(job, origins);
+  assertEquals(rendered.status, "ok");
+  if (rendered.status !== "ok") return;
+  assertEquals(rendered.mail.from, "hola@enrailar.com");
+  assert(rendered.mail.mime.includes("List-Unsubscribe: <https://api.enrailar.com/v1/newsletter/unsubscribe?token=def>"));
+  assert(rendered.mail.mime.includes("List-Unsubscribe-Post: List-Unsubscribe=One-Click"));
+  assert(rendered.mail.mime.includes("https://api.enrailar.com/v1/newsletter/confirm?token=abc"));
+});
+
+Deno.test("el correo de verificación usa el sitio y no la API", () => {
+  const rendered = renderMail({
+    kind: "auth.verify",
+    to: "hola@enrailar.com",
+    locale: "es",
+    path: "/es/cuenta/verificar?token=abc",
+  }, origins);
+  assertEquals(rendered.status, "ok");
+  if (rendered.status !== "ok") return;
+  assert(rendered.mail.mime.includes("https://enrailar.com/es/cuenta/verificar?token=abc"));
+  assert(!rendered.mail.mime.includes("api.enrailar.com"));
+});
+
+Deno.test("sin origen web el correo de auth se reintenta", () => {
+  const rendered = renderMail({
+    kind: "auth.reset",
+    to: "hola@enrailar.com",
+    locale: "en",
+    path: "/en/cuenta/recuperar?token=abc",
+  }, { api: "https://api.enrailar.com", web: "" });
+  assertEquals(rendered.status, "no-origin");
 });
 
 Deno.test("la cola no escribe el destinatario en el log", async () => {
@@ -26,7 +52,7 @@ Deno.test("la cola no escribe el destinatario en el log", async () => {
     body: job,
     ack() {},
     retry() {},
-  }], "https://api.enrailar.com", {
+  }], origins, {
     send(message) {
       sent.push(message.to);
       return Promise.resolve();
@@ -48,7 +74,7 @@ Deno.test("un mensaje inválido se descarta sin reintento", async () => {
     retry() {
       retried += 1;
     },
-  }], "https://api.enrailar.com", { send: () => Promise.resolve() }, () => undefined);
+  }], origins, { send: () => Promise.resolve() }, () => undefined);
   assertEquals(acked, 1);
   assertEquals(retried, 0);
 });

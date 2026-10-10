@@ -25,6 +25,7 @@ jobs:
       ACCESS_SERVICE_TOKEN_IDS: ${{ secrets.ACCESS_SERVICE_TOKEN_IDS }}
       POLICY_AUD: ${{ secrets.POLICY_AUD }}
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
+      ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -41,6 +42,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Install inbox
         run: npm ci --prefix apps/inbox
+      - name: Ephemeral auth secret
+        run: echo "BETTER_AUTH_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
       - name: Fail closed
         run: bash scripts/ci/require-secrets.sh
       - name: Deploy pr stage
@@ -67,6 +70,7 @@ jobs:
       ACCESS_SERVICE_TOKEN_IDS: ${{ secrets.ACCESS_SERVICE_TOKEN_IDS }}
       POLICY_AUD: ${{ secrets.POLICY_AUD }}
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
+      ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -81,6 +85,8 @@ jobs:
           cache: pnpm
       - name: Install
         run: pnpm install --frozen-lockfile
+      - name: Ephemeral auth secret
+        run: echo "BETTER_AUTH_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
       - name: Fail closed
         run: bash scripts/ci/require-secrets.sh
       - name: Destroy pr stage

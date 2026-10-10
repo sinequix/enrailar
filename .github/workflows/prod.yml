@@ -27,6 +27,8 @@ jobs:
       ACCESS_SERVICE_TOKEN_IDS: ${{ secrets.ACCESS_SERVICE_TOKEN_IDS }}
       POLICY_AUD: ${{ secrets.POLICY_AUD }}
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
