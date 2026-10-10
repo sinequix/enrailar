@@ -36,5 +36,9 @@ jobs:
         run: pnpm typecheck
       - name: Test
         run: pnpm test
+      - name: Install Playwright
+        run: pnpm --filter @enrailar/web exec playwright install chromium --with-deps
+      - name: E2E mobile
+        run: pnpm --filter @enrailar/web e2e
       - name: Build web
         run: pnpm --filter @enrailar/web build

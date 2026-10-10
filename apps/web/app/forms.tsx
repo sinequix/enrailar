@@ -13,11 +13,13 @@ import {
 import {
   apiOrigin,
   intentsFromHash,
+  isTurnstileRejection,
   parseSumate,
   SUMATE_PATH,
   sumateIssueFields,
   type SumateField,
 } from "../src/submit.ts";
+import { watchTurnstileScript, type TurnstileScriptDom, type TurnstileScriptHandle } from "../src/turnstile-script.ts";
 
 export interface Labels {
   intent: string;
@@ -40,47 +42,117 @@ export interface Labels {
   errors: Record<SumateField, string>;
   turnstileMissing: string;
   turnstileLoading: string;
+  turnstileFailed: string;
+  turnstileRetry: string;
+}
+
+interface TurnstileHandlers {
+  onToken(): void;
+  onFail(): void;
+  onExpire(): void;
+}
+
+interface TurnstileRenderOptions {
+  sitekey: string;
+  callback: () => void;
+  "error-callback": () => boolean;
+  "expired-callback": () => void;
 }
 
 interface TurnstileApi {
-  render: (el: HTMLElement, opts: { sitekey: string }) => string;
+  render: (el: HTMLElement, opts: TurnstileRenderOptions) => string;
+  reset: (widgetId: string) => void;
+  remove: (widgetId: string) => void;
 }
 
 function turnstileApi(): TurnstileApi | undefined {
   return (globalThis as { turnstile?: TurnstileApi }).turnstile;
 }
 
+function browserTurnstileDom(): TurnstileScriptDom {
+  const wrap = (element: HTMLScriptElement): TurnstileScriptHandle => ({
+    get loaded() {
+      return element.dataset.loaded === "1";
+    },
+    addLoadListener(listener) {
+      element.addEventListener("load", listener);
+    },
+    removeLoadListener(listener) {
+      element.removeEventListener("load", listener);
+    },
+    markLoaded() {
+      element.dataset.loaded = "1";
+    },
+    mount() {
+      document.head.appendChild(element);
+    },
+  });
+  return {
+    apiReady: () => Boolean(turnstileApi()),
+    findScript() {
+      const element = document.querySelector<HTMLScriptElement>("script[data-turnstile]");
+      return element ? wrap(element) : null;
+    },
+    createScript() {
+      const element = document.createElement("script");
+      element.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      element.async = true;
+      element.dataset.turnstile = "1";
+      return wrap(element);
+    },
+  };
+}
+
 /**
  * Carga el script de Turnstile una sola vez. Con `render=explicit` el widget se
- * monta a mano, así no importa si el script llega antes o después del contenedor.
+ * monta a mano. Si la ficha restaurada oculta el formulario mientras el script
+ * carga, el `load` no se vuelve a emitir: hay que mirar si la API ya está.
  */
 function useTurnstileScript(siteKey: string) {
   const [ready, setReady] = useState(() => Boolean(turnstileApi()));
   useEffect(() => {
     if (!siteKey || ready) return;
-    const existing = document.querySelector<HTMLScriptElement>("script[data-turnstile]");
-    const onLoad = () => setReady(true);
-    if (existing) {
-      existing.addEventListener("load", onLoad);
-      return () => existing.removeEventListener("load", onLoad);
-    }
-    const script = document.createElement("script");
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-    script.async = true;
-    script.dataset.turnstile = "1";
-    script.addEventListener("load", onLoad);
-    document.head.appendChild(script);
-    return () => script.removeEventListener("load", onLoad);
+    return watchTurnstileScript(browserTurnstileDom(), () => setReady(true));
   }, [siteKey, ready]);
   return ready;
 }
 
-function TurnstileSlot({ siteKey, ready, labels, pending }: { siteKey: string; ready: boolean; labels: Labels; pending: boolean }) {
+function TurnstileSlot({
+  siteKey,
+  ready,
+  labels,
+  pending,
+  handlers,
+  widgetId,
+}: {
+  siteKey: string;
+  ready: boolean;
+  labels: Labels;
+  pending: boolean;
+  handlers: { current: TurnstileHandlers };
+  widgetId: { current: string | null };
+}) {
   const [node, setNode] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!node || !siteKey || !ready || node.childElementCount > 0) return;
-    turnstileApi()?.render(node, { sitekey: siteKey });
-  }, [node, siteKey, ready]);
+    const api = turnstileApi();
+    if (!api) return;
+    const id = api.render(node, {
+      sitekey: siteKey,
+      callback: () => handlers.current.onToken(),
+      "error-callback": () => {
+        handlers.current.onFail();
+        return false;
+      },
+      "expired-callback": () => handlers.current.onExpire(),
+    });
+    if (!id) return;
+    widgetId.current = id;
+    return () => {
+      if (widgetId.current === id) widgetId.current = null;
+      api.remove(id);
+    };
+  }, [node, siteKey, ready, handlers, widgetId]);
   if (!siteKey) {
     return <p className="note">{pending ? labels.turnstileLoading : labels.turnstileMissing}</p>;
   }
@@ -111,10 +183,21 @@ export function SumateForm({
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [live, setLive] = useState(false);
+  const [turnstileDown, setTurnstileDown] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const widgetId = useRef<string | null>(null);
   const memory = useSyncExternalStore(subscribeSumateMemory, getSumateMemory, getServerSumateMemory);
   const formActive = editing || memory === null;
   const ready = useTurnstileScript(siteKey && formActive ? siteKey : "");
+  const turnstileHandlers = useRef<TurnstileHandlers>({
+    onToken: () => setTurnstileDown(false),
+    onFail: () => setTurnstileDown(true),
+    onExpire: () => {
+      const id = widgetId.current;
+      const api = turnstileApi();
+      if (id && api) api.reset(id);
+    },
+  });
 
   useEffect(() => {
     setLive(true);
@@ -157,9 +240,19 @@ export function SumateForm({
     setSelected([]);
     setErrors({});
     setStatus(null);
+    setTurnstileDown(false);
     applySumateFlags(getSumateMemory(), "editing");
     formRef.current?.reset();
     document.getElementById("sumate-intent-hackatrain")?.focus();
+  }
+
+  function retryTurnstile() {
+    const id = widgetId.current;
+    const api = turnstileApi();
+    if (id && api) api.reset(id);
+    setTurnstileDown(false);
+    setErrors((current) => ({ ...current, turnstileToken: undefined }));
+    setStatus(null);
   }
 
   function toggle(intent: JoinIntent) {
@@ -212,6 +305,14 @@ export function SumateForm({
       });
       if (!response.ok) {
         const body: unknown = await response.json().catch(() => null);
+        if (isTurnstileRejection(body)) {
+          setTurnstileDown(true);
+          const id = widgetId.current;
+          const api = turnstileApi();
+          if (id && api) api.reset(id);
+          setStatus(null);
+          return;
+        }
         const raw = body && typeof body === "object" && "fields" in body && Array.isArray(body.fields)
           ? body.fields.filter((item): item is string => typeof item === "string")
           : [];
@@ -373,11 +474,23 @@ export function SumateForm({
         {fieldError("sumate-consent-error", errors.consent)}
       </div>
       <div
-        aria-invalid={errors.turnstileToken ? true : undefined}
-        aria-describedby={errors.turnstileToken ? "sumate-turnstile-error" : undefined}
+        aria-invalid={errors.turnstileToken || turnstileDown ? true : undefined}
+        aria-describedby={errors.turnstileToken || turnstileDown ? "sumate-turnstile-error" : undefined}
       >
-        <TurnstileSlot siteKey={formActive ? siteKey : ""} ready={ready} labels={labels} pending={siteKeyPending} />
-        {fieldError("sumate-turnstile-error", errors.turnstileToken)}
+        <TurnstileSlot
+          siteKey={formActive ? siteKey : ""}
+          ready={ready}
+          labels={labels}
+          pending={siteKeyPending}
+          handlers={turnstileHandlers}
+          widgetId={widgetId}
+        />
+        {turnstileDown ? (
+          <>
+            <p id="sumate-turnstile-error" className="field-error" role="alert">{labels.turnstileFailed}</p>
+            <button id="sumate-turnstile-retry" className="btn btn--ghost" type="button" onClick={retryTurnstile}>{labels.turnstileRetry}</button>
+          </>
+        ) : fieldError("sumate-turnstile-error", errors.turnstileToken)}
       </div>
       <div>
         <button className="btn" type="submit" disabled={!live || busy}>{busy ? labels.sending : labels.send}</button>

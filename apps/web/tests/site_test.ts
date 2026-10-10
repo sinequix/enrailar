@@ -9,7 +9,13 @@ import {
   SUMATE_MEMORY_KEY,
   sumateBootScript,
 } from "../src/sumate-memory.ts";
-import { apiOrigin, formPath, intentsFromHash, parseSubmission, parseSumate, SUMATE_PATH, SUMATE_PRESELECT } from "../src/submit.ts";
+import { apiOrigin, formPath, intentsFromHash, isTurnstileRejection, parseSubmission, parseSumate, SUMATE_PATH, SUMATE_PRESELECT } from "../src/submit.ts";
+
+Deno.test("un rechazo de Turnstile se distingue de la validación", () => {
+  assertEquals(isTurnstileRejection({ ok: false, error: "turnstile" }), true);
+  assertEquals(isTurnstileRejection({ ok: false, error: "validation", fields: ["email"] }), false);
+  assertEquals(isTurnstileRejection(null), false);
+});
 
 Deno.test("el hackatrain muestra el mes y no una fecha", () => {
   assertEquals(ARTICLE_URL, "https://x.com/tebayoso/status/2107894676426559739");

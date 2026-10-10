@@ -71,6 +71,8 @@ function HomePage({ locale }: { locale: Locale }) {
     errors: copy.errors,
     turnstileMissing: copy.turnstileMissing,
     turnstileLoading: copy.turnstileLoading,
+    turnstileFailed: copy.turnstileFailed,
+    turnstileRetry: copy.turnstileRetry,
   };
   const digitLabels: [string, string, string, string] = locale === "es"
     ? ["días", "horas", "min", "seg"]

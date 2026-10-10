@@ -9,5 +9,7 @@ dist/
 .next/
 apps/web/next-env.d.ts
 .turbo/
+apps/web/test-results/
+apps/web/playwright-report/
 *.log
 .DS_Store
