@@ -7,6 +7,7 @@ import { guardRequest } from "../src/app-guard.ts";
 import { handleAuth } from "../src/auth-http.ts";
 import { requestArea } from "../src/auth-policy.ts";
 import { bindDb } from "../src/request-db.ts";
+import { securityHeaders } from "../src/security-headers.ts";
 import { createMemoryDatabase } from "./memory-db.ts";
 
 function migrationSql(): string {
@@ -65,6 +66,10 @@ export function authDevPlugin(): Plugin {
           },
         },
       };
+      server.middlewares.use((_req, res, next) => {
+        for (const [name, value] of securityHeaders(false)) res.setHeader(name, value);
+        next();
+      });
       server.middlewares.use(async (req, res, next) => {
         const path = (req.url ?? "/").split("?")[0] ?? "/";
         const auth = path.startsWith("/api/auth");
