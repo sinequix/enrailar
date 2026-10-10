@@ -80,6 +80,23 @@ export interface GateUser {
 
 export type GateDecision = "missing" | "forbidden" | "setup" | "ok";
 
+export type RequestArea = "public" | "session" | "admin";
+
+/** `/app` pide sesión. `/app/admin` y `/api/admin` piden el guard de admin. */
+export function requestArea(pathname: string): RequestArea {
+  if (pathname === "/api/admin" || pathname.startsWith("/api/admin/")) return "admin";
+  const match = /^\/(es|en)\/app(\/.*)?$/.exec(pathname);
+  if (!match) return "public";
+  const rest = match[2] ?? "";
+  if (rest === "/admin" || rest.startsWith("/admin/")) return "admin";
+  return "session";
+}
+
+export function areaLocale(pathname: string): "es" | "en" {
+  if (pathname === "/en" || pathname.startsWith("/en/")) return "en";
+  return "es";
+}
+
 /** Admin entra a /app/admin solo con 2FA o una passkey. El resto recibe 403. */
 export function gateDecision(user: GateUser | undefined): GateDecision {
   if (!user) return "missing";
