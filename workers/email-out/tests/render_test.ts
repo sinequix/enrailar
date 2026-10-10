@@ -32,7 +32,9 @@ Deno.test("el correo de verificación usa el sitio y no la API", () => {
   assertEquals(rendered.status, "ok");
   if (rendered.status !== "ok") return;
   assert(rendered.mail.mime.includes("https://enrailar.com/es/cuenta/verificar?token=abc"));
-  assert(!rendered.mail.mime.includes("api.enrailar.com"));
+  const hosts = [...rendered.mail.mime.matchAll(/https:\/\/[^\s>]+/g)].map((match) => new URL(match[0]).hostname);
+  assert(hosts.some((host) => host === "enrailar.com"));
+  assert(hosts.every((host) => host !== "api.enrailar.com"));
 });
 
 Deno.test("sin origen web el correo de auth se reintenta", () => {

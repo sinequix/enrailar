@@ -40,7 +40,7 @@ Los carga Jorge en los secretos del entorno de GitHub que usa el workflow de pro
 | `BETTER_AUTH_SECRET` | Firma cookies y tokens. Obligatorio para desplegar. `require-secrets.sh` corta si falta. |
 | `ADMIN_EMAILS` | Correos, separados por coma, que nacen como `admin`. Puede ir vacío. No está en `require-secrets.sh`. |
 
-El preview no usa el secreto de prod. Antes de `require-secrets.sh`, el workflow de preview escribe un `BETTER_AUTH_SECRET` efímero (`openssl rand -base64 32`) en el entorno del job, tanto al desplegar como al destruir el stage `pr-N`. Ese valor no se commitea y el workflow de prod no lo genera: ahí se lee `secrets.BETTER_AUTH_SECRET`.
+El preview no usa el secreto de prod. Antes de `require-secrets.sh`, el workflow de preview genera un `BETTER_AUTH_SECRET` efímero (`openssl rand -base64 32`), lo enmascara con `::add-mask::` y recién entonces lo escribe en el entorno del job, tanto al desplegar como al destruir el stage `pr-N`. Así el log de los pasos siguientes no imprime el valor. Ese secreto no se commitea y el workflow de prod no lo genera: ahí se lee `secrets.BETTER_AUTH_SECRET`.
 
 `TURNSTILE_SECRET_KEY` sigue siendo el secreto del widget que Alchemy ya crea. No es un secreto nuevo para cargar a mano.
 
