@@ -20,6 +20,22 @@ export const LABEL_COLORS: Readonly<Record<string, string>> = {
   "priority/high": "d93f0b",
   "priority/normal": "fbca04",
   "priority/low": "0e8a16",
+  "agent:plan": "1d76db",
+  "agent:plan-review": "5319e7",
+  "agent:ready": "0e8a16",
+  "agent:building": "fbca04",
+  "agent:approved": "0e8a16",
+  "needs:human": "d93f0b",
+};
+
+export const LABEL_DESCRIPTIONS: Readonly<Record<string, string>> = {
+  clickup: "Sincronizada desde ClickUp",
+  "agent:plan": "Pedir plan, sin código",
+  "agent:plan-review": "Revisión del plan",
+  "agent:ready": "Plan aprobado, listo para implementar",
+  "agent:building": "Implementación en curso",
+  "agent:approved": "Aprobación de la revisión",
+  "needs:human": "Hace falta una persona",
 };
 
 export function priorityLabel(priority: number | null): string | null {
@@ -55,11 +71,19 @@ export function labelsForNewIssue(
   return [...labels];
 }
 
+export function isWorkflowLabel(name: string): boolean {
+  const lower = name.trim().toLowerCase();
+  return lower.startsWith("agent:") || lower === "needs:human";
+}
+
 export function tagsFromLabels(labels: readonly string[]): string[] {
   const tags: string[] = [];
   for (const label of labels) {
     const lower = label.trim().toLowerCase();
-    if (lower === CLICKUP_LABEL || lower.startsWith("priority/")) continue;
+    if (
+      lower === CLICKUP_LABEL || lower.startsWith("priority/") ||
+      isWorkflowLabel(lower)
+    ) continue;
     const tag = sanitizeLabel(label);
     if (!tag) continue;
     tags.push(tag.toLowerCase());

@@ -74,9 +74,14 @@ Labels del issue nuevo:
 Esas labels están declaradas en [`.github/labels.json`](../.github/labels.json).
 Si falta alguna al crear el issue, el workflow la crea.
 
-Después, las labels del issue (salvo `clickup` y `priority/*`) vuelven como tags
-de la tarea. `priority/*` actualiza la prioridad. Quitar esa label no la borra
-en ClickUp: la API espera un entero y no un valor vacío.
+Después, las labels del issue (salvo `clickup`, `priority/*`, `agent:*` y
+`needs:human`) vuelven como tags de la tarea. `priority/*` actualiza la
+prioridad. Quitar esa label no la borra en ClickUp: la API espera un entero y no
+un valor vacío.
+
+Un issue que nace abierto lleva también `agent:plan`. El flujo de plan, revisión
+e implementación está en [agent-workflow.md](agent-workflow.md). El mapeo de
+estados de esta página no cambia.
 
 ## Link de vuelta
 
@@ -137,6 +142,11 @@ Permisos del workflow que escribe issues: `issues: write`,
 Si `CLICKUP_API_TOKEN` no está, el proceso imprime un aviso y termina en cero.
 No rompe el CI. El schedule de GitHub solo corre desde `main`, después del
 merge.
+
+Al crear un issue abierto, si existe `AGENT_MENTION_TOKEN`, la misma corrida
+publica la mención de plan. Un issue creado con `GITHUB_TOKEN` no dispara otro
+workflow. Si ese secreto no está, la sync avisa y sigue: el issue queda con
+`agent:plan` y la mención espera a que el secreto exista.
 
 El script también acepta `--dry-run`: lee y no escribe.
 

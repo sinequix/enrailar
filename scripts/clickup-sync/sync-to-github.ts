@@ -1,3 +1,5 @@
+import { AGENT_PLAN } from "./agent.ts";
+import { postInitialPlanRequest } from "./agent-run.ts";
 import { statusesFor, type SyncContext } from "./context.ts";
 import type { GithubIssue } from "./github.ts";
 import { labelsForNewIssue } from "./labels.ts";
@@ -103,6 +105,9 @@ async function ensureIssue(
     console.warn(`task=${task.id} sin par para clickupUserId=${person.id}`);
     return [];
   });
+  const close = initialGithubClose(task.status, task.statusType);
+  const labels = labelsForNewIssue(task.tags, task.priority);
+  if (close === "open") labels.push(AGENT_PLAN);
   let issue = await ctx.github.createIssue({
     title: issueTitle(task.name, task.id),
     body: buildIssueBody({
@@ -110,10 +115,9 @@ async function ensureIssue(
       taskUrl: task.url,
       markdown: task.markdown,
     }),
-    labels: labelsForNewIssue(task.tags, task.priority),
+    labels,
     assignees,
   });
-  const close = initialGithubClose(task.status, task.statusType);
   if (close !== "open") {
     const stateReason = close === "not_planned" ? "not_planned" : "completed";
     await ctx.github.updateIssue(issue.number, {
@@ -127,6 +131,9 @@ async function ensureIssue(
   }
   index.set(task.id, issue);
   console.log(`task=${task.id} issue=#${issue.number} action=created`);
+  if (issue.state === "open" && issue.number > 0) {
+    await postInitialPlanRequest(issue.number, ctx.repo, ctx.dryRun);
+  }
 }
 
 async function linkSubtasks(
