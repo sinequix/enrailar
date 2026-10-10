@@ -155,6 +155,7 @@ export function SignUpForm({
 export function VerifyForm({ labels, token }: { labels: AccountLabels; token: string }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const live = useLive();
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -165,9 +166,9 @@ export function VerifyForm({ labels, token }: { labels: AccountLabels; token: st
   }
 
   return (
-    <form className="form" method="post" onSubmit={onSubmit}>
+    <form className="form" method="post" data-live={live ? "1" : "0"} onSubmit={onSubmit}>
       <p className="hint">{labels.verifyBody}</p>
-      <Button type="submit" disabled={busy || token.length === 0}>{labels.verifyAction}</Button>
+      <Button type="submit" disabled={busy || !live || token.length === 0}>{labels.verifyAction}</Button>
       {statusLine(message)}
     </form>
   );

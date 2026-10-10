@@ -17,6 +17,9 @@
     "@enrailar/shared": "./packages/shared/src/index.ts",
     "zod": "npm:zod@4.6.5",
     "playwright-core": "npm:playwright-core@1.56.1",
+    "better-auth": "npm:better-auth@1.7.7",
+    "better-auth/": "npm:/better-auth@1.7.7/",
+    "@better-auth/passkey": "npm:@better-auth/passkey@1.7.7",
     "cloudflare:node": "./apps/api/src/shims/cloudflare-node.ts",
     "cloudflare:workers": "./apps/api/src/shims/cloudflare-workers.ts"
   }
