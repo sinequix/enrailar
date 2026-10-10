@@ -19,7 +19,7 @@ import {
   rpIdFor,
   sessionIsFresh,
 } from "../src/auth-policy.ts";
-import { cspScriptHash, securityHeaders, sumateScriptHash } from "../src/security-headers.ts";
+import { cspScriptHash, inlineScriptHashes, securityHeaders, sumateScriptHash } from "../src/security-headers.ts";
 import { sumateBootScript } from "../src/sumate-memory.ts";
 
 const now = Date.parse("2026-10-10T12:00:00.000Z");
@@ -156,6 +156,13 @@ Deno.test("la auditoría anota el fallo de login sin pedir el correo", () => {
   assert(!factor.toLowerCase().includes("drop"));
   assert(!sql.toLowerCase().includes("drop table"));
   assert(!sql.includes("preinscriptions"));
+});
+
+Deno.test("un script con espacio antes del cierre entra al hash", () => {
+  assertEquals(inlineScriptHashes("<script>alert(1)</script >"), [cspScriptHash("alert(1)")]);
+  assertEquals(inlineScriptHashes("<SCRIPT>alert(1)</SCRIPT\t>"), [cspScriptHash("alert(1)")]);
+  assertEquals(inlineScriptHashes('<script src="/app.js"></script >'), []);
+  assertEquals(inlineScriptHashes("<script>  </script >"), []);
 });
 
 Deno.test("la web manda CSP, HSTS y frame-ancestors", () => {

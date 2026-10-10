@@ -66,6 +66,10 @@ function mailToken(jobs: MailJob[]): string {
   return new URL(job.path, origin).searchParams.get("token") ?? "";
 }
 
+function httpHosts(source: string): string[] {
+  return [...source.matchAll(/https?:\/\/[^\s"'<>]+/g)].map((match) => new URL(match[0]).hostname);
+}
+
 function cookieJar(response: Response, previous = ""): string {
   const map = new Map<string, string>();
   for (const part of previous.split(";").map((item) => item.trim()).filter(Boolean)) {
@@ -361,6 +365,10 @@ Deno.test("prod no pone el secreto en el job y CI no baja Chrome sin pin", () =>
   assertEquals(prod.indexOf("BETTER_AUTH_SECRET"), prod.indexOf("name: Deploy prod") < prod.indexOf("BETTER_AUTH_SECRET") ? prod.indexOf("BETTER_AUTH_SECRET") : -1);
   const ci = Deno.readTextFileSync(new URL("../../../.github/workflows/ci.yml", import.meta.url));
   assert(!ci.includes("google-chrome-stable"));
-  assert(!ci.includes("dl.google.com"));
+  assert(httpHosts(ci).every((host) => host !== "dl.google.com"));
+  const probe = httpHosts("https://dl.google.com/linux/chrome.deb https://dl.google.com.evil.test/pkg https://cdn.example/dl.google.com");
+  assertEquals(probe.filter((host) => host === "dl.google.com"), ["dl.google.com"]);
+  assert(probe.some((host) => host === "dl.google.com.evil.test"));
+  assert(probe.some((host) => host === "cdn.example"));
   assert(ci.includes("playwright-core install chromium"));
 });
