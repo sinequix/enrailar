@@ -3,6 +3,7 @@
   "specifiers": {
     "jsr:@std/assert@^1.0.19": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
+    "npm:playwright-core@1.56.1": "1.56.1",
     "npm:turbo@2.11.7": "2.11.7",
     "npm:typescript@7.0.2": "7.0.2",
     "npm:zod@4.6.5": "4.6.5"
@@ -149,6 +150,10 @@
       "os": ["win32"],
       "cpu": ["x64"]
     },
+    "playwright-core@1.56.1": {
+      "integrity": "sha512-hutraynyn31F+Bifme+Ps9Vq59hKuUCz7H1kDOcBs+2oGguKkWTU50bBWrtz34OUWmIwpBTWDxaRPXrIXkgvmQ==",
+      "bin": true
+    },
     "turbo@2.11.7": {
       "integrity": "sha512-RhXHbqfvY6o3xt/zSHCwSNwLrZlXiqHzewi4eAj9PtZ1T1CqgMJ2yIDb7SKPTG9IikTm925mfzL6hldQVdyNWw==",
       "optionalDependencies": [
@@ -194,6 +199,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@^1.0.19",
+      "npm:playwright-core@1.56.1",
       "npm:zod@4.6.5"
     ],
     "packageJson": {

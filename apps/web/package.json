@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "deno lint --config ../../deno.json src tests",
     "typecheck": "tsc --noEmit",
-    "test": "deno test --allow-env --allow-read --config ../../deno.json tests"
+    "test": "DENO_JOBS=1 deno test --allow-env --allow-read --allow-net --allow-run --allow-write --allow-sys --config ../../deno.json tests"
   },
   "dependencies": {
     "@better-auth/passkey": "1.7.7",

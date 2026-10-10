@@ -48,6 +48,7 @@ export function SignInForm({ locale, labels, emailLabel }: { locale: Locale; lab
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const live = useLive();
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -59,7 +60,7 @@ export function SignInForm({ locale, labels, emailLabel }: { locale: Locale; lab
   }
 
   return (
-    <form className="form" method="post" onSubmit={onSubmit}>
+    <form className="form" method="post" data-live={live ? "1" : "0"} onSubmit={onSubmit}>
       <Label className="field" htmlFor="account-email">
         {emailLabel}
         <Input id="account-email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
@@ -68,7 +69,7 @@ export function SignInForm({ locale, labels, emailLabel }: { locale: Locale; lab
         {labels.password}
         <Input id="account-password" name="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={12} />
       </Label>
-      <Button type="submit" disabled={busy}>{labels.submitSignIn}</Button>
+      <Button type="submit" disabled={busy || !live}>{labels.submitSignIn}</Button>
       <p className="hint"><a href={`/${locale}/cuenta/recuperar`}>{labels.forgot}</a></p>
       {statusLine(message)}
     </form>
