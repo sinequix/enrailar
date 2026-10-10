@@ -1,6 +1,6 @@
 import { HttpStatusError, readJson, sendWithRetry } from "./http.ts";
 import { asArray, asRecord, asString, idString } from "./json.ts";
-import { CLICKUP_LABEL, LABEL_COLORS } from "./labels.ts";
+import { LABEL_COLORS, LABEL_DESCRIPTIONS } from "./labels.ts";
 import { nextLink, type RepositoryName } from "./references.ts";
 import { normalizeCloseReason, type PullRequestRef } from "./state.ts";
 
@@ -16,7 +16,28 @@ export type GithubIssue = {
   htmlUrl: string;
   labels: string[];
   assignees: string[];
+  isPullRequest: boolean;
 };
+
+export type GithubComment = {
+  id: number;
+  author: string;
+  body: string;
+};
+
+export type PullReview = {
+  id: number;
+  author: string;
+  state: string;
+};
+
+export type PullDetails = PullRequestRef & {
+  title: string;
+  body: string;
+  headSha: string;
+};
+
+export type CiState = "pending" | "success" | "failure";
 
 export type CreateIssueInput = {
   title: string;
@@ -87,6 +108,7 @@ export class GithubClient {
         htmlUrl: "",
         labels: input.labels,
         assignees: input.assignees,
+        isPullRequest: false,
       };
     }
     const payload: Record<string, unknown> = {
@@ -165,9 +187,7 @@ export class GithubClient {
         await this.#send("POST", `${API}/repos/${this.#slug}/labels`, {
           name,
           color: LABEL_COLORS[name] ?? "ededed",
-          description: name === CLICKUP_LABEL
-            ? "Sincronizada desde ClickUp"
-            : "",
+          description: LABEL_DESCRIPTIONS[name] ?? "",
         });
       } catch (createError) {
         if (
@@ -296,6 +316,157 @@ export class GithubClient {
     this.#pulls.set(pullRequest.number, pullRequest);
   }
 
+  async listComments(number: number): Promise<GithubComment[]> {
+    const comments: GithubComment[] = [];
+    const seen = new Set<string>();
+    let url: string | null =
+      `${API}/repos/${this.#slug}/issues/${number}/comments?per_page=100`;
+    while (url && !seen.has(url)) {
+      seen.add(url);
+      const { payload, next } = await this.#getPage(url);
+      for (const raw of asArray(payload)) {
+        const comment = parseComment(asRecord(raw));
+        if (comment) comments.push(comment);
+      }
+      url = next;
+    }
+    return comments;
+  }
+
+  async createComment(number: number, body: string): Promise<void> {
+    if (this.#dryRun) {
+      console.log(`dry-run issue=#${number} action=create-comment`);
+      return;
+    }
+    await this.#send(
+      "POST",
+      `${API}/repos/${this.#slug}/issues/${number}/comments`,
+      { body },
+    );
+  }
+
+  async addLabels(number: number, names: readonly string[]): Promise<void> {
+    if (names.length === 0) return;
+    for (const name of names) await this.ensureLabel(name);
+    if (this.#dryRun) {
+      console.log(`dry-run issue=#${number} action=add-labels`);
+      return;
+    }
+    await this.#send(
+      "POST",
+      `${API}/repos/${this.#slug}/issues/${number}/labels`,
+      { labels: [...names] },
+    );
+  }
+
+  async removeLabel(number: number, name: string): Promise<void> {
+    if (this.#dryRun) {
+      console.log(`dry-run issue=#${number} action=remove-label`);
+      return;
+    }
+    try {
+      await this.#send(
+        "DELETE",
+        `${API}/repos/${this.#slug}/issues/${number}/labels/${
+          encodeURIComponent(name)
+        }`,
+      );
+    } catch (error) {
+      if (error instanceof HttpStatusError && error.status === 404) return;
+      throw error;
+    }
+  }
+
+  async getPullDetails(number: number): Promise<PullDetails> {
+    const payload = asRecord(
+      await this.#get(`${API}/repos/${this.#slug}/pulls/${number}`),
+    );
+    const head = asRecord(payload?.head);
+    const details: PullDetails = {
+      number,
+      state: payload?.state === "closed" ? "closed" : "open",
+      merged: payload?.merged === true,
+      draft: payload?.draft === true,
+      url: asString(payload?.html_url) ??
+        `https://github.com/${this.#slug}/pull/${number}`,
+      title: asString(payload?.title) ?? "",
+      body: asString(payload?.body) ?? "",
+      headSha: asString(head?.sha) ?? "",
+    };
+    this.#pulls.set(number, {
+      number: details.number,
+      state: details.state,
+      merged: details.merged,
+      draft: details.draft,
+      url: details.url,
+    });
+    return details;
+  }
+
+  async listReviews(number: number): Promise<PullReview[]> {
+    const reviews: PullReview[] = [];
+    const seen = new Set<string>();
+    let url: string | null =
+      `${API}/repos/${this.#slug}/pulls/${number}/reviews?per_page=100`;
+    while (url && !seen.has(url)) {
+      seen.add(url);
+      const { payload, next } = await this.#getPage(url);
+      for (const raw of asArray(payload)) {
+        const review = parseReview(asRecord(raw));
+        if (review) reviews.push(review);
+      }
+      url = next;
+    }
+    return reviews;
+  }
+
+  async ciState(sha: string): Promise<CiState> {
+    if (!/^[0-9a-f]{7,40}$/i.test(sha)) return "pending";
+    const runs = await this.#checkRuns(sha);
+    if (runs.length > 0) return summarizeChecks(runs);
+    const status = asRecord(
+      await this.#get(
+        `${API}/repos/${this.#slug}/commits/${sha}/status`,
+      ),
+    );
+    const state = asString(status?.state);
+    switch (state) {
+      case "success":
+        return "success";
+      case "failure":
+      case "error":
+        return "failure";
+      case "pending":
+        return "pending";
+      default:
+        return "pending";
+    }
+  }
+
+  async #checkRuns(
+    sha: string,
+  ): Promise<{ status: string; conclusion: string | null }[]> {
+    const runs: { status: string; conclusion: string | null }[] = [];
+    const seen = new Set<string>();
+    let url: string | null =
+      `${API}/repos/${this.#slug}/commits/${sha}/check-runs?per_page=100`;
+    while (url && !seen.has(url)) {
+      seen.add(url);
+      const { payload, next } = await this.#getPage(url);
+      for (const raw of asArray(asRecord(payload)?.check_runs)) {
+        const record = asRecord(raw);
+        const status = asString(record?.status);
+        if (!status) continue;
+        runs.push({
+          status,
+          conclusion: asString(record?.conclusion),
+        });
+      }
+      url = next;
+    }
+    return runs;
+  }
+
   get #slug(): string {
     return `${this.#repo.owner}/${this.#repo.name}`;
   }
@@ -360,7 +531,54 @@ function parseIssue(
     htmlUrl: asString(record.html_url) ?? "",
     labels: parseLabels(record.labels),
     assignees: parseLogins(record.assignees),
+    isPullRequest: record.pull_request != null,
   };
+}
+
+function parseComment(
+  record: Record<string, unknown> | null,
+): GithubComment | null {
+  if (!record) return null;
+  const id = idString(record.id);
+  if (!id || !/^\d+$/.test(id)) return null;
+  const user = asRecord(record.user);
+  return {
+    id: Number(id),
+    author: asString(user?.login) ?? "",
+    body: asString(record.body) ?? "",
+  };
+}
+
+function parseReview(
+  record: Record<string, unknown> | null,
+): PullReview | null {
+  if (!record) return null;
+  const id = idString(record.id);
+  if (!id || !/^\d+$/.test(id)) return null;
+  const user = asRecord(record.user);
+  return {
+    id: Number(id),
+    author: asString(user?.login) ?? "",
+    state: asString(record.state) ?? "",
+  };
+}
+
+function summarizeChecks(
+  runs: readonly { status: string; conclusion: string | null }[],
+): CiState {
+  if (runs.some((run) => run.status !== "completed")) return "pending";
+  const failed = new Set([
+    "failure",
+    "timed_out",
+    "cancelled",
+    "action_required",
+    "stale",
+  ]);
+  if (runs.some((run) => run.conclusion && failed.has(run.conclusion))) {
+    return "failure";
+  }
+  if (runs.some((run) => run.conclusion === "success")) return "success";
+  return "pending";
 }
 
 function parseLabels(value: unknown): string[] {

@@ -15,5 +15,11 @@
   { "name": "priority/urgent", "color": "b60205", "description": "Prioridad urgente" },
   { "name": "priority/high", "color": "d93f0b", "description": "Prioridad alta" },
   { "name": "priority/normal", "color": "fbca04", "description": "Prioridad normal" },
-  { "name": "priority/low", "color": "0e8a16", "description": "Prioridad baja" }
+  { "name": "priority/low", "color": "0e8a16", "description": "Prioridad baja" },
+  { "name": "agent:plan", "color": "1d76db", "description": "Pedir plan, sin código" },
+  { "name": "agent:plan-review", "color": "5319e7", "description": "Revisión del plan" },
+  { "name": "agent:ready", "color": "0e8a16", "description": "Plan aprobado, listo para implementar" },
+  { "name": "agent:building", "color": "fbca04", "description": "Implementación en curso" },
+  { "name": "agent:approved", "color": "0e8a16", "description": "Aprobación de la revisión" },
+  { "name": "needs:human", "color": "d93f0b", "description": "Hace falta una persona" }
 ]
