@@ -120,6 +120,36 @@ interface Copy {
   };
   turnstileMissing: string;
   turnstileLoading: string;
+  account: {
+    signIn: string;
+    signUp: string;
+    password: string;
+    passwordAgain: string;
+    submitSignIn: string;
+    submitSignUp: string;
+    forgot: string;
+    verifyTitle: string;
+    verifyBody: string;
+    verifyAction: string;
+    recoverTitle: string;
+    recoverSend: string;
+    recoverChoose: string;
+    securityTitle: string;
+    passkey: string;
+    passkeyAdd: string;
+    totp: string;
+    totpOn: string;
+    totpOff: string;
+    confirm: string;
+    backup: string;
+    secretHint: string;
+    code: string;
+    sessions: string;
+    revoke: string;
+    signedOut: string;
+    mismatch: string;
+    failed: string;
+  };
   language: string;
   footer: { about: string; mailboxes: string; project: string; code: string; license: string };
 }
@@ -270,6 +300,36 @@ export const COPY: Record<Locale, Copy> = {
     },
     turnstileMissing: "Falta la clave pública de Turnstile en este entorno.",
     turnstileLoading: "Cargando la verificación…",
+    account: {
+      signIn: "Ingresar",
+      signUp: "Crear cuenta",
+      password: "Contraseña",
+      passwordAgain: "Repetir contraseña",
+      submitSignIn: "Ingresar",
+      submitSignUp: "Crear cuenta",
+      forgot: "Olvidé la contraseña",
+      verifyTitle: "Verificá tu correo",
+      verifyBody: "El enlace de verificación confirma la cuenta. Si no llegó, pedí otro desde el ingreso.",
+      verifyAction: "Verificar",
+      recoverTitle: "Recuperar el acceso",
+      recoverSend: "Enviar el enlace",
+      recoverChoose: "Guardar contraseña",
+      securityTitle: "Seguridad",
+      passkey: "Passkeys",
+      passkeyAdd: "Agregar passkey",
+      totp: "Código de un solo uso",
+      totpOn: "Activar",
+      totpOff: "Desactivar",
+      confirm: "Confirmar",
+      backup: "Códigos de respaldo",
+      secretHint: "Clave para la app de códigos",
+      code: "Código",
+      sessions: "Sesiones activas",
+      revoke: "Revocar",
+      signedOut: "Entrá para ver las sesiones, las passkeys y el segundo factor.",
+      mismatch: "Las contraseñas no coinciden.",
+      failed: "No se pudo completar. Revisá los datos.",
+    },
     language: "Idioma",
     footer: {
       about: "Enrailar es una iniciativa de Sinequix para recuperar los trenes de Argentina. Proyecto abierto, con código Apache-2.0.",
@@ -425,6 +485,36 @@ export const COPY: Record<Locale, Copy> = {
     },
     turnstileMissing: "This environment has no Turnstile site key.",
     turnstileLoading: "Loading verification…",
+    account: {
+      signIn: "Sign in",
+      signUp: "Create account",
+      password: "Password",
+      passwordAgain: "Repeat password",
+      submitSignIn: "Sign in",
+      submitSignUp: "Create account",
+      forgot: "Forgot password",
+      verifyTitle: "Verify your email",
+      verifyBody: "The verification link confirms the account. If it did not arrive, ask for another from sign in.",
+      verifyAction: "Verify",
+      recoverTitle: "Recover access",
+      recoverSend: "Send the link",
+      recoverChoose: "Save password",
+      securityTitle: "Security",
+      passkey: "Passkeys",
+      passkeyAdd: "Add passkey",
+      totp: "One-time code",
+      totpOn: "Turn on",
+      totpOff: "Turn off",
+      confirm: "Confirm",
+      backup: "Backup codes",
+      secretHint: "Key for the code app",
+      code: "Code",
+      sessions: "Active sessions",
+      revoke: "Revoke",
+      signedOut: "Sign in to see sessions, passkeys and the second factor.",
+      mismatch: "The passwords do not match.",
+      failed: "Could not finish. Check the fields.",
+    },
     language: "Language",
     footer: {
       about: "Enrailar is a Sinequix initiative to restore Argentina's railways. An open project, with Apache-2.0 code.",
