@@ -6,6 +6,7 @@ interface OutEnv {
     send(message: EmailMessage): Promise<unknown>;
   };
   PUBLIC_API_ORIGIN: string;
+  PUBLIC_WEB_ORIGIN: string;
 }
 
 function bindings(): OutEnv {
@@ -18,7 +19,10 @@ export default {
   },
   queue(batch: { messages: QueueMessage[] }): Promise<void> {
     const bound = bindings();
-    return handleQueue(batch.messages, bound.PUBLIC_API_ORIGIN, {
+    return handleQueue(batch.messages, {
+      api: bound.PUBLIC_API_ORIGIN,
+      web: bound.PUBLIC_WEB_ORIGIN,
+    }, {
       send(message) {
         return bound.SEND_EMAIL.send(new EmailMessage(message.from, message.to, message.mime)).then(() => undefined);
       },

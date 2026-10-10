@@ -148,6 +148,7 @@ export default Stack(
         DB: database,
         SEND_EMAIL: outbound,
         PUBLIC_API_ORIGIN: production ? `https://api.${DOMAIN}` : "",
+        PUBLIC_WEB_ORIGIN: production ? `https://${DOMAIN}` : "",
       },
     });
 
@@ -156,7 +157,13 @@ export default Stack(
       compatibility,
       ...domain(DOMAIN, [`www.${DOMAIN}`]),
       env: {
+        DB: database,
+        MAIL_QUEUE: mail,
         TURNSTILE_SITE_KEY: turnstile.sitekey,
+        TURNSTILE_SECRET_KEY: turnstile.secret,
+        BETTER_AUTH_SECRET: Config.Redacted("BETTER_AUTH_SECRET"),
+        ADMIN_EMAILS: yield* Config.String("ADMIN_EMAILS").pipe(Config.withDefault("")),
+        AUTH_PRODUCTION: production ? "1" : "0",
       },
     });
 

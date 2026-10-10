@@ -78,6 +78,7 @@ Deno.test("preinscripción, contacto y newsletter", async () => {
     assertEquals(jobs.length, 1);
     const job = jobs[0];
     assert(job);
+    assert(job.kind === "newsletter.confirm");
     const confirm = await fetch(`${base}${job.confirmPath}`);
     assertEquals(confirm.status, 200);
     assert((await confirm.text()).includes("confirmada"));

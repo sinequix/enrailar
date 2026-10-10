@@ -10,6 +10,7 @@ const names = [
   "ACCESS_ALLOWED_EMAILS",
   "POLICY_AUD",
   "TEAM_DOMAIN",
+  "BETTER_AUTH_SECRET",
 ];
 
 function run(env: Record<string, string>) {
