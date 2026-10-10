@@ -43,7 +43,10 @@ jobs:
       - name: Install inbox
         run: npm ci --prefix apps/inbox
       - name: Ephemeral auth secret
-        run: echo "BETTER_AUTH_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+        run: |
+          secret="$(openssl rand -base64 32)"
+          echo "::add-mask::${secret}"
+          echo "BETTER_AUTH_SECRET=${secret}" >> "$GITHUB_ENV"
       - name: Fail closed
         run: bash scripts/ci/require-secrets.sh
       - name: Deploy pr stage
@@ -86,7 +89,10 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
       - name: Ephemeral auth secret
-        run: echo "BETTER_AUTH_SECRET=$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+        run: |
+          secret="$(openssl rand -base64 32)"
+          echo "::add-mask::${secret}"
+          echo "BETTER_AUTH_SECRET=${secret}" >> "$GITHUB_ENV"
       - name: Fail closed
         run: bash scripts/ci/require-secrets.sh
       - name: Destroy pr stage
