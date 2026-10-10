@@ -1,0 +1,53 @@
+name: Agent orchestration
+
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened, labeled]
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+  pull_request_review:
+    types: [submitted]
+  check_suite:
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: read
+  contents: read
+  checks: read
+
+concurrency:
+  group: agent-orch-${{ github.event.issue.number || github.event.pull_request.number || github.event.check_suite.pull_requests[0].number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  orchestrate:
+    name: agent-orch
+    if: >-
+      (github.event_name != 'check_suite' ||
+      github.event.check_suite.pull_requests[0].number) &&
+      (github.event_name != 'issue_comment' ||
+      github.event.issue.pull_request ||
+      contains(toJSON(github.event.issue.labels), 'agent:') ||
+      contains(toJSON(github.event.issue.labels), 'needs:human'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
+      - name: Orchestrate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AGENT_MENTION_TOKEN: ${{ secrets.AGENT_MENTION_TOKEN }}
+          CLICKUP_API_TOKEN: ${{ secrets.CLICKUP_API_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number || github.event.check_suite.pull_requests[0].number }}
+        run: deno run --allow-net --allow-env --allow-read scripts/clickup-sync/cli.ts agent
