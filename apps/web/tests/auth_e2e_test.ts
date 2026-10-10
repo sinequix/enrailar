@@ -14,15 +14,7 @@ const adminEmail = ["mesa", host].join("@");
 function chromePath(): string {
   const fromEnv = Deno.env.get("CHROME_PATH");
   if (fromEnv && fromEnv.length > 0) return fromEnv;
-  for (const path of ["/usr/local/bin/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/google-chrome", "/usr/bin/chromium"]) {
-    try {
-      Deno.statSync(path);
-      return path;
-    } catch {
-      // siguiente candidato
-    }
-  }
-  throw new Error("falta Chrome");
+  return chromium.executablePath();
 }
 
 async function codeFor(secret: string): Promise<string> {
@@ -123,7 +115,9 @@ Deno.test({
       await waitForServer();
       const home = await fetch(`${base}/es`);
       const csp = home.headers.get("content-security-policy") ?? "";
+      const scriptSrc = csp.split(";").find((part) => part.trim().startsWith("script-src")) ?? "";
       assert(csp.includes("frame-ancestors 'none'"));
+      assert(!scriptSrc.includes("unsafe-inline"));
       assertEquals(home.headers.get("strict-transport-security"), null);
 
       browser = await chromium.launch({
@@ -234,6 +228,20 @@ async function adminSession(): Promise<string> {
   const token = await mailToken();
   const verify = await fetch(`${base}/api/auth/verify-email?token=${encodeURIComponent(token)}`, { headers: { origin: base } });
   assertEquals(verify.status, 200);
+  await Deno.remove(mailFile).catch(() => undefined);
+  const resetRequest = await fetch(`${base}/api/auth/request-password-reset`, {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: base, "x-turnstile-token": "XXXX.DUMMY.TOKEN.XXXX" },
+    body: JSON.stringify({ email: adminEmail, redirectTo: `${base}/es/cuenta/recuperar` }),
+  });
+  assertEquals(resetRequest.status, 200);
+  const resetToken = await mailToken();
+  const reset = await fetch(`${base}/api/auth/reset-password`, {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: base },
+    body: JSON.stringify({ newPassword: password, token: resetToken }),
+  });
+  assertEquals(reset.status, 200);
   const signin = await fetch(`${base}/api/auth/sign-in/email`, {
     method: "POST",
     headers: { "content-type": "application/json", origin: base },

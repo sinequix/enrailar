@@ -1,17 +1,26 @@
 import { assert, assertEquals } from "@std/assert";
 import {
+  adminMay,
+  auditAfter,
   auditKind,
+  cookieHasSession,
   gateDecision,
   isConsentAt,
+  isPluginAdminPath,
   isRateLimitedPath,
   needsTurnstile,
   originAllowed,
   parseAdminEmails,
+  passkeyRegistrationAllowed,
+  rateBucketIp,
   requestArea,
+  roleChangeAllowed,
   roleForEmail,
   rpIdFor,
+  sessionIsFresh,
 } from "../src/auth-policy.ts";
-import { securityHeaders } from "../src/security-headers.ts";
+import { cspScriptHash, securityHeaders, sumateScriptHash } from "../src/security-headers.ts";
+import { sumateBootScript } from "../src/sumate-memory.ts";
 
 const now = Date.parse("2026-10-10T12:00:00.000Z");
 
@@ -49,10 +58,18 @@ Deno.test("login, registro y OTP tienen límite, y Turnstile va en registro y re
   assert(isRateLimitedPath("/sign-up/email"));
   assert(isRateLimitedPath("/request-password-reset"));
   assert(isRateLimitedPath("/two-factor/verify-totp"));
+  assert(isRateLimitedPath("/send-verification-email"));
+  assert(isRateLimitedPath("/passkey/verify-registration"));
+  assert(isRateLimitedPath("/sign-in/passkey"));
+  assert(isRateLimitedPath("/reset-password"));
+  assert(isRateLimitedPath("/change-password"));
   assert(!isRateLimitedPath("/get-session"));
   assert(needsTurnstile("/sign-up/email"));
   assert(needsTurnstile("/forget-password"));
+  assert(needsTurnstile("/send-verification-email"));
   assert(!needsTurnstile("/sign-in/email"));
+  assert(isPluginAdminPath("/admin/set-role"));
+  assert(!isPluginAdminPath("/api/admin/role"));
 });
 
 Deno.test("el área de /app y /api/admin se decide por el path", () => {
@@ -67,22 +84,76 @@ Deno.test("el área de /app y /api/admin se decide por el path", () => {
   assertEquals(requestArea("/api/auth/sign-in/email"), "public");
 });
 
-Deno.test("un user no pasa el guard de admin y un admin sin segundo factor tampoco", () => {
+Deno.test("un user no pasa el guard y una passkey ajena tampoco abre la sesión", () => {
   assertEquals(gateDecision(undefined), "missing");
-  assertEquals(gateDecision({ role: "user", twoFactorEnabled: true, passkeys: 0 }), "forbidden");
-  assertEquals(gateDecision({ role: "admin", twoFactorEnabled: false, passkeys: 0 }), "setup");
-  assertEquals(gateDecision({ role: "admin", twoFactorEnabled: true, passkeys: 0 }), "ok");
-  assertEquals(gateDecision({ role: "admin", twoFactorEnabled: false, passkeys: 1 }), "ok");
+  assertEquals(gateDecision({ role: "user", sessionFactor: "totp" }), "forbidden");
+  assertEquals(gateDecision({ role: "admin", sessionFactor: null }), "setup");
+  assertEquals(gateDecision({ role: "admin", sessionFactor: "totp" }), "ok");
+  assertEquals(gateDecision({ role: "admin", sessionFactor: "passkey" }), "ok");
+  assertEquals(gateDecision({ role: "admin", sessionFactor: "backup" }), "ok");
 });
 
-Deno.test("la auditoría anota fallo, 2FA y cambio de rol sin pedir el correo", () => {
-  assertEquals(auditKind("/sign-in/email", 401, null), "auth.login_failed");
-  assertEquals(auditKind("/two-factor/verify-totp", 200, "enrailar.two_factor=1"), undefined);
-  assertEquals(auditKind("/two-factor/verify-totp", 200, "enrailar.session_token=1"), "auth.two_factor_on");
-  assertEquals(auditKind("/two-factor/disable", 200, null), "auth.two_factor_off");
-  assertEquals(auditKind("/admin/set-role", 200, null), "auth.role");
+Deno.test("la cookie de sesión se reconoce con y sin el prefijo Secure", () => {
+  assert(cookieHasSession("enrailar.session_token=1"));
+  assert(cookieHasSession("__Secure-enrailar.session_token=1"));
+  assert(!cookieHasSession("enrailar.two_factor=1"));
+  assert(!cookieHasSession(null));
+});
+
+Deno.test("el login con 2FA pendiente no se audita y el rol se anota una vez", () => {
+  const base = { ok: true, pendingTwoFactor: false, hadSession: false, roleInBody: false };
+  assertEquals(auditKind("/sign-in/email", 401), "auth.login_failed");
+  assertEquals(auditAfter({ ...base, path: "/sign-in/email", pendingTwoFactor: true }), undefined);
+  assertEquals(auditAfter({ ...base, path: "/sign-in/email" }), "auth.login");
+  assertEquals(auditAfter({ ...base, path: "/two-factor/verify-totp", hadSession: false }), "auth.login");
+  assertEquals(auditAfter({ ...base, path: "/two-factor/verify-totp", hadSession: true }), "auth.two_factor_on");
+  assertEquals(auditAfter({ ...base, path: "/two-factor/disable", hadSession: true }), "auth.two_factor_off");
+  assertEquals(auditAfter({ ...base, path: "/admin/set-role" }), "auth.role");
+  assertEquals(auditAfter({ ...base, path: "/admin/update-user", roleInBody: true }), "auth.role");
+  assertEquals(auditAfter({ ...base, path: "/admin/update-user" }), "auth.user_update");
+  assertEquals(auditAfter({ ...base, path: "/admin/create-user" }), "auth.user_create");
+  assertEquals(auditAfter({ ...base, path: "/admin/ban-user" }), "auth.ban");
+  assertEquals(auditAfter({ ...base, path: "/admin/remove-user" }), "auth.remove");
+});
+
+Deno.test("nadie se cambia el rol ni degrada al último admin", () => {
+  assert(!roleChangeAllowed({ actorId: "a", targetId: "a", nextRole: "user", targetRole: "admin", adminCount: 2 }));
+  assert(!roleChangeAllowed({ actorId: "a", targetId: "b", nextRole: "user", targetRole: "admin", adminCount: 1 }));
+  assert(roleChangeAllowed({ actorId: "a", targetId: "b", nextRole: "user", targetRole: "admin", adminCount: 2 }));
+  assert(roleChangeAllowed({ actorId: "a", targetId: "b", nextRole: "admin", targetRole: "user", adminCount: 1 }));
+});
+
+Deno.test("una passkey nueva pide sesión fresca y 2FA", () => {
+  assert(!passkeyRegistrationAllowed({ hasSession: true, fresh: true, twoFactorEnabled: false }));
+  assert(!passkeyRegistrationAllowed({ hasSession: true, fresh: false, twoFactorEnabled: true }));
+  assert(passkeyRegistrationAllowed({ hasSession: true, fresh: true, twoFactorEnabled: true }));
+  assert(sessionIsFresh(new Date(now).toISOString(), now + 60_000, 600));
+  assert(!sessionIsFresh(new Date(now).toISOString(), now + 11 * 60_000, 600));
+});
+
+Deno.test("el rol admin no puede impersonar ni poner contraseñas", () => {
+  assert(adminMay("set-role"));
+  assert(adminMay("ban"));
+  assert(!adminMay("impersonate"));
+  assert(!adminMay("impersonate-admins"));
+  assert(!adminMay("set-password"));
+});
+
+Deno.test("IPv6 entra al límite por el prefijo /64", () => {
+  const left = rateBucketIp("2001:db8:1:2:3:4:5:6");
+  const right = rateBucketIp("2001:db8:1:2::9");
+  assertEquals(left, right);
+  assert(left.endsWith("::/64"));
+  assert(rateBucketIp("2001:db8:1:3::1") !== left);
+  assertEquals(rateBucketIp("203.0.113.8"), "203.0.113.8");
+});
+
+Deno.test("la auditoría anota el fallo de login sin pedir el correo", () => {
   const sql = Deno.readTextFileSync(new URL("../../api/migrations/0004_auth.sql", import.meta.url));
   assert(sql.includes('CREATE TABLE "user"'));
+  const factor = Deno.readTextFileSync(new URL("../../api/migrations/0005_session_factor.sql", import.meta.url));
+  assert(factor.includes('ADD COLUMN "authMethod"'));
+  assert(!factor.toLowerCase().includes("drop"));
   assert(!sql.toLowerCase().includes("drop table"));
   assert(!sql.includes("preinscriptions"));
 });
@@ -90,7 +161,12 @@ Deno.test("la auditoría anota fallo, 2FA y cambio de rol sin pedir el correo", 
 Deno.test("la web manda CSP, HSTS y frame-ancestors", () => {
   const https = securityHeaders(true);
   const csp = https.find((header) => header[0] === "content-security-policy")?.[1] ?? "";
+  const scriptSrc = csp.split(";").find((part) => part.trim().startsWith("script-src")) ?? "";
   assert(csp.includes("frame-ancestors 'none'"));
+  assert(!scriptSrc.includes("unsafe-inline"));
+  assert(scriptSrc.includes(sumateScriptHash()));
+  assertEquals(sumateScriptHash(), cspScriptHash(sumateBootScript()));
+  assertEquals(cspScriptHash("abc"), "'sha256-ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0='");
   assert(https.some((header) => header[0] === "strict-transport-security" && header[1].includes("max-age=")));
   assert(!securityHeaders(false).some((header) => header[0] === "strict-transport-security"));
 });

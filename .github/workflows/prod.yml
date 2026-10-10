@@ -27,7 +27,6 @@ jobs:
       ACCESS_SERVICE_TOKEN_IDS: ${{ secrets.ACCESS_SERVICE_TOKEN_IDS }}
       POLICY_AUD: ${{ secrets.POLICY_AUD }}
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
-      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
     steps:
       - name: Checkout
@@ -45,9 +44,10 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Install inbox
         run: npm ci --prefix apps/inbox
-      - name: Fail closed
-        run: bash scripts/ci/require-secrets.sh
       - name: Deploy prod
         env:
           NODE_OPTIONS: --import ${{ github.workspace }}/scripts/ci/inbox-vite-hooks.mjs
-        run: pnpm --filter @enrailar/infra exec alchemy deploy --yes --no-input --stage prod
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+        run: |
+          bash scripts/ci/require-secrets.sh
+          pnpm --filter @enrailar/infra exec alchemy deploy --yes --no-input --stage prod
