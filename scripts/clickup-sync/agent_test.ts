@@ -114,17 +114,47 @@ Deno.test("la label agent:approved aprueba el plan", () => {
   );
 });
 
-Deno.test("otro autor y Verdict APPROVE no mueven el plan", () => {
+Deno.test("otro autor con Verdict APPROVE no mueve el plan", () => {
   const actions = decide(issue({
     labels: [AGENT_PLAN_REVIEW],
     issueComments: [
       note(4, "cursor", "PLAN\nv1"),
       note(5, "tebayoso", "<!-- agent-orch:ask-tebabot-plan:4 -->"),
       note(6, "github-actions[bot]", "PLAN no soy cursor"),
-      note(7, "tebabot[bot]", "Verdict: APPROVE"),
+      note(7, "tebayoso", "Verdict: APPROVE"),
     ],
   }));
   assertEquals(actions.filter((action) => action.kind === "comment"), []);
+});
+
+Deno.test("Verdict APPROVE de tebabot aprueba el plan", () => {
+  const actions = decide(issue({
+    labels: [AGENT_PLAN_REVIEW],
+    issueComments: [
+      note(4, "cursor", "PLAN\nv1"),
+      note(5, "tebayoso", "<!-- agent-orch:ask-tebabot-plan:4 -->"),
+      note(6, "tebabot[bot]", "Resumen\n\n**Verdict: Approve**"),
+    ],
+  }));
+  const body = commentBody(actions, "issue");
+  assertEquals(body.includes("<!-- agent-orch:ask-cursor-build -->"), true);
+  assertEquals(body.includes("No mergees"), true);
+});
+
+Deno.test("Verdict REQUEST CHANGES pide otro plan", () => {
+  const actions = decide(issue({
+    labels: [AGENT_PLAN_REVIEW],
+    issueComments: [
+      note(4, "cursor", "PLAN\nv1"),
+      note(5, "tebayoso", "<!-- agent-orch:ask-tebabot-plan:4 -->"),
+      note(6, "tebabot[bot]", "Notas\n\nVerdict: REQUEST CHANGES"),
+    ],
+  }));
+  const body = commentBody(actions, "issue");
+  assertEquals(
+    body.includes("<!-- agent-orch:ask-cursor-revise-plan:6 -->"),
+    true,
+  );
 });
 
 Deno.test("un comentario del orquestador no cuenta como plan", () => {
@@ -173,6 +203,52 @@ Deno.test("CI pendiente no gasta una ronda", () => {
     }),
   }));
   assertEquals(actions.filter((action) => action.kind === "comment"), []);
+});
+
+Deno.test("CI verde y Verdict APPROVE avisa el merge humano", () => {
+  const sha = "abc1234def";
+  const actions = decide(issue({
+    labels: [AGENT_BUILDING],
+    issueComments: [
+      note(3, "tebayoso", "<!-- agent-orch:ask-cursor-build -->"),
+    ],
+    pull: pull({
+      headSha: sha,
+      ci: "success",
+      comments: [
+        note(8, "tebabot[bot]", "Review\n\nVerdict: APPROVE"),
+      ],
+    }),
+  }));
+  const body = commentBody(actions, "issue");
+  assertEquals(body.includes("@cursor"), false);
+  assertEquals(
+    body.includes(`<!-- agent-orch:ready-for-merge:${sha} -->`),
+    true,
+  );
+});
+
+Deno.test("Verdict REQUEST CHANGES en el PR pide un ajuste", () => {
+  const sha = "abc1234def";
+  const actions = decide(issue({
+    labels: [AGENT_BUILDING],
+    issueComments: [
+      note(3, "tebayoso", "<!-- agent-orch:ask-cursor-build -->"),
+    ],
+    pull: pull({
+      headSha: sha,
+      ci: "success",
+      comments: [
+        note(8, "tebabot[bot]", "Verdict: REQUEST CHANGES"),
+      ],
+    }),
+  }));
+  const body = commentBody(actions, "pull");
+  assertEquals(body.includes("@cursor"), true);
+  assertEquals(
+    body.includes(`<!-- agent-orch:ask-cursor-revise-pr:${sha}:8 -->`),
+    true,
+  );
 });
 
 Deno.test("CI verde y review APPROVED avisa el merge humano sin mencionar a @cursor", () => {

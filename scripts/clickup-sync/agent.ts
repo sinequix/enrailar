@@ -299,7 +299,8 @@ function planApproved(snapshot: AgentSnapshot): boolean {
   return snapshot.issueComments.some((comment) =>
     actorOf(comment.author) === "tebabot" &&
     !isOrchestrator(comment.body) &&
-    startsWithToken(comment.body, "APPROVED")
+    (startsWithToken(comment.body, "APPROVED") ||
+      verdictOf(comment.body) === "approved")
   );
 }
 
@@ -355,7 +356,17 @@ function commentSignal(comment: AgentComment): Signal | null {
   }
   if (startsWithToken(comment.body, "APPROVED")) return "approved";
   if (startsWithToken(comment.body, "CHANGES")) return "changes";
-  return null;
+  return verdictOf(comment.body);
+}
+
+function verdictOf(body: string): Signal | null {
+  const matches = [
+    ...body.matchAll(/verdict:\s*(request\s+changes|approved?)\b/gi),
+  ];
+  const last = matches.at(-1);
+  const token = last?.[1];
+  if (!token) return null;
+  return /^request/i.test(token) ? "changes" : "approved";
 }
 
 function cursorPlans(comments: readonly AgentComment[]): AgentComment[] {
@@ -466,7 +477,7 @@ function clickup(markerName: string, text: string): AgentAction {
 
 function tebabotPlanComment(planId: number): string {
   return [
-    "@tebabot Revisá el plan de este issue. Si lo aprobás, empezá el comentario con APPROVED. Si pedís cambios, empezá con CHANGES.",
+    "@tebabot Revisá el plan de este issue. Si lo aprobás, empezá el comentario con APPROVED o incluí una línea `Verdict: APPROVE`. Si pedís cambios, empezá con CHANGES o incluí `Verdict: REQUEST CHANGES`.",
     "",
     marker(`ask-tebabot-plan:${planId}`),
   ].join("\n");
@@ -490,7 +501,7 @@ function buildComment(issueNumber: number): string {
 
 function tebabotPullComment(pullNumber: number, sha: string): string {
   return [
-    `@tebabot Revisá el pull request #${pullNumber}. Si lo aprobás, empezá el comentario con APPROVED o dejá una review en estado APPROVED. Si pedís cambios, empezá con CHANGES.`,
+    `@tebabot Revisá el pull request #${pullNumber}. Si lo aprobás, empezá el comentario con APPROVED, incluí una línea \`Verdict: APPROVE\` o dejá una review en estado APPROVED. Si pedís cambios, empezá con CHANGES o incluí \`Verdict: REQUEST CHANGES\`.`,
     "",
     marker(`ask-tebabot-pr:${sha}`),
   ].join("\n");

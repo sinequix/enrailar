@@ -16,7 +16,7 @@ stateDiagram-v2
   plan --> review: comentario que empieza con PLAN
   review --> review: CHANGES y queda ronda
   review --> human: 3 rondas sin aprobación
-  review --> ready: APPROVED o label agent:approved
+  review --> ready: APPROVED, Verdict APPROVE o label agent:approved
   ready --> building: pedido de implementación
   building --> building: CI rojo o CHANGES
   building --> human: 3 rondas sin CI verde y aprobación
@@ -48,8 +48,9 @@ una GitHub App, así que no despierta a @cursor.
 
 tebabot es la GitHub App `tebabot[bot]`, ya instalada. Este flujo la menciona
 con `@tebabot` en el issue (el plan) y en el PR (la implementación). Un
-comentario que ya publica sola, del estilo `Verdict: APPROVE` o
-`Veredicto: Approve`, no cuenta como aprobación.
+comentario que ya publica sola cuenta como aprobación si el autor es
+tebabot y el texto incluye `Verdict: APPROVE` o `Verdict: Approved`.
+`Verdict: REQUEST CHANGES` pide cambios. `Veredicto: Approve` no cuenta.
 
 GitHub no vuelve a disparar workflows por eventos que crea `GITHUB_TOKEN`
 (`issues`, `issue_comment`, `labeled`). Por eso la sync de ClickUp, en la misma
@@ -80,12 +81,13 @@ Así no hay un loop entre bots.
 | Quién                                          | Cuenta como                                                                                                      |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | @cursor                                        | Plan solo si el comentario empieza con `PLAN`.                                                                   |
-| tebabot                                        | Aprobación si empieza con `APPROVED`, si la review del PR está `APPROVED`, o si el issue tiene `agent:approved`. |
-| tebabot                                        | Cambios si empieza con `CHANGES` o si la review está `CHANGES_REQUESTED`.                                        |
+| tebabot                                        | Aprobación si empieza con `APPROVED`, si incluye `Verdict: APPROVE` o `Verdict: Approved`, si la review del PR está `APPROVED`, o si el issue tiene `agent:approved`. |
+| tebabot                                        | Cambios si empieza con `CHANGES`, si incluye `Verdict: REQUEST CHANGES`, o si la review está `CHANGES_REQUESTED`. |
 | Cualquier otro, incluido `github-actions[bot]` | No avanza el estado.                                                                                             |
 
-`Verdict: APPROVE` no aprueba y tampoco pide cambios. El pedido a tebabot dice
-que use el prefijo.
+`Verdict: APPROVE`, `Verdict: Approved` y `Verdict: REQUEST CHANGES` valen
+aunque no estén al principio del comentario. El pedido a tebabot acepta ese
+formato y también el prefijo.
 
 Tope de 3 rondas en el plan y otras 3 en el PR. CI pendiente no gasta una ronda.
 CI rojo, o un `CHANGES`, sí. Al agotar el tope: label `needs:human` y comentario
