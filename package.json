@@ -7,9 +7,9 @@
     "node": ">=22.15"
   },
   "scripts": {
-    "lint": "turbo lint",
-    "typecheck": "turbo typecheck",
-    "test": "turbo test"
+    "lint": "turbo lint && deno lint scripts/clickup-sync",
+    "typecheck": "turbo typecheck && deno check scripts/clickup-sync/cli.ts",
+    "test": "turbo test && deno test --allow-env scripts/clickup-sync"
   },
   "devDependencies": {
     "turbo": "2.11.7",

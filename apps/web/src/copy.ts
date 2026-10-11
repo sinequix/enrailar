@@ -18,6 +18,8 @@ export const SITE_URL = "https://enrailar.com";
 
 export const REPO_URL = "https://github.com/sinequix/enrailar";
 
+export const SINEQUIX_URL = "https://sinequix.com";
+
 export const ARTICLE_URL = "https://x.com/tebayoso/status/2107894676426559739";
 
 export const POST_SLUG = "fase-1";
@@ -152,8 +154,39 @@ interface Copy {
     mismatch: string;
     failed: string;
   };
+  app: {
+    home: string;
+    profile: string;
+    security: string;
+    admin: string;
+    nav: string;
+    intents: string;
+    intentsEmpty: string;
+    news: string;
+    users: string;
+    submissions: string;
+    subscribers: string;
+    audit: string;
+    empty: string;
+    ban: string;
+    makeAdmin: string;
+    makeUser: string;
+    forbidden: string;
+    banned: string;
+    twoFactor: string;
+  };
   language: string;
-  footer: { about: string; mailboxes: string; project: string; code: string; license: string };
+  footer: {
+    about: string;
+    mailboxes: string;
+    project: string;
+    code: string;
+    license: string;
+    /** "© {year} Sinequix. …" — el año se sustituye al renderizar. */
+    copyright: string;
+    /** La marca va en "{sinequix}" y es el único texto del enlace. */
+    venture: string;
+  };
 }
 
 export const COPY: Record<Locale, Copy> = {
@@ -334,6 +367,27 @@ export const COPY: Record<Locale, Copy> = {
       mismatch: "Las contraseñas no coinciden.",
       failed: "No se pudo completar. Revisá los datos.",
     },
+    app: {
+      home: "Inicio",
+      profile: "Perfil",
+      security: "Seguridad",
+      admin: "Administración",
+      nav: "Cuenta",
+      intents: "Intenciones de Sumate",
+      intentsEmpty: "Todavía no hay una ficha de Sumate con este correo.",
+      news: "Novedades",
+      users: "Usuarios",
+      submissions: "Fichas de Sumate",
+      subscribers: "Suscriptores",
+      audit: "Auditoría",
+      empty: "Nada para mostrar.",
+      ban: "Banear",
+      makeAdmin: "Hacer admin",
+      makeUser: "Hacer user",
+      forbidden: "No tenés acceso.",
+      banned: "Baneada",
+      twoFactor: "2FA",
+    },
     language: "Idioma",
     footer: {
       about: "Enrailar es una iniciativa de Sinequix para recuperar los trenes de Argentina. Proyecto abierto, con código Apache-2.0.",
@@ -341,6 +395,8 @@ export const COPY: Record<Locale, Copy> = {
       project: "Proyecto",
       code: "Código en GitHub",
       license: "Licencia Apache-2.0",
+      copyright: "© {year} Sinequix. Todos los derechos reservados.",
+      venture: "Un proyecto de {sinequix}",
     },
   },
   en: {
@@ -521,6 +577,27 @@ export const COPY: Record<Locale, Copy> = {
       mismatch: "The passwords do not match.",
       failed: "Could not finish. Check the fields.",
     },
+    app: {
+      home: "Home",
+      profile: "Profile",
+      security: "Security",
+      admin: "Administration",
+      nav: "Account",
+      intents: "Sumate intents",
+      intentsEmpty: "There is no Sumate form for this email yet.",
+      news: "News",
+      users: "Users",
+      submissions: "Sumate forms",
+      subscribers: "Subscribers",
+      audit: "Audit log",
+      empty: "Nothing to show.",
+      ban: "Ban",
+      makeAdmin: "Make admin",
+      makeUser: "Make user",
+      forbidden: "You do not have access.",
+      banned: "Banned",
+      twoFactor: "2FA",
+    },
     language: "Language",
     footer: {
       about: "Enrailar is a Sinequix initiative to restore Argentina's railways. An open project, with Apache-2.0 code.",
@@ -528,6 +605,8 @@ export const COPY: Record<Locale, Copy> = {
       project: "Project",
       code: "Code on GitHub",
       license: "Apache-2.0 license",
+      copyright: "© {year} Sinequix. All rights reserved.",
+      venture: "A {sinequix} venture",
     },
   },
 };

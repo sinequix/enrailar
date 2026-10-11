@@ -893,6 +893,68 @@ a:hover {
   margin-bottom: var(--s-5);
 }
 
+.app-frame {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  gap: var(--s-5);
+  align-items: start;
+  padding-block: var(--s-6);
+}
+
+.app-side {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  padding: var(--s-3);
+}
+
+.app-side nav {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.app-side a {
+  display: block;
+  text-decoration: none;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 620;
+  font-size: var(--t-sm);
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+}
+
+.app-side a[aria-current="page"] {
+  background: var(--accent);
+  color: var(--blanco);
+}
+
+.app-main {
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+.app-main h1 {
+  margin: 0;
+}
+
+.app-stack {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.app-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.app-table td {
+  padding: 0.4rem 0.35rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
 .form {
   background: var(--bg);
   border: 1px solid var(--line);
@@ -1294,6 +1356,18 @@ html[data-sumate-boletin="1"] .sumate-confirm {
 }
 
 /* Responsive */
+@media (max-width: 720px) {
+  .app-frame {
+    grid-template-columns: 1fr;
+  }
+
+  .app-side nav {
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    overflow-x: auto;
+  }
+}
+
 @media (max-width: 960px) {
   .cards,
   .forms {

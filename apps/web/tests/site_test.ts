@@ -1,6 +1,6 @@
 import { HACKATRAIN_START, HACKATRAIN_WHEN, JOIN_INTENTS } from "@enrailar/shared";
 import { assert, assertEquals } from "@std/assert";
-import { ARTICLE_URL, COPY } from "../src/copy.ts";
+import { ARTICLE_URL, COPY, SINEQUIX_URL } from "../src/copy.ts";
 import { POSTS } from "../src/posts.ts";
 import {
   createSumateMemory,
@@ -105,6 +105,13 @@ Deno.test("la ficha única preselecciona desde el hash y exige una intención", 
   assert(header.includes("/cuenta/crear"));
   assertEquals(COPY.es.account.signIn, "Ingresar");
   assertEquals(COPY.en.account.signIn, "Sign in");
+  assertEquals(COPY.es.app.home, "Inicio");
+  assertEquals(COPY.en.app.home, "Home");
+  assertEquals(COPY.es.app.forbidden, "No tenés acceso.");
+  const sidebar = Deno.readTextFileSync(new URL("../app/components/ui/sidebar.tsx", import.meta.url));
+  assert(sidebar.includes('data-slot="sidebar"'));
+  const guard = Deno.readTextFileSync(new URL("../src/app-guard.ts", import.meta.url));
+  assert(guard.includes("status: 403"));
   assertEquals(COPY.es.account.signUp, "Crear cuenta");
   assertEquals(COPY.en.account.signUp, "Create account");
   for (const locale of ["es", "en"] as const) {
@@ -187,4 +194,31 @@ Deno.test("el recuerdo de Sumate no guarda el correo", () => {
   assert(forms.includes("components/ui/button.tsx"));
   const layout = Deno.readTextFileSync(new URL("../app/layout.tsx", import.meta.url));
   assert(layout.includes("sumateBootScript"));
+});
+
+Deno.test("el pie atribuye el copyright a Sinequix", () => {
+  const year = String(new Date().getFullYear());
+  assertEquals(
+    COPY.es.footer.copyright.replaceAll("{year}", year),
+    `© ${year} Sinequix. Todos los derechos reservados.`,
+  );
+  assertEquals(
+    COPY.en.footer.copyright.replaceAll("{year}", year),
+    `© ${year} Sinequix. All rights reserved.`,
+  );
+  assertEquals(COPY.es.footer.venture, "Un proyecto de {sinequix}");
+  assertEquals(COPY.en.footer.venture, "A {sinequix} venture");
+  assert(!COPY.es.footer.copyright.includes("2025"));
+  assert(!COPY.en.footer.copyright.includes("2025"));
+  assertEquals(SINEQUIX_URL, "https://sinequix.com");
+  const footer = Deno.readTextFileSync(new URL("../app/components/site-footer.tsx", import.meta.url));
+  assert(footer.includes("SINEQUIX_URL"));
+  assert(footer.includes('target="_blank"'));
+  assert(footer.includes('rel="noopener"'));
+  assert(footer.includes("getFullYear()"));
+  assert(footer.includes(">Sinequix</a>"));
+  for (const page of ["../app/[locale]/page.tsx", "../app/[locale]/blog/page.tsx", "../app/[locale]/blog/[slug]/page.tsx"]) {
+    const source = Deno.readTextFileSync(new URL(page, import.meta.url));
+    assert(source.includes("<SiteFooter"));
+  }
 });
