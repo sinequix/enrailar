@@ -85,6 +85,29 @@ async function clickAndWait(page: Page, selector: string, path: string) {
   }
 }
 
+async function submitHydrated(page: Page, path: string) {
+  const button = "form[data-live='1'] button[type=submit]:not([disabled])";
+  let last = "sin respuesta";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.waitForSelector(button, { timeout: 15_000 });
+    const pending = page.waitForRequest((item) => item.url().includes(path), { timeout: 8_000 });
+    try {
+      await page.locator(button).click({ timeout: 8_000 });
+      const sent = await pending;
+      const response = await Promise.race([
+        sent.response(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 20_000)),
+      ]);
+      if (!response) throw new Error("la petición no tuvo respuesta");
+      return response;
+    } catch (error) {
+      last = error instanceof Error ? error.message : String(error);
+      await pending.catch(() => undefined);
+    }
+  }
+  throw new Error(`${path}: ${last}`);
+}
+
 async function expectOk(response: { status: () => number; text: () => Promise<string> }): Promise<void> {
   const body = (await response.text()).replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/g, "[correo]");
   assertEquals(response.status(), 200, body.slice(0, 300));
@@ -145,7 +168,7 @@ Deno.test({
 
       const token = await mailToken();
       await page.goto(`${base}/es/cuenta/verificar?token=${encodeURIComponent(token)}`, { waitUntil: "domcontentloaded" });
-      const verifyResponse = await clickAndWait(page, "button[type=submit]", "/api/auth/verify-email");
+      const verifyResponse = await submitHydrated(page, "/api/auth/verify-email");
       await expectOk(verifyResponse);
 
       await page.goto(`${base}/es/cuenta/ingresar`, { waitUntil: "domcontentloaded" });
