@@ -1,5 +1,5 @@
 import { banUser, safeUserId } from "../../../../src/admin-actions.ts";
-import { guardRequest } from "../../../../src/app-guard.ts";
+import { requireAdminAccess } from "../../../../src/app-guard.ts";
 import { authEnvFromProcess } from "../../../../src/request-db.ts";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,7 @@ export async function POST(request: Request): Promise<Response> {
     return new Response("Forbidden", { status: 403 });
   }
   const env = authEnvFromProcess();
-  const denied = await guardRequest(request, env);
+  const denied = await requireAdminAccess(request, env);
   if (denied) return denied;
   const body: unknown = await request.json().catch(() => null);
   const record = body && typeof body === "object" ? body : {};
