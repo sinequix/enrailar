@@ -18,6 +18,8 @@ export const SITE_URL = "https://enrailar.com";
 
 export const REPO_URL = "https://github.com/sinequix/enrailar";
 
+export const SINEQUIX_URL = "https://sinequix.com";
+
 export const ARTICLE_URL = "https://x.com/tebayoso/status/2107894676426559739";
 
 export const POST_SLUG = "fase-1";
@@ -174,7 +176,17 @@ interface Copy {
     twoFactor: string;
   };
   language: string;
-  footer: { about: string; mailboxes: string; project: string; code: string; license: string };
+  footer: {
+    about: string;
+    mailboxes: string;
+    project: string;
+    code: string;
+    license: string;
+    /** "© {year} Sinequix. …" — el año se sustituye al renderizar. */
+    copyright: string;
+    /** La marca va en "{sinequix}" y es el único texto del enlace. */
+    venture: string;
+  };
 }
 
 export const COPY: Record<Locale, Copy> = {
@@ -383,6 +395,8 @@ export const COPY: Record<Locale, Copy> = {
       project: "Proyecto",
       code: "Código en GitHub",
       license: "Licencia Apache-2.0",
+      copyright: "© {year} Sinequix. Todos los derechos reservados.",
+      venture: "Un proyecto de {sinequix}",
     },
   },
   en: {
@@ -591,6 +605,8 @@ export const COPY: Record<Locale, Copy> = {
       project: "Project",
       code: "Code on GitHub",
       license: "Apache-2.0 license",
+      copyright: "© {year} Sinequix. All rights reserved.",
+      venture: "A {sinequix} venture",
     },
   },
 };

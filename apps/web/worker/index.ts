@@ -23,10 +23,10 @@ export default {
     }
     const https = url.protocol === "https:";
     if (url.pathname.startsWith("/api/auth")) {
-      return withSecurityHeaders(await handleAuth(request, env, env.DB), https);
+      return await withSecurityHeaders(await handleAuth(request, env, env.DB), https);
     }
     const guarded = await guardRequest(request, env);
-    if (guarded) return withSecurityHeaders(guarded, https);
-    return withSecurityHeaders(await handler.fetch(request, env, ctx), https);
+    if (guarded) return await withSecurityHeaders(guarded, https);
+    return await withSecurityHeaders(await handler.fetch(request, env, ctx), https);
   },
 };
