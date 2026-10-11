@@ -18,6 +18,8 @@ export const SITE_URL = "https://enrailar.com";
 
 export const REPO_URL = "https://github.com/sinequix/enrailar";
 
+export const SINEQUIX_URL = "https://sinequix.com";
+
 export const ARTICLE_URL = "https://x.com/tebayoso/status/2107894676426559739";
 
 export const POST_SLUG = "fase-1";
@@ -122,8 +124,69 @@ interface Copy {
   turnstileLoading: string;
   turnstileFailed: string;
   turnstileRetry: string;
+  account: {
+    signIn: string;
+    signUp: string;
+    password: string;
+    passwordAgain: string;
+    submitSignIn: string;
+    submitSignUp: string;
+    forgot: string;
+    verifyTitle: string;
+    verifyBody: string;
+    verifyAction: string;
+    recoverTitle: string;
+    recoverSend: string;
+    recoverChoose: string;
+    securityTitle: string;
+    passkey: string;
+    passkeyAdd: string;
+    totp: string;
+    totpOn: string;
+    totpOff: string;
+    confirm: string;
+    backup: string;
+    secretHint: string;
+    code: string;
+    sessions: string;
+    revoke: string;
+    signedOut: string;
+    mismatch: string;
+    failed: string;
+  };
+  app: {
+    home: string;
+    profile: string;
+    security: string;
+    admin: string;
+    nav: string;
+    intents: string;
+    intentsEmpty: string;
+    news: string;
+    users: string;
+    submissions: string;
+    subscribers: string;
+    audit: string;
+    empty: string;
+    ban: string;
+    makeAdmin: string;
+    makeUser: string;
+    forbidden: string;
+    banned: string;
+    twoFactor: string;
+  };
   language: string;
-  footer: { about: string; mailboxes: string; project: string; code: string; license: string };
+  footer: {
+    about: string;
+    mailboxes: string;
+    project: string;
+    code: string;
+    license: string;
+    /** "© {year} Sinequix. …" — el año se sustituye al renderizar. */
+    copyright: string;
+    /** La marca va en "{sinequix}" y es el único texto del enlace. */
+    venture: string;
+  };
 }
 
 export const COPY: Record<Locale, Copy> = {
@@ -274,6 +337,57 @@ export const COPY: Record<Locale, Copy> = {
     turnstileLoading: "Cargando la verificación…",
     turnstileFailed: "No se pudo verificar. Reintentá.",
     turnstileRetry: "Reintentar la verificación",
+    account: {
+      signIn: "Ingresar",
+      signUp: "Crear cuenta",
+      password: "Contraseña",
+      passwordAgain: "Repetir contraseña",
+      submitSignIn: "Ingresar",
+      submitSignUp: "Crear cuenta",
+      forgot: "Olvidé la contraseña",
+      verifyTitle: "Verificá tu correo",
+      verifyBody: "El enlace de verificación confirma la cuenta. Si no llegó, pedí otro desde el ingreso.",
+      verifyAction: "Verificar",
+      recoverTitle: "Recuperar el acceso",
+      recoverSend: "Enviar el enlace",
+      recoverChoose: "Guardar contraseña",
+      securityTitle: "Seguridad",
+      passkey: "Passkeys",
+      passkeyAdd: "Agregar passkey",
+      totp: "Código de un solo uso",
+      totpOn: "Activar",
+      totpOff: "Desactivar",
+      confirm: "Confirmar",
+      backup: "Códigos de respaldo",
+      secretHint: "Clave para la app de códigos",
+      code: "Código",
+      sessions: "Sesiones activas",
+      revoke: "Revocar",
+      signedOut: "Entrá para ver las sesiones, las passkeys y el segundo factor.",
+      mismatch: "Las contraseñas no coinciden.",
+      failed: "No se pudo completar. Revisá los datos.",
+    },
+    app: {
+      home: "Inicio",
+      profile: "Perfil",
+      security: "Seguridad",
+      admin: "Administración",
+      nav: "Cuenta",
+      intents: "Intenciones de Sumate",
+      intentsEmpty: "Todavía no hay una ficha de Sumate con este correo.",
+      news: "Novedades",
+      users: "Usuarios",
+      submissions: "Fichas de Sumate",
+      subscribers: "Suscriptores",
+      audit: "Auditoría",
+      empty: "Nada para mostrar.",
+      ban: "Banear",
+      makeAdmin: "Hacer admin",
+      makeUser: "Hacer user",
+      forbidden: "No tenés acceso.",
+      banned: "Baneada",
+      twoFactor: "2FA",
+    },
     language: "Idioma",
     footer: {
       about: "Enrailar es una iniciativa de Sinequix para recuperar los trenes de Argentina. Proyecto abierto, con código Apache-2.0.",
@@ -281,6 +395,8 @@ export const COPY: Record<Locale, Copy> = {
       project: "Proyecto",
       code: "Código en GitHub",
       license: "Licencia Apache-2.0",
+      copyright: "© {year} Sinequix. Todos los derechos reservados.",
+      venture: "Un proyecto de {sinequix}",
     },
   },
   en: {
@@ -431,6 +547,57 @@ export const COPY: Record<Locale, Copy> = {
     turnstileLoading: "Loading verification…",
     turnstileFailed: "Verification failed. Try again.",
     turnstileRetry: "Retry verification",
+    account: {
+      signIn: "Sign in",
+      signUp: "Create account",
+      password: "Password",
+      passwordAgain: "Repeat password",
+      submitSignIn: "Sign in",
+      submitSignUp: "Create account",
+      forgot: "Forgot password",
+      verifyTitle: "Verify your email",
+      verifyBody: "The verification link confirms the account. If it did not arrive, ask for another from sign in.",
+      verifyAction: "Verify",
+      recoverTitle: "Recover access",
+      recoverSend: "Send the link",
+      recoverChoose: "Save password",
+      securityTitle: "Security",
+      passkey: "Passkeys",
+      passkeyAdd: "Add passkey",
+      totp: "One-time code",
+      totpOn: "Turn on",
+      totpOff: "Turn off",
+      confirm: "Confirm",
+      backup: "Backup codes",
+      secretHint: "Key for the code app",
+      code: "Code",
+      sessions: "Active sessions",
+      revoke: "Revoke",
+      signedOut: "Sign in to see sessions, passkeys and the second factor.",
+      mismatch: "The passwords do not match.",
+      failed: "Could not finish. Check the fields.",
+    },
+    app: {
+      home: "Home",
+      profile: "Profile",
+      security: "Security",
+      admin: "Administration",
+      nav: "Account",
+      intents: "Sumate intents",
+      intentsEmpty: "There is no Sumate form for this email yet.",
+      news: "News",
+      users: "Users",
+      submissions: "Sumate forms",
+      subscribers: "Subscribers",
+      audit: "Audit log",
+      empty: "Nothing to show.",
+      ban: "Ban",
+      makeAdmin: "Make admin",
+      makeUser: "Make user",
+      forbidden: "You do not have access.",
+      banned: "Banned",
+      twoFactor: "2FA",
+    },
     language: "Language",
     footer: {
       about: "Enrailar is a Sinequix initiative to restore Argentina's railways. An open project, with Apache-2.0 code.",
@@ -438,6 +605,8 @@ export const COPY: Record<Locale, Copy> = {
       project: "Project",
       code: "Code on GitHub",
       license: "Apache-2.0 license",
+      copyright: "© {year} Sinequix. All rights reserved.",
+      venture: "A {sinequix} venture",
     },
   },
 };

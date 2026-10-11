@@ -30,6 +30,8 @@ jobs:
           deno-version: v2.9.7
       - name: Install
         run: pnpm install --frozen-lockfile
+      - name: Chrome
+        run: pnpm --filter @enrailar/web exec playwright-core install chromium
       - name: Lint
         run: pnpm lint
       - name: Typecheck

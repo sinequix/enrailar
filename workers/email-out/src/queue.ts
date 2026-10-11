@@ -1,4 +1,4 @@
-import { renderMail, type RenderedMail } from "./render.ts";
+import { renderMail, type MailOrigins, type RenderedMail } from "./render.ts";
 
 export interface QueueMessage {
   readonly body: unknown;
@@ -16,24 +16,24 @@ export interface QueueLog {
 
 export async function handleQueue(
   messages: readonly QueueMessage[],
-  origin: string,
+  origins: MailOrigins,
   sender: MailSender,
   log: (event: QueueLog) => void,
 ): Promise<void> {
   for (const message of messages) {
-    if (origin.trim().length === 0) {
-      log({ status: "no-origin" });
-      message.retry();
-      continue;
-    }
-    const rendered = renderMail(message.body, origin.trim());
-    if (!rendered) {
+    const rendered = renderMail(message.body, origins);
+    if (rendered.status === "invalid") {
       log({ status: "invalid" });
       message.ack();
       continue;
     }
+    if (rendered.status === "no-origin") {
+      log({ status: "no-origin" });
+      message.retry();
+      continue;
+    }
     try {
-      await sender.send(rendered);
+      await sender.send(rendered.mail);
       log({ status: "sent" });
       message.ack();
     } catch {

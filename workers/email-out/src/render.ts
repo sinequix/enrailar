@@ -8,7 +8,22 @@ export interface RenderedMail {
   mime: string;
 }
 
-function copy(locale: MailJob["locale"]): { subject: string; confirm: string; unsubscribe: string } {
+export interface MailOrigins {
+  api: string;
+  web: string;
+}
+
+export type RenderResult =
+  | { status: "ok"; mail: RenderedMail }
+  | { status: "invalid" }
+  | { status: "no-origin" };
+
+function headerSafe(value: string): string | undefined {
+  if (value.length === 0 || /[\r\n]/.test(value)) return undefined;
+  return value;
+}
+
+function newsletterCopy(locale: MailJob["locale"]): { subject: string; confirm: string; unsubscribe: string } {
   switch (locale) {
     case "es":
       return {
@@ -29,32 +44,83 @@ function copy(locale: MailJob["locale"]): { subject: string; confirm: string; un
   }
 }
 
-function headerSafe(value: string): string | undefined {
-  if (value.length === 0 || /[\r\n]/.test(value)) return undefined;
-  return value;
+function authCopy(kind: "auth.verify" | "auth.reset", locale: MailJob["locale"]): { subject: string; action: string } {
+  switch (kind) {
+    case "auth.verify":
+      return locale === "es"
+        ? { subject: "Confirmá tu correo de Enrailar", action: "Verificar correo" }
+        : { subject: "Confirm your Enrailar email", action: "Verify email" };
+    case "auth.reset":
+      return locale === "es"
+        ? { subject: "Recuperá tu acceso a Enrailar", action: "Elegir una contraseña nueva" }
+        : { subject: "Reset your Enrailar access", action: "Choose a new password" };
+    default: {
+      const unreachable: never = kind;
+      return unreachable;
+    }
+  }
 }
 
-export function renderMail(body: unknown, origin: string): RenderedMail | undefined {
-  const parsed = mailJobSchema.safeParse(body);
-  const base = headerSafe(origin);
-  if (!parsed.success || !base) return undefined;
-  const to = headerSafe(parsed.data.to);
-  if (!to) return undefined;
-  const text = copy(parsed.data.locale);
-  const confirmUrl = `${base}${parsed.data.confirmPath}`;
-  const unsubscribeUrl = `${base}${parsed.data.unsubscribePath}`;
-  const lines = [
-    `From: ${FROM}`,
+function message(from: string, to: string, subject: string, lines: string[], extra: string[]): string {
+  return [
+    `From: ${from}`,
     `To: ${to}`,
-    `Subject: ${text.subject}`,
+    `Subject: ${subject}`,
     "MIME-Version: 1.0",
     "Content-Type: text/plain; charset=utf-8",
-    `List-Unsubscribe: <${unsubscribeUrl}>`,
-    "List-Unsubscribe-Post: List-Unsubscribe=One-Click",
+    ...extra,
     "",
-    `${text.confirm}: ${confirmUrl}`,
-    `${text.unsubscribe}: ${unsubscribeUrl}`,
+    ...lines,
     "",
-  ];
-  return { from: FROM, to, mime: lines.join("\r\n") };
+  ].join("\r\n");
+}
+
+export function renderMail(body: unknown, origins: MailOrigins): RenderResult {
+  const parsed = mailJobSchema.safeParse(body);
+  if (!parsed.success) return { status: "invalid" };
+  const job = parsed.data;
+  const to = headerSafe(job.to);
+  if (!to) return { status: "invalid" };
+  switch (job.kind) {
+    case "newsletter.confirm": {
+      const base = headerSafe(origins.api.trim());
+      if (!base) return { status: "no-origin" };
+      const text = newsletterCopy(job.locale);
+      const confirmUrl = `${base}${job.confirmPath}`;
+      const unsubscribeUrl = `${base}${job.unsubscribePath}`;
+      return {
+        status: "ok",
+        mail: {
+          from: FROM,
+          to,
+          mime: message(FROM, to, text.subject, [
+            `${text.confirm}: ${confirmUrl}`,
+            `${text.unsubscribe}: ${unsubscribeUrl}`,
+          ], [
+            `List-Unsubscribe: <${unsubscribeUrl}>`,
+            "List-Unsubscribe-Post: List-Unsubscribe=One-Click",
+          ]),
+        },
+      };
+    }
+    case "auth.verify":
+    case "auth.reset": {
+      const base = headerSafe(origins.web.trim());
+      if (!base) return { status: "no-origin" };
+      const text = authCopy(job.kind, job.locale);
+      const url = `${base}${job.path}`;
+      return {
+        status: "ok",
+        mail: {
+          from: FROM,
+          to,
+          mime: message(FROM, to, text.subject, [`${text.action}: ${url}`], []),
+        },
+      };
+    }
+    default: {
+      const unreachable: never = job;
+      return unreachable;
+    }
+  }
 }
