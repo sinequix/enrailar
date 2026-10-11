@@ -1,8 +1,10 @@
 import { ROLE_MAILBOXES } from "@enrailar/shared";
-import { COPY, type Locale, REPO_URL } from "../../src/copy.ts";
+import { COPY, type Locale, REPO_URL, SINEQUIX_URL } from "../../src/copy.ts";
 
 export function SiteFooter({ locale }: { locale: Locale }) {
   const copy = COPY[locale];
+  const year = new Date().getFullYear();
+  const [ventureBefore, ventureAfter = ""] = copy.footer.venture.split("{sinequix}");
   return (
     <footer className="site-footer">
       <div className="wrap">
@@ -10,6 +12,8 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           <img src="/brand/logo-horizontal.svg" width={148} height={32} alt="Enrailar" loading="lazy" />
           <p className="tagline">{copy.tagline}</p>
           <p>{copy.footer.about}</p>
+          <p>{copy.footer.copyright.replaceAll("{year}", String(year))}</p>
+          <p>{ventureBefore}<a href={SINEQUIX_URL} target="_blank" rel="noopener">Sinequix</a>{ventureAfter}</p>
         </div>
         <div>
           <h4>{copy.footer.mailboxes}</h4>
