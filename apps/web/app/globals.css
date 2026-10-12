@@ -208,7 +208,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 5rem;
+  scroll-padding-top: 6.5rem;
 }
 
 body {
@@ -926,6 +926,7 @@ a:hover {
 
 .account-page h1 {
   margin-bottom: var(--s-5);
+  scroll-margin-top: 6.5rem;
 }
 
 .app-frame {
