@@ -363,28 +363,35 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--s-5);
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-5);
   min-height: 4.25rem;
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
+  flex: none;
   text-decoration: none;
   border-radius: var(--radius-sm);
 }
 
 .brand img {
-  /* Lockup de 148 × 32 a escala 1:1 (2:1 en pantallas de 2×): nunca fraccionaria. */
+  /* Lockup de 148 × 32 a escala 1:1 (2:1 en pantallas de 2×): nunca fraccionaria.
+     max-width: 100% en un ítem flex lo aplasta hasta desaparecer. */
   display: block;
+  flex: none;
   width: 148px;
   height: 32px;
+  max-width: none;
 }
 
 .nav {
   display: flex;
   align-items: center;
-  gap: var(--s-5);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--s-3) var(--s-5);
   font-family: var(--font-display);
   font-size: var(--t-sm);
   font-weight: 540;
@@ -1234,8 +1241,10 @@ html[data-sumate-boletin="1"] .sumate-confirm {
 
 .site-footer img {
   display: block;
+  flex: none;
   width: 148px;
   height: 32px;
+  max-width: none;
   margin-bottom: var(--s-3);
 }
 

@@ -9,7 +9,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
     <footer className="site-footer">
       <div className="wrap">
         <div>
-          <img src="/brand/logo-horizontal.svg" width={148} height={32} alt="Enrailar" loading="lazy" />
+          <img src="/brand/logo-horizontal.svg" width={148} height={32} alt="Enrailar" />
           <p className="tagline">{copy.tagline}</p>
           <p>{copy.footer.about}</p>
           <p>{copy.footer.copyright.replaceAll("{year}", String(year))}</p>
