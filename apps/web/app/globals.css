@@ -1237,8 +1237,8 @@ html[data-sumate-boletin="1"] .sumate-confirm {
   overflow: hidden;
 }
 
-.turnstile-slot {
-  min-height: 65px;
+.turnstile-slot:empty {
+  display: none;
 }
 
 .status {
