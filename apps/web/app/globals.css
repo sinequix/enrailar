@@ -216,6 +216,13 @@ body {
   background: var(--bg);
   color: var(--ink);
   min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+body > main,
+body > .app-frame {
+  flex: 1 0 auto;
 }
 
 img,
@@ -1285,7 +1292,8 @@ html[data-sumate-boletin="1"] .sumate-confirm {
 
 .site-footer .wrap {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(11rem, 2fr) repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: var(--s-6);
 }
 
