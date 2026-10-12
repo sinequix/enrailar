@@ -408,6 +408,34 @@ a:hover {
   border-bottom-color: var(--sol);
 }
 
+.nav a.btn {
+  flex: none;
+  white-space: nowrap;
+  padding: 0.8rem 1.25rem;
+  border-bottom-width: 1.5px;
+  color: var(--sh-primary-foreground);
+  background: var(--sh-primary);
+  border-color: var(--sh-primary);
+}
+
+.nav a.btn--ghost {
+  color: var(--accent);
+  background: transparent;
+  border-color: var(--accent);
+}
+
+.nav a.btn:hover {
+  border-bottom-color: var(--azul-riel);
+  background: var(--azul-riel);
+  color: var(--sh-primary-foreground);
+}
+
+.nav a.btn--ghost:hover {
+  border-bottom-color: var(--accent);
+  background: var(--celeste-100);
+  color: var(--accent);
+}
+
 .nav .lang {
   font-stretch: 112%;
   letter-spacing: 0.1em;
