@@ -563,9 +563,9 @@ a:hover {
   letter-spacing: 0.01em;
   padding: 0.8rem 1.25rem;
   border-radius: 999px;
-  border: 1.5px solid var(--accent);
-  background: var(--accent);
-  color: var(--blanco);
+  border: 1.5px solid var(--sh-primary);
+  background: var(--sh-primary);
+  color: var(--sh-primary-foreground);
   text-decoration: none;
   cursor: pointer;
   transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
@@ -601,9 +601,20 @@ a:hover {
   color: var(--azul-riel);
 }
 
-.btn[disabled] {
-  opacity: 0.6;
-  cursor: progress;
+.btn[disabled],
+.btn:disabled {
+  background: var(--gris-100);
+  border-color: var(--line-strong);
+  color: var(--ink);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.btn[disabled]:hover,
+.btn:disabled:hover {
+  background: var(--gris-100);
+  border-color: var(--line-strong);
+  color: var(--ink);
 }
 
 /* Figuras con imagen sintética */
