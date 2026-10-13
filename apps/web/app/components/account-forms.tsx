@@ -337,11 +337,24 @@ function turnstileValue(): string {
 function TurnstileBox() {
   const [node, setNode] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
-    const siteKey = document.documentElement.dataset.turnstile ?? "";
-    if (!node || siteKey.length === 0) return;
-    const api = (globalThis as { turnstile?: { render: (el: HTMLElement, opts: { sitekey: string; size: "flexible" }) => void } }).turnstile;
-    if (!api || node.childElementCount > 0) return;
-    api.render(node, { sitekey: siteKey, size: "flexible" });
+    if (!node) return;
+    // El loader del layout corre su efecto después que este (los efectos del hijo van primero),
+    // así que la sitekey y la API de Turnstile pueden no estar todavía. Reintentamos hasta que estén.
+    let tries = 0;
+    const tryRender = (): boolean => {
+      const siteKey = document.documentElement.dataset.turnstile ?? "";
+      const api = (globalThis as { turnstile?: { render: (el: HTMLElement, opts: { sitekey: string; size: "flexible" }) => void } }).turnstile;
+      if (node.childElementCount > 0) return true;
+      if (!api || siteKey.length === 0) return false;
+      api.render(node, { sitekey: siteKey, size: "flexible" });
+      return true;
+    };
+    if (tryRender()) return;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (tryRender() || tries > 150) clearInterval(timer);
+    }, 200);
+    return () => clearInterval(timer);
   }, [node]);
   return <div className="turnstile-slot" ref={setNode} />;
 }
