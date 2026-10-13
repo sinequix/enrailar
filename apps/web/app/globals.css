@@ -1333,7 +1333,7 @@ html[data-sumate-boletin="1"] .sumate-confirm {
 .posts {
   display: grid;
   gap: var(--s-4);
-  max-width: 44rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
 }
 
 .post-card {
