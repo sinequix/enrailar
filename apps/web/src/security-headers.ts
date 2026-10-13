@@ -117,7 +117,7 @@ export function inlineScriptHashes(html: string): string[] {
 }
 
 export function securityHeaders(https: boolean, scriptHashes: readonly string[] = [sumateScriptHash()]): ReadonlyArray<readonly [string, string]> {
-  const scripts = ["'self'", ...new Set(scriptHashes), "https://challenges.cloudflare.com"].join(" ");
+  const scripts = ["'self'", ...new Set(scriptHashes), "https://challenges.cloudflare.com", "https://static.cloudflareinsights.com"].join(" ");
   const headers: Array<readonly [string, string]> = [
     ["content-security-policy", [
       "default-src 'self'",
@@ -125,7 +125,7 @@ export function securityHeaders(https: boolean, scriptHashes: readonly string[] 
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self'",
-      "connect-src 'self' https://api.enrailar.com https://challenges.cloudflare.com",
+      "connect-src 'self' https://api.enrailar.com https://challenges.cloudflare.com https://cloudflareinsights.com",
       "frame-src https://challenges.cloudflare.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
