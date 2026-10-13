@@ -59,6 +59,7 @@ interface TurnstileHandlers {
 
 interface TurnstileRenderOptions {
   sitekey: string;
+  size: "flexible";
   callback: () => void;
   "error-callback": () => boolean;
   "expired-callback": () => void;
@@ -144,6 +145,7 @@ function TurnstileSlot({
     if (!api) return;
     const id = api.render(node, {
       sitekey: siteKey,
+      size: "flexible",
       callback: () => handlers.current.onToken(),
       "error-callback": () => {
         handlers.current.onFail();
