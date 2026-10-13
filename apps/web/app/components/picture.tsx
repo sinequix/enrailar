@@ -4,9 +4,16 @@ import { SYNTHETIC_IMAGE } from "../../src/copy.ts";
 export type BrandImage = "hero-pampa" | "robot-inspeccion" | "estacion-renovada" | "patron-red";
 
 const WIDTHS = [480, 768, 1280] as const;
+// Solo existe el JPEG de 1280. 480 y 768 responden 404 y rompen el respaldo.
+const JPEG_WIDTHS = [1280] as const;
+
+function asset(name: BrandImage, width: number, ext: "avif" | "webp" | "jpg"): string {
+  return `/brand/img/${name}-${width}.${ext}`;
+}
 
 function srcset(name: BrandImage, ext: "avif" | "webp" | "jpg"): string {
-  return WIDTHS.map((w) => `/brand/img/${name}-${w}.${ext} ${w}w`).join(", ");
+  const widths = ext === "jpg" ? JPEG_WIDTHS : WIDTHS;
+  return widths.map((w) => `${asset(name, w, ext)} ${w}w`).join(", ");
 }
 
 /**
@@ -31,7 +38,7 @@ export function BrandPicture({
       <source type="image/avif" srcSet={srcset(name, "avif")} sizes={sizes} />
       <source type="image/webp" srcSet={srcset(name, "webp")} sizes={sizes} />
       <img
-        src={`/brand/img/${name}-1280.jpg`}
+        src={asset(name, 1280, "jpg")}
         srcSet={srcset(name, "jpg")}
         sizes={sizes}
         width={1280}
