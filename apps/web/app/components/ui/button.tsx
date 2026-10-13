@@ -6,12 +6,12 @@ import type { ComponentProps } from "react";
 import { cn } from "../../../src/cn.ts";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-full border-[1.5px] border-solid font-[family-name:var(--font-display)] text-[length:var(--t-sm)] font-semibold tracking-[0.01em] no-underline px-5 py-[0.8rem] cursor-pointer transition-colors disabled:cursor-progress disabled:opacity-60",
+  "inline-flex items-center justify-center gap-2 rounded-full border-[1.5px] border-solid font-[family-name:var(--font-display)] text-[length:var(--t-sm)] font-semibold tracking-[0.01em] no-underline px-5 py-[0.8rem] cursor-pointer transition-colors disabled:cursor-not-allowed disabled:border-[var(--line-strong)] disabled:bg-[var(--gris-100)] disabled:text-[var(--ink)] disabled:opacity-100",
   {
     variants: {
       variant: {
         default:
-          "border-[var(--accent)] bg-[var(--accent)] text-[var(--blanco)] hover:border-[var(--azul-riel)] hover:bg-[var(--azul-riel)]",
+          "border-primary bg-primary text-primary-foreground hover:border-[var(--azul-riel)] hover:bg-[var(--azul-riel)] hover:text-[var(--blanco)]",
         ghost:
           "border-[var(--accent)] bg-transparent text-[var(--accent)] hover:bg-[var(--celeste-100)]",
         sol:

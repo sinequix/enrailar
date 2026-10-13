@@ -339,9 +339,9 @@ function TurnstileBox() {
   useEffect(() => {
     const siteKey = document.documentElement.dataset.turnstile ?? "";
     if (!node || siteKey.length === 0) return;
-    const api = (globalThis as { turnstile?: { render: (el: HTMLElement, opts: { sitekey: string }) => void } }).turnstile;
+    const api = (globalThis as { turnstile?: { render: (el: HTMLElement, opts: { sitekey: string; size: "flexible" }) => void } }).turnstile;
     if (!api || node.childElementCount > 0) return;
-    api.render(node, { sitekey: siteKey });
+    api.render(node, { sitekey: siteKey, size: "flexible" });
   }, [node]);
   return <div className="turnstile-slot" ref={setNode} />;
 }
