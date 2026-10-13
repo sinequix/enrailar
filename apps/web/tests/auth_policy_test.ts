@@ -169,8 +169,17 @@ Deno.test("la web manda CSP, HSTS y frame-ancestors", () => {
   const https = securityHeaders(true);
   const csp = https.find((header) => header[0] === "content-security-policy")?.[1] ?? "";
   const scriptSrc = csp.split(";").find((part) => part.trim().startsWith("script-src")) ?? "";
+  const connectSrc = csp.split(";").find((part) => part.trim().startsWith("connect-src")) ?? "";
   assert(csp.includes("frame-ancestors 'none'"));
   assert(!scriptSrc.includes("unsafe-inline"));
+  assertEquals(
+    scriptSrc.trim().split(/\s+/).filter((token) => token.startsWith("https://")),
+    ["https://challenges.cloudflare.com", "https://static.cloudflareinsights.com"],
+  );
+  assertEquals(
+    connectSrc.trim().split(/\s+/).filter((token) => token.startsWith("https://")),
+    ["https://api.enrailar.com", "https://challenges.cloudflare.com", "https://cloudflareinsights.com"],
+  );
   assert(scriptSrc.includes(sumateScriptHash()));
   assertEquals(sumateScriptHash(), cspScriptHash(sumateBootScript()));
   assertEquals(cspScriptHash("abc"), "'sha256-ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0='");
