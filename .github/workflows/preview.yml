@@ -15,7 +15,7 @@ jobs:
   deploy:
     name: preview
     if: github.event.action != 'closed'
-    runs-on: [self-hosted, Linux, X64, ian-hetzner]
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","ian-hetzner"]') || 'ubuntu-latest' }}
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -63,7 +63,7 @@ jobs:
   destroy:
     name: destroy preview
     if: github.event.action == 'closed'
-    runs-on: [self-hosted, Linux, X64, ian-hetzner]
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","ian-hetzner"]') || 'ubuntu-latest' }}
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
