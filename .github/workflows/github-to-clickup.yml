@@ -18,7 +18,7 @@ concurrency:
 jobs:
   sync:
     name: github-to-clickup
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, ian-hetzner]
     timeout-minutes: 10
     steps:
       - name: Checkout

@@ -33,7 +33,7 @@ jobs:
       github.event.issue.pull_request ||
       contains(toJSON(github.event.issue.labels), 'agent:') ||
       contains(toJSON(github.event.issue.labels), 'needs:human'))
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, ian-hetzner]
     timeout-minutes: 10
     steps:
       - name: Checkout
