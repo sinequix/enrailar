@@ -9,7 +9,9 @@ const newsletterJobSchema = z.object({
   unsubscribePath: z.string().startsWith("/v1/newsletter/unsubscribe?token="),
 });
 
-const authPathSchema = z.string().startsWith("/").refine((value) => !/[\r\n]/.test(value));
+const authPathSchema = z.string().regex(
+  /^\/(es|en)\/cuenta\/(verificar|recuperar)\?token=[A-Za-z0-9._~%=-]{8,2000}$/,
+);
 
 const authVerifyJobSchema = z.object({
   kind: z.literal("auth.verify"),

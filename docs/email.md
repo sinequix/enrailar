@@ -27,8 +27,27 @@ Alchemy despliega ese árbol con `Cloudflare.Website.Vite`: bundle de React Rout
 
 ## Salida
 
-`workers/email-out` consume la cola `Mail`. Hoy el único trabajo es `newsletter.confirm`: arma un texto plano desde `hola@enrailar.com` con `List-Unsubscribe` y `List-Unsubscribe-Post` apuntando a la baja en un clic de la API. No loguea el destinatario. Un cuerpo que no cumple el esquema se confirma y se descarta. Si falta `PUBLIC_API_ORIGIN`, reintenta.
+`workers/email-out` consume la cola `Mail`. El binding `EMAIL` es `send_email` de Email Sending. No usa una API key.
 
-En `prod`, Alchemy setea `PUBLIC_API_ORIGIN` en `https://api.enrailar.com`. En `preview` y `pr-N` queda vacío: la cola reintenta y termina en la dead letter. Alchemy `2.0.0-beta.81` no deja pasar `worker.url` (puede ser `undefined`) como binding de texto. Cuando haga falta probar el boletín en un preview, hay que completar ese origen con la URL pública del Worker de la API.
+El boletín (`newsletter.confirm`) sale de `hola@enrailar.com`, en HTML y texto plano, con `List-Unsubscribe` y `List-Unsubscribe-Post` apuntando a la baja en un clic de la API. Ese enlace usa `PUBLIC_API_ORIGIN`.
 
-Enviar a suscriptores arbitrarios depende de que Email Sending de la cuenta permita destinos que no estén verificados uno por uno. `SendEmail` de Alchemy no fija una lista de destinos, justamente para no commitear direcciones. Si la cuenta igual exige destinos verificados, la confirmación del boletín no sale hasta resolver eso en el dashboard.
+La verificación de cuenta (`auth.verify`) y la recuperación (`auth.reset`) salen de `EMAIL_FROM`. En prod es `no-responder@enrailar.com`, con el nombre visible Enrailar. El `replyTo` es `hola@enrailar.com`: el catch-all de Routing descarta lo que llega a `no-responder@`. Cada mensaje lleva HTML y texto plano, en el idioma de la cuenta. El enlace se arma con `APP_BASE_URL` más `/{locale}/cuenta/verificar` o `/{locale}/cuenta/recuperar`.
+
+No se loguea el destinatario ni el token. Un cuerpo que no cumple el esquema se confirma y se descarta. Si falta `PUBLIC_API_ORIGIN` en el boletín, o `APP_BASE_URL` o `EMAIL_FROM` en la cuenta, el mensaje se reintenta.
+
+En `prod`, Alchemy setea `PUBLIC_API_ORIGIN` en `https://api.enrailar.com`, `APP_BASE_URL` en `https://enrailar.com` y `EMAIL_FROM` en `no-responder@enrailar.com`. En `preview` y `pr-N`, `PUBLIC_API_ORIGIN` y `APP_BASE_URL` quedan vacíos: la cola reintenta y termina en la dead letter. Alchemy `2.0.0-beta.81` no deja pasar `worker.url` (puede ser `undefined`) como binding de texto. Cuando haga falta probar un correo en un preview, hay que completar ese origen con la URL pública del Worker que corresponde.
+
+`EMAIL_FROM` y `APP_BASE_URL` no son secretos. Alchemy los declara. No van en `.env.example`. El binding `EMAIL` permite como remitentes las tres casillas de rol y `no-responder@enrailar.com`. No fija destinos, para no commitear direcciones. Si la cuenta exige destinos verificados uno por uno, el correo no sale hasta resolverlo en el dashboard.
+
+## DNS de Email Sending
+
+Email Routing (entrada) y Email Sending (salida) se onboarded por separado. Alchemy declara Routing en `prod`. Sending no tiene un recurso en este stack: `enrailar.com` tiene que estar onboarded en Email Sending de la cuenta antes del primer envío. Al onboarded, Cloudflare agrega y deja bloqueados estos registros, distintos de los MX, SPF y DKIM del ápice:
+
+| Registro | Nombre | Para qué |
+| --- | --- | --- |
+| MX | `cf-bounce.enrailar.com` | Rebotes, hacia `route1.mx.cloudflare.net`, `route2.mx.cloudflare.net` y `route3.mx.cloudflare.net` |
+| TXT SPF | `cf-bounce.enrailar.com` | `v=spf1 include:_spf.mx.cloudflare.net ~all` |
+| TXT DKIM | `cf-bounce._domainkey.enrailar.com` | Firma de salida. El selector y la clave los administra Cloudflare. |
+| TXT DMARC | `_dmarc.enrailar.com` | Política. Conviene `p=none` hasta mirar los reportes. |
+
+El valor de DKIM no se copia a este repo: sale del onboarding. No hay que mezclar estos registros con los de Email Routing.

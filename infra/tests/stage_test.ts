@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "@std/assert";
-import { ROLE_MAILBOXES } from "../../packages/shared/src/project.ts";
+import { ROLE_MAILBOXES, TRANSACTIONAL_FROM } from "../../packages/shared/src/project.ts";
 import { isProductionStage, NAMED_STAGES } from "../src/stage.ts";
 
 Deno.test("solo prod toca el DNS de enrailar.com", () => {
@@ -32,7 +32,7 @@ async function files(): Promise<string[]> {
 }
 
 Deno.test("no hay correos fuera de las casillas de rol", async () => {
-  const allowed = new Set<string>(ROLE_MAILBOXES);
+  const allowed = new Set<string>([...ROLE_MAILBOXES, TRANSACTIONAL_FROM]);
   const offenders: string[] = [];
   for (const path of await files()) {
     const text = await Deno.readTextFile(path);
@@ -42,6 +42,16 @@ Deno.test("no hay correos fuera de las casillas de rol", async () => {
     }
   }
   assertEquals(offenders, []);
+});
+
+Deno.test("email-out manda con el binding EMAIL", async () => {
+  const text = await Deno.readTextFile(new URL("../alchemy.run.ts", import.meta.url));
+  assert(text.includes("EMAIL: outbound"));
+  assert(text.includes("EMAIL_FROM: TRANSACTIONAL_FROM"));
+  assert(text.includes("APP_BASE_URL:"));
+  assert(text.includes("allowedSenderAddresses: [...ROLE_MAILBOXES, TRANSACTIONAL_FROM]"));
+  assert(!text.includes("SEND_EMAIL"));
+  assert(!text.includes("PUBLIC_WEB_ORIGIN"));
 });
 
 Deno.test("el ejemplo de entorno deja los secretos vacíos", async () => {

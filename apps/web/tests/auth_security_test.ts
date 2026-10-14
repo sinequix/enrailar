@@ -5,7 +5,7 @@ import { guardRequest, requireAdminAccess } from "../src/app-guard.ts";
 import { createAuth, type AuthEnv } from "../src/auth.ts";
 import { consumeRateLimit, handleAuth, rateLimitSql } from "../src/auth-http.ts";
 import { createMemoryDatabase } from "../dev/memory-db.ts";
-import type { MailJob } from "@enrailar/shared";
+import { mailJobSchema, type MailJob } from "@enrailar/shared";
 
 const host = ["example", "test"].join(".");
 const adminEmail = ["mesa", host].join("@");
@@ -350,6 +350,90 @@ Deno.test("ban, alta y edición de admin quedan en la auditoría", async () => {
     assertEquals(await count("auth.user_update"), 1);
     assertEquals(await count("auth.ban"), 1);
     assertEquals(await count("auth.remove"), 1);
+  } finally {
+    sqlite.close();
+  }
+});
+
+Deno.test("verificar el correo es de un solo uso y el token no queda en claro", async () => {
+  const { sqlite, db, env, jobs } = openDb();
+  try {
+    await signup(db, env, userEmail);
+    const token = mailToken(jobs);
+    assert(mailJobSchema.safeParse(jobs.at(-1)).success);
+    const listed = await db.prepare(`SELECT identifier, value FROM verification`).bind().all<{ identifier: string; value: string }>();
+    assert(!JSON.stringify(listed.results).includes(token));
+    assert(listed.results.some((row) => row.identifier.startsWith("auth-verify:")));
+    const blocked = await call(db, env, "/sign-in/email", { email: userEmail, password });
+    assertEquals(blocked.status, 403);
+    const body = await blocked.json() as { code?: string };
+    assertEquals(body.code, "EMAIL_NOT_VERIFIED");
+    const verify = await handleAuth(new Request(`${origin}/api/auth/verify-email?token=${encodeURIComponent(token)}`, { headers: { origin } }), env, db);
+    assertEquals(verify.status, 200, await verify.clone().text());
+    const again = await handleAuth(new Request(`${origin}/api/auth/verify-email?token=${encodeURIComponent(token)}`, { headers: { origin } }), env, db);
+    assertEquals(again.status, 401);
+    const row = await db.prepare(`SELECT emailVerified FROM "user" WHERE email = ?`).bind(userEmail).first<{ emailVerified: number }>();
+    assertEquals(Number(row?.emailVerified ?? 0), 1);
+  } finally {
+    sqlite.close();
+  }
+});
+
+Deno.test("un enlace de verificación vencido no confirma la cuenta", async () => {
+  const { sqlite, db, env, jobs } = openDb();
+  try {
+    await signup(db, env, userEmail);
+    const token = mailToken(jobs);
+    const past = new Date(Date.now() - 60_000).toISOString();
+    await db.prepare(`UPDATE verification SET expiresAt = ? WHERE identifier LIKE 'auth-verify:%'`).bind(past).run();
+    const verify = await handleAuth(new Request(`${origin}/api/auth/verify-email?token=${encodeURIComponent(token)}`, { headers: { origin } }), env, db);
+    assertEquals(verify.status, 401);
+    const row = await db.prepare(`SELECT emailVerified FROM "user" WHERE email = ?`).bind(userEmail).first<{ emailVerified: number }>();
+    assertEquals(Number(row?.emailVerified ?? 1), 0);
+  } finally {
+    sqlite.close();
+  }
+});
+
+Deno.test("recuperar la contraseña es de un solo uso y no guarda el token", async () => {
+  const { sqlite, db, env, jobs } = openDb();
+  try {
+    await signup(db, env, userEmail);
+    const verify = await handleAuth(new Request(`${origin}/api/auth/verify-email?token=${encodeURIComponent(mailToken(jobs))}`, { headers: { origin } }), env, db);
+    assertEquals(verify.status, 200);
+    jobs.length = 0;
+    const resetRequest = await call(db, env, "/request-password-reset", { email: userEmail, redirectTo: `${origin}/es/cuenta/recuperar` });
+    assertEquals(resetRequest.status, 200, await resetRequest.clone().text());
+    const token = mailToken(jobs);
+    assert(mailJobSchema.safeParse(jobs.at(-1)).success);
+    const listed = await db.prepare(`SELECT identifier, value FROM verification`).bind().all<{ identifier: string; value: string }>();
+    assert(!JSON.stringify(listed.results).includes(token));
+    const reset = await call(db, env, "/reset-password", { newPassword: `${password}-nueva`, token });
+    assertEquals(reset.status, 200, await reset.clone().text());
+    const again = await call(db, env, "/reset-password", { newPassword: `${password}-otra`, token });
+    assert(again.status !== 200);
+    const signin = await call(db, env, "/sign-in/email", { email: userEmail, password: `${password}-nueva` });
+    assertEquals(signin.status, 200);
+  } finally {
+    sqlite.close();
+  }
+});
+
+Deno.test("un enlace de recuperación vencido no cambia la contraseña", async () => {
+  const { sqlite, db, env, jobs } = openDb();
+  try {
+    await signup(db, env, userEmail);
+    const verify = await handleAuth(new Request(`${origin}/api/auth/verify-email?token=${encodeURIComponent(mailToken(jobs))}`, { headers: { origin } }), env, db);
+    assertEquals(verify.status, 200);
+    jobs.length = 0;
+    assertEquals((await call(db, env, "/request-password-reset", { email: userEmail, redirectTo: `${origin}/es/cuenta/recuperar` })).status, 200);
+    const token = mailToken(jobs);
+    const past = new Date(Date.now() - 60_000).toISOString();
+    await db.prepare(`UPDATE verification SET expiresAt = ?`).bind(past).run();
+    const reset = await call(db, env, "/reset-password", { newPassword: `${password}-nueva`, token });
+    assert(reset.status !== 200);
+    const signin = await call(db, env, "/sign-in/email", { email: userEmail, password });
+    assertEquals(signin.status, 200);
   } finally {
     sqlite.close();
   }

@@ -138,6 +138,12 @@ interface Copy {
     recoverTitle: string;
     recoverSend: string;
     recoverChoose: string;
+    sent: string;
+    sentRecover: string;
+    verified: string;
+    recovered: string;
+    unverified: string;
+    resend: string;
     securityTitle: string;
     passkey: string;
     passkeyAdd: string;
@@ -346,11 +352,17 @@ export const COPY: Record<Locale, Copy> = {
       submitSignUp: "Crear cuenta",
       forgot: "Olvidé la contraseña",
       verifyTitle: "Verificá tu correo",
-      verifyBody: "El enlace de verificación confirma la cuenta. Si no llegó, pedí otro desde el ingreso.",
+      verifyBody: "El enlace confirma la cuenta. Vence en una hora y se usa una sola vez. Si no llegó, pedí otro desde el ingreso.",
       verifyAction: "Verificar",
       recoverTitle: "Recuperar el acceso",
       recoverSend: "Enviar el enlace",
       recoverChoose: "Guardar contraseña",
+      sent: "Te enviamos un correo para verificar la cuenta. El enlace vence en una hora y se usa una sola vez.",
+      sentRecover: "Si hay una cuenta con ese correo, llega un enlace. Vence en una hora y se usa una sola vez.",
+      verified: "Correo verificado. Ya podés ingresar.",
+      recovered: "Contraseña guardada. Ya podés ingresar.",
+      unverified: "Falta verificar el correo.",
+      resend: "Reenviar el correo",
       securityTitle: "Seguridad",
       passkey: "Passkeys",
       passkeyAdd: "Agregar passkey",
@@ -556,11 +568,17 @@ export const COPY: Record<Locale, Copy> = {
       submitSignUp: "Create account",
       forgot: "Forgot password",
       verifyTitle: "Verify your email",
-      verifyBody: "The verification link confirms the account. If it did not arrive, ask for another from sign in.",
+      verifyBody: "The link confirms the account. It expires in one hour and works only once. If it did not arrive, ask for another from sign in.",
       verifyAction: "Verify",
       recoverTitle: "Recover access",
       recoverSend: "Send the link",
       recoverChoose: "Save password",
+      sent: "We sent an email to verify the account. The link expires in one hour and works only once.",
+      sentRecover: "If an account uses that email, a link is on the way. It expires in one hour and works only once.",
+      verified: "Email verified. You can sign in.",
+      recovered: "Password saved. You can sign in.",
+      unverified: "The email still needs verification.",
+      resend: "Send the email again",
       securityTitle: "Security",
       passkey: "Passkeys",
       passkeyAdd: "Add passkey",

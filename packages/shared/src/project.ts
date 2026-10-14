@@ -8,6 +8,15 @@ export const ROLE_MAILBOXES = [
 export type RoleMailbox = (typeof ROLE_MAILBOXES)[number];
 
 /**
+ * Remitente de los correos de cuenta. No es una casilla de entrada:
+ * el catch-all de Routing descarta lo que llega ahí.
+ */
+export const TRANSACTIONAL_FROM = "no-responder@enrailar.com";
+
+/** Vida de los enlaces de verificación y de recuperación, en segundos. */
+export const AUTH_LINK_TTL_SECONDS = 60 * 60;
+
+/**
  * Referencia del Hackatrain mientras no haya un día.
  * Cambiar este objeto es el único lugar donde vive el mes.
  */

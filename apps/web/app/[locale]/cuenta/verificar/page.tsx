@@ -17,7 +17,7 @@ export default async function VerifyPage({
   const token = typeof query.token === "string" ? query.token : "";
   return (
     <AccountShell locale={locale} path="/cuenta/verificar" title={copy.account.verifyTitle} skip={copy.skip}>
-      <VerifyForm labels={copy.account} token={token} />
+      <VerifyForm locale={locale} labels={copy.account} token={token} />
     </AccountShell>
   );
 }

@@ -2,9 +2,10 @@ import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
 import { admin } from "better-auth/plugins/admin";
 import { twoFactor } from "better-auth/plugins/two-factor";
-import type { MailJob } from "@enrailar/shared";
+import { AUTH_LINK_TTL_SECONDS, type MailJob } from "@enrailar/shared";
 import { adminAccess, guardPlugin, markAdminPromotion, promoteVerifiedAdmin, shouldPromoteAdmin } from "./auth-hooks.ts";
 import { isConsentAt, parseAdminEmails, rpIdFor } from "./auth-policy.ts";
+import { storeVerifyToken, type TokenDatabase } from "./auth-tokens.ts";
 
 export interface AuthDatabase {
   prepare(query: string): {
@@ -93,6 +94,7 @@ export function createAuth(env: AuthEnv, origin: string) {
       minPasswordLength: 12,
       maxPasswordLength: 128,
       revokeSessionsOnPasswordReset: true,
+      resetPasswordTokenExpiresIn: AUTH_LINK_TTL_SECONDS,
       sendResetPassword: async ({ user, token }) => {
         const locale = localeOf(user);
         await enqueue({
@@ -106,7 +108,9 @@ export function createAuth(env: AuthEnv, origin: string) {
     emailVerification: {
       sendOnSignUp: true,
       autoSignInAfterVerification: false,
+      expiresIn: AUTH_LINK_TTL_SECONDS,
       sendVerificationEmail: async ({ user, token }) => {
+        await storeVerifyToken(env.DB as TokenDatabase, token);
         const locale = localeOf(user);
         await enqueue({
           kind: "auth.verify",
@@ -115,6 +119,9 @@ export function createAuth(env: AuthEnv, origin: string) {
           path: `/${locale}/cuenta/verificar?token=${encodeURIComponent(token)}`,
         });
       },
+    },
+    verification: {
+      storeIdentifier: "hashed",
     },
     session: {
       expiresIn: 60 * 60 * 24 * 7,

@@ -90,6 +90,7 @@ export function isRateLimitedPath(path: string): boolean {
     path === "/request-password-reset" ||
     path === "/forget-password" ||
     path === "/send-verification-email" ||
+    path === "/verify-email" ||
     path === "/reset-password" ||
     path === "/change-password" ||
     path === "/sign-in/passkey" ||

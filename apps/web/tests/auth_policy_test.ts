@@ -59,6 +59,7 @@ Deno.test("login, registro y OTP tienen límite, y Turnstile va en registro y re
   assert(isRateLimitedPath("/request-password-reset"));
   assert(isRateLimitedPath("/two-factor/verify-totp"));
   assert(isRateLimitedPath("/send-verification-email"));
+  assert(isRateLimitedPath("/verify-email"));
   assert(isRateLimitedPath("/passkey/verify-registration"));
   assert(isRateLimitedPath("/sign-in/passkey"));
   assert(isRateLimitedPath("/reset-password"));

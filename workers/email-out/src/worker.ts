@@ -1,12 +1,14 @@
 import { env } from "cloudflare:workers";
 import { handleQueue, type QueueMessage } from "./queue.ts";
+import { toEmailSend, type EmailSendPayload } from "./render.ts";
 
 interface OutEnv {
-  SEND_EMAIL: {
-    send(message: EmailMessage): Promise<unknown>;
+  EMAIL: {
+    send(message: EmailSendPayload): Promise<{ messageId: string }>;
   };
   PUBLIC_API_ORIGIN: string;
-  PUBLIC_WEB_ORIGIN: string;
+  APP_BASE_URL: string;
+  EMAIL_FROM: string;
 }
 
 function bindings(): OutEnv {
@@ -20,11 +22,12 @@ export default {
   queue(batch: { messages: QueueMessage[] }): Promise<void> {
     const bound = bindings();
     return handleQueue(batch.messages, {
-      api: bound.PUBLIC_API_ORIGIN,
-      web: bound.PUBLIC_WEB_ORIGIN,
+      api: bound.PUBLIC_API_ORIGIN ?? "",
+      web: bound.APP_BASE_URL ?? "",
+      from: bound.EMAIL_FROM ?? "",
     }, {
       send(message) {
-        return bound.SEND_EMAIL.send(new EmailMessage(message.from, message.to, message.mime)).then(() => undefined);
+        return bound.EMAIL.send(toEmailSend(message)).then(() => undefined);
       },
     }, (event) => {
       console.log(JSON.stringify(event));

@@ -45,6 +45,10 @@ El sitekey de Turnstile es público y sale del recurso. El secret también: Alch
 
 ## Qué queda apuntando a stubs
 
+### Correo transaccional
+
+El worker `email-out` recibe el binding `EMAIL` (`send_email` de Email Sending). Las variables de texto, no secretos, son `EMAIL_FROM`, `APP_BASE_URL` y `PUBLIC_API_ORIGIN`. Alchemy las setea: en prod `EMAIL_FROM` es `no-responder@enrailar.com` y `APP_BASE_URL` es `https://enrailar.com`. No van en `.env.example` ni en los secretos de GitHub. El DNS de Email Sending (MX, SPF y DKIM en `cf-bounce.enrailar.com`, y DMARC en `_dmarc.enrailar.com`) no lo declara este stack: se crea al onboarded el dominio en Email Sending. El detalle está en [`email.md`](email.md).
+
 La API, el inbox, los workers de correo y la web ya tienen entrypoint propio. La web es `Cloudflare.Website.Vinext` sobre `apps/web`. El inbox es `Cloudflare.Website.Vite` sobre `apps/inbox` (`main: workers/app.ts`). Antes de `alchemy deploy`, `npm ci --prefix apps/inbox`: ese paquete no está en el workspace de pnpm y trae su propio lockfile. Ese `npm ci` no corre Wrangler. El admin sigue en `infra/stubs/`. Las tablas de D1 salen de `apps/api/migrations`. El detalle del correo está en [`email.md`](email.md) y el del inbox en [`inbox.md`](inbox.md).
 
 `NEXT_PUBLIC_API_ORIGIN` y `NEXT_PUBLIC_TURNSTILE_SITE_KEY` son públicas. En [`.env.example`](../.env.example) quedan vacías. Si el origen no está, el formulario apunta a `https://api.enrailar.com`. La clave de Turnstile es el sitekey del widget, no el secret.

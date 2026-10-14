@@ -1,4 +1,5 @@
 import { appendAudit, createAuth, type AuthEnv } from "./auth.ts";
+import { consumeVerifyToken } from "./auth-tokens.ts";
 import {
   auditKind,
   authPath,
@@ -82,6 +83,10 @@ export async function handleAuth(request: Request, env: AuthEnv & { TURNSTILE_SE
       ip: rawIp(request) === "unknown" ? undefined : rawIp(request),
     });
     if (!ok) return Response.json({ ok: false, error: "turnstile" }, { status: 400 });
+  }
+  if (request.method === "GET" && path === "/verify-email") {
+    const fresh = await consumeVerifyToken(db, url.searchParams.get("token") ?? "");
+    if (!fresh) return Response.json({ ok: false }, { status: 401 });
   }
   const auth = createAuth(env, url.origin);
   const response = await auth.handler(request);
