@@ -10,7 +10,7 @@ on:
 jobs:
   detect:
     name: Detect JavaScript
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","ian-hetzner"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     outputs:
@@ -32,7 +32,7 @@ jobs:
     name: Analyze
     needs: detect
     if: needs.detect.outputs.present == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","ian-hetzner"]') || 'ubuntu-latest' }}
     permissions:
       actions: read
       contents: read

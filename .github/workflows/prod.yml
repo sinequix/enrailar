@@ -14,7 +14,7 @@ concurrency:
 jobs:
   deploy:
     name: production
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","ian-hetzner"]') || 'ubuntu-latest' }}
     environment:
       name: production
       url: https://enrailar.com
