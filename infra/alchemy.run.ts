@@ -3,7 +3,7 @@ import { adopt } from "alchemy/AdoptPolicy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
-import { ROLE_MAILBOXES } from "@enrailar/shared";
+import { ROLE_MAILBOXES, TRANSACTIONAL_FROM } from "@enrailar/shared";
 import { accessPolicies } from "./src/access.ts";
 import { DOMAIN, isProductionStage, stubPath } from "./src/stage.ts";
 
@@ -63,7 +63,7 @@ export default Stack(
       mode: "managed",
     });
     const outbound = yield* Cloudflare.Email.SendEmail("Outbound", {
-      allowedSenderAddresses: [...ROLE_MAILBOXES],
+      allowedSenderAddresses: [...ROLE_MAILBOXES, TRANSACTIONAL_FROM],
     });
 
     const domain = (name: string, aliases?: string[]) =>
@@ -146,9 +146,10 @@ export default Stack(
       ...closedDev,
       env: {
         DB: database,
-        SEND_EMAIL: outbound,
+        EMAIL: outbound,
         PUBLIC_API_ORIGIN: production ? `https://api.${DOMAIN}` : "",
-        PUBLIC_WEB_ORIGIN: production ? `https://${DOMAIN}` : "",
+        APP_BASE_URL: production ? `https://${DOMAIN}` : "",
+        EMAIL_FROM: TRANSACTIONAL_FROM,
       },
     });
 
@@ -164,6 +165,7 @@ export default Stack(
         BETTER_AUTH_SECRET: Config.Redacted("BETTER_AUTH_SECRET"),
         ADMIN_EMAILS: yield* Config.String("ADMIN_EMAILS").pipe(Config.withDefault("")),
         AUTH_PRODUCTION: production ? "1" : "0",
+        EMAIL_VERIFICATION_REQUIRED: yield* Config.String("EMAIL_VERIFICATION_REQUIRED").pipe(Config.withDefault("")),
       },
     });
 

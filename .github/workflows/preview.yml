@@ -26,6 +26,7 @@ jobs:
       POLICY_AUD: ${{ secrets.POLICY_AUD }}
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+      EMAIL_VERIFICATION_REQUIRED: ${{ secrets.EMAIL_VERIFICATION_REQUIRED }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -74,6 +75,7 @@ jobs:
       POLICY_AUD: ${{ secrets.POLICY_AUD }}
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+      EMAIL_VERIFICATION_REQUIRED: ${{ secrets.EMAIL_VERIFICATION_REQUIRED }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

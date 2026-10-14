@@ -38,6 +38,7 @@ export function authEnvFromProcess(): AuthEnv {
     BETTER_AUTH_SECRET: processEnv("BETTER_AUTH_SECRET"),
     ADMIN_EMAILS: processEnv("ADMIN_EMAILS"),
     AUTH_PRODUCTION: processEnv("AUTH_PRODUCTION"),
+    EMAIL_VERIFICATION_REQUIRED: processEnv("EMAIL_VERIFICATION_REQUIRED"),
   };
 }
 
