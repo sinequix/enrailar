@@ -4,6 +4,7 @@ import {
   auditAfter,
   auditKind,
   cookieHasSession,
+  emailVerificationRequired,
   gateDecision,
   isConsentAt,
   isPluginAdminPath,
@@ -32,6 +33,19 @@ Deno.test("el primer admin sale de la lista y nunca de un correo fijo", () => {
   assertEquals(parseAdminEmails(undefined).size, 0);
   assertEquals(roleForEmail("prensa@enrailar.com", admins), "admin");
   assertEquals(roleForEmail("otra@enrailar.com", admins), "user");
+});
+
+Deno.test("EMAIL_VERIFICATION_REQUIRED solo prende con 1, true o yes", () => {
+  assert(!emailVerificationRequired(undefined));
+  assert(!emailVerificationRequired(""));
+  assert(!emailVerificationRequired("  "));
+  assert(!emailVerificationRequired("0"));
+  assert(!emailVerificationRequired("false"));
+  assert(!emailVerificationRequired("no"));
+  assert(emailVerificationRequired("1"));
+  assert(emailVerificationRequired("true"));
+  assert(emailVerificationRequired(" yes "));
+  assert(emailVerificationRequired("TRUE"));
 });
 
 Deno.test("el consentimiento es un instante reciente", () => {

@@ -165,6 +165,7 @@ export default Stack(
         BETTER_AUTH_SECRET: Config.Redacted("BETTER_AUTH_SECRET"),
         ADMIN_EMAILS: yield* Config.String("ADMIN_EMAILS").pipe(Config.withDefault("")),
         AUTH_PRODUCTION: production ? "1" : "0",
+        EMAIL_VERIFICATION_REQUIRED: yield* Config.String("EMAIL_VERIFICATION_REQUIRED").pipe(Config.withDefault("")),
       },
     });
 

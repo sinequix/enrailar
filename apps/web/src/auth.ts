@@ -4,7 +4,7 @@ import { admin } from "better-auth/plugins/admin";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { AUTH_LINK_TTL_SECONDS, type MailJob } from "@enrailar/shared";
 import { adminAccess, guardPlugin, markAdminPromotion, promoteVerifiedAdmin, shouldPromoteAdmin } from "./auth-hooks.ts";
-import { isConsentAt, parseAdminEmails, rpIdFor } from "./auth-policy.ts";
+import { emailVerificationRequired, isConsentAt, parseAdminEmails, rpIdFor } from "./auth-policy.ts";
 import { storeVerifyToken, type TokenDatabase } from "./auth-tokens.ts";
 
 export interface AuthDatabase {
@@ -24,7 +24,9 @@ export interface AuthEnv {
   BETTER_AUTH_SECRET?: string;
   ADMIN_EMAILS?: string;
   AUTH_PRODUCTION?: string;
+  EMAIL_VERIFICATION_REQUIRED?: string;
   MAIL_QUEUE?: AuthMailQueue;
+  log?: (status: string) => void;
 }
 
 function localeOf(user: object): "es" | "en" {
@@ -50,10 +52,25 @@ export function createAuth(env: AuthEnv, origin: string) {
   const admins = parseAdminEmails(env.ADMIN_EMAILS);
   const secure = url.protocol === "https:";
   const queue = env.MAIL_QUEUE;
+  const required = emailVerificationRequired(env.EMAIL_VERIFICATION_REQUIRED);
 
-  async function enqueue(job: MailJob): Promise<void> {
-    if (!queue) return;
-    await queue.send(job);
+  function note(status: "mail-skipped"): void {
+    if (env.log) env.log(status);
+    else console.log(JSON.stringify({ status }));
+  }
+
+  async function deliver(job: MailJob, prepare?: () => Promise<void>): Promise<void> {
+    try {
+      if (prepare) await prepare();
+      if (!queue) {
+        if (!required) note("mail-skipped");
+        return;
+      }
+      await queue.send(job);
+    } catch (error) {
+      if (required) throw error;
+      note("mail-skipped");
+    }
   }
 
   return betterAuth({
@@ -90,14 +107,14 @@ export function createAuth(env: AuthEnv, origin: string) {
     },
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: true,
+      requireEmailVerification: required,
       minPasswordLength: 12,
       maxPasswordLength: 128,
       revokeSessionsOnPasswordReset: true,
       resetPasswordTokenExpiresIn: AUTH_LINK_TTL_SECONDS,
       sendResetPassword: async ({ user, token }) => {
         const locale = localeOf(user);
-        await enqueue({
+        await deliver({
           kind: "auth.reset",
           to: user.email,
           locale,
@@ -110,14 +127,13 @@ export function createAuth(env: AuthEnv, origin: string) {
       autoSignInAfterVerification: false,
       expiresIn: AUTH_LINK_TTL_SECONDS,
       sendVerificationEmail: async ({ user, token }) => {
-        await storeVerifyToken(env.DB as TokenDatabase, token);
         const locale = localeOf(user);
-        await enqueue({
+        await deliver({
           kind: "auth.verify",
           to: user.email,
           locale,
           path: `/${locale}/cuenta/verificar?token=${encodeURIComponent(token)}`,
-        });
+        }, () => storeVerifyToken(env.DB as TokenDatabase, token));
       },
     },
     verification: {

@@ -49,6 +49,7 @@ Deno.test("email-out manda con el binding EMAIL", async () => {
   assert(text.includes("EMAIL: outbound"));
   assert(text.includes("EMAIL_FROM: TRANSACTIONAL_FROM"));
   assert(text.includes("APP_BASE_URL:"));
+  assert(text.includes("EMAIL_VERIFICATION_REQUIRED:"));
   assert(text.includes("allowedSenderAddresses: [...ROLE_MAILBOXES, TRANSACTIONAL_FROM]"));
   assert(!text.includes("SEND_EMAIL"));
   assert(!text.includes("PUBLIC_WEB_ORIGIN"));
@@ -67,6 +68,7 @@ Deno.test("el ejemplo de entorno deja los secretos vacíos", async () => {
     "TEAM_DOMAIN",
     "BETTER_AUTH_SECRET",
     "ADMIN_EMAILS",
+    "EMAIL_VERIFICATION_REQUIRED",
   ];
   for (const name of names) {
     assert(text.includes(`${name}=`), name);

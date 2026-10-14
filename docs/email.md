@@ -39,6 +39,14 @@ En `prod`, Alchemy setea `PUBLIC_API_ORIGIN` en `https://api.enrailar.com`, `APP
 
 `EMAIL_FROM` y `APP_BASE_URL` no son secretos. Alchemy los declara. No van en `.env.example`. El binding `EMAIL` permite como remitentes las tres casillas de rol y `no-responder@enrailar.com`. No fija destinos, para no commitear direcciones. Si la cuenta exige destinos verificados uno por uno, el correo no sale hasta resolverlo en el dashboard.
 
+## Verificación obligatoria
+
+`EMAIL_VERIFICATION_REQUIRED` es una variable de texto del Worker de la web. No es un secreto y no está en `require-secrets.sh`. Alchemy la lee del entorno y, si falta, la deja vacía. En [`.env.example`](../.env.example) queda vacía. En los workflows de deploy se pasa como `secrets.EMAIL_VERIFICATION_REQUIRED`: si ese secreto no existe, el valor es vacío.
+
+Vacío, `0` o `false` (el default): el alta no bloquea el ingreso. El worker igual intenta encolar `auth.verify` y `auth.reset`. Si falta el binding de la cola, o `send` tira porque Email Sending no está activo, el alta y la recuperación responden igual: se loguea `{ "status": "mail-skipped" }` y se sigue. Ese log no lleva destinatario, token ni el texto del error.
+
+`1`, `true` o `yes`: hay que verificar el correo antes de ingresar. Un fallo al encolar el correo se propaga como hasta ahora.
+
 ## DNS de Email Sending
 
 Email Routing (entrada) y Email Sending (salida) se onboarded por separado. Alchemy declara Routing en `prod`. Sending no tiene un recurso en este stack: `enrailar.com` tiene que estar onboarded en Email Sending de la cuenta antes del primer envío. Al onboarded, Cloudflare agrega y deja bloqueados estos registros, distintos de los MX, SPF y DKIM del ápice:
