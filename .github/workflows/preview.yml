@@ -15,7 +15,7 @@ jobs:
   deploy:
     name: preview
     if: github.event.action != 'closed'
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","ian-hetzner"]') || 'ubuntu-latest' }}
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -26,6 +26,7 @@ jobs:
       POLICY_AUD: ${{ secrets.POLICY_AUD }}
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+      EMAIL_VERIFICATION_REQUIRED: ${{ secrets.EMAIL_VERIFICATION_REQUIRED }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -63,7 +64,7 @@ jobs:
   destroy:
     name: destroy preview
     if: github.event.action == 'closed'
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","ian-hetzner"]') || 'ubuntu-latest' }}
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -74,6 +75,7 @@ jobs:
       POLICY_AUD: ${{ secrets.POLICY_AUD }}
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+      EMAIL_VERIFICATION_REQUIRED: ${{ secrets.EMAIL_VERIFICATION_REQUIRED }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

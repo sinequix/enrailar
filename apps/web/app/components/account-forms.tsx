@@ -21,6 +21,12 @@ export interface AccountLabels {
   recoverTitle: string;
   recoverSend: string;
   recoverChoose: string;
+  sent: string;
+  sentRecover: string;
+  verified: string;
+  recovered: string;
+  unverified: string;
+  resend: string;
   securityTitle: string;
   passkey: string;
   passkeyAdd: string;
@@ -43,10 +49,17 @@ function statusLine(text: string | null) {
   return <p className="status" role="status">{text}</p>;
 }
 
+function errorCode(error: unknown): string {
+  if (!error || typeof error !== "object" || !("code" in error)) return "";
+  const code = error.code;
+  return typeof code === "string" ? code : "";
+}
+
 export function SignInForm({ locale, labels, emailLabel }: { locale: Locale; labels: AccountLabels; emailLabel: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [unverified, setUnverified] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const live = useLive();
 
@@ -56,7 +69,28 @@ export function SignInForm({ locale, labels, emailLabel }: { locale: Locale; lab
     setMessage(null);
     const result = await authClient.signIn.email({ email, password });
     setBusy(false);
-    if (result.error) setMessage(labels.failed);
+    if (!result.error) {
+      setUnverified(false);
+      return;
+    }
+    if (errorCode(result.error) === "EMAIL_NOT_VERIFIED") {
+      setUnverified(true);
+      setMessage(labels.unverified);
+      return;
+    }
+    setUnverified(false);
+    setMessage(labels.failed);
+  }
+
+  async function resend() {
+    setBusy(true);
+    setMessage(null);
+    const result = await authClient.sendVerificationEmail({
+      email,
+      fetchOptions: { headers: { "x-turnstile-token": turnstileValue() } },
+    });
+    setBusy(false);
+    setMessage(result.error ? labels.failed : labels.sent);
   }
 
   return (
@@ -71,6 +105,14 @@ export function SignInForm({ locale, labels, emailLabel }: { locale: Locale; lab
       </Label>
       <Button type="submit" disabled={busy || !live}>{labels.submitSignIn}</Button>
       <p className="hint"><a href={`/${locale}/cuenta/recuperar`}>{labels.forgot}</a></p>
+      {unverified
+        ? (
+          <>
+            <TurnstileBox />
+            <Button type="button" disabled={busy || !live || email.length === 0} onClick={() => void resend()}>{labels.resend}</Button>
+          </>
+        )
+        : null}
       {statusLine(message)}
     </form>
   );
@@ -124,7 +166,7 @@ export function SignUpForm({
       },
     });
     setBusy(false);
-    if (result.error) setMessage(labels.failed);
+    setMessage(result.error ? labels.failed : labels.sent);
   }
 
   return (
@@ -152,8 +194,9 @@ export function SignUpForm({
   );
 }
 
-export function VerifyForm({ labels, token }: { labels: AccountLabels; token: string }) {
+export function VerifyForm({ locale, labels, token }: { locale: Locale; labels: AccountLabels; token: string }) {
   const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const live = useLive();
 
@@ -162,13 +205,19 @@ export function VerifyForm({ labels, token }: { labels: AccountLabels; token: st
     setBusy(true);
     const result = await authClient.verifyEmail({ query: { token } });
     setBusy(false);
-    if (result.error) setMessage(labels.failed);
+    if (result.error) {
+      setMessage(labels.failed);
+      return;
+    }
+    setDone(true);
+    setMessage(labels.verified);
   }
 
   return (
     <form className="form" method="post" data-live={live ? "1" : "0"} onSubmit={onSubmit}>
       <p className="hint">{labels.verifyBody}</p>
-      <Button type="submit" disabled={busy || !live || token.length === 0}>{labels.verifyAction}</Button>
+      <Button type="submit" disabled={busy || !live || token.length === 0 || done}>{labels.verifyAction}</Button>
+      {done ? <p className="hint"><a href={`/${locale}/cuenta/ingresar`}>{labels.signIn}</a></p> : null}
       {statusLine(message)}
     </form>
   );
@@ -178,6 +227,7 @@ export function RecoverForm({ locale, labels, emailLabel, token }: { locale: Loc
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const choosing = token.length > 0;
 
@@ -193,7 +243,12 @@ export function RecoverForm({ locale, labels, emailLabel, token }: { locale: Loc
         fetchOptions: { headers: { "x-turnstile-token": turnstileValue() } },
       });
     setBusy(false);
-    if (result.error) setMessage(labels.failed);
+    if (result.error) {
+      setMessage(labels.failed);
+      return;
+    }
+    setDone(true);
+    setMessage(choosing ? labels.recovered : labels.sentRecover);
   }
 
   return (
@@ -212,7 +267,8 @@ export function RecoverForm({ locale, labels, emailLabel, token }: { locale: Loc
           </Label>
         )}
       {choosing ? null : <TurnstileBox />}
-      <Button type="submit" disabled={busy}>{choosing ? labels.recoverChoose : labels.recoverSend}</Button>
+      <Button type="submit" disabled={busy || done}>{choosing ? labels.recoverChoose : labels.recoverSend}</Button>
+      {done && choosing ? <p className="hint"><a href={`/${locale}/cuenta/ingresar`}>{labels.signIn}</a></p> : null}
       {statusLine(message)}
     </form>
   );

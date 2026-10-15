@@ -68,6 +68,7 @@ export function authDevPlugin(): Plugin {
         BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
         ADMIN_EMAILS: process.env.ADMIN_EMAILS ?? "",
         AUTH_PRODUCTION: "0",
+        EMAIL_VERIFICATION_REQUIRED: process.env.EMAIL_VERIFICATION_REQUIRED,
         TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
         MAIL_QUEUE: {
           send(body: MailJob) {

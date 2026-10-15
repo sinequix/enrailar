@@ -2,6 +2,12 @@
 
 export type AuthRole = "user" | "admin";
 
+/** Vacío, `0` y `false` no bloquean el ingreso. `1`, `true` y `yes` sí. */
+export function emailVerificationRequired(raw: string | undefined): boolean {
+  const value = (raw ?? "").trim().toLowerCase();
+  return value === "1" || value === "true" || value === "yes";
+}
+
 export function parseAdminEmails(raw: string | undefined): ReadonlySet<string> {
   const found = new Set<string>();
   for (const part of (raw ?? "").split(",")) {
@@ -90,6 +96,7 @@ export function isRateLimitedPath(path: string): boolean {
     path === "/request-password-reset" ||
     path === "/forget-password" ||
     path === "/send-verification-email" ||
+    path === "/verify-email" ||
     path === "/reset-password" ||
     path === "/change-password" ||
     path === "/sign-in/passkey" ||

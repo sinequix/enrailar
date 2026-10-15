@@ -20,6 +20,7 @@ export default {
       if (env.BETTER_AUTH_SECRET) proc.env.BETTER_AUTH_SECRET = env.BETTER_AUTH_SECRET;
       proc.env.ADMIN_EMAILS = env.ADMIN_EMAILS ?? "";
       proc.env.AUTH_PRODUCTION = env.AUTH_PRODUCTION ?? "";
+      proc.env.EMAIL_VERIFICATION_REQUIRED = env.EMAIL_VERIFICATION_REQUIRED ?? "";
     }
     const https = url.protocol === "https:";
     if (url.pathname.startsWith("/api/auth")) {

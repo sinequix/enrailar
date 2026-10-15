@@ -14,7 +14,7 @@ concurrency:
 jobs:
   deploy:
     name: production
-    runs-on: ubuntu-latest
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","ian-hetzner"]') || 'ubuntu-latest' }}
     environment:
       name: production
       url: https://enrailar.com
@@ -28,6 +28,7 @@ jobs:
       POLICY_AUD: ${{ secrets.POLICY_AUD }}
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+      EMAIL_VERIFICATION_REQUIRED: ${{ secrets.EMAIL_VERIFICATION_REQUIRED }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

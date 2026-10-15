@@ -4,6 +4,7 @@ import {
   auditAfter,
   auditKind,
   cookieHasSession,
+  emailVerificationRequired,
   gateDecision,
   isConsentAt,
   isPluginAdminPath,
@@ -34,6 +35,19 @@ Deno.test("el primer admin sale de la lista y nunca de un correo fijo", () => {
   assertEquals(roleForEmail("otra@enrailar.com", admins), "user");
 });
 
+Deno.test("EMAIL_VERIFICATION_REQUIRED solo prende con 1, true o yes", () => {
+  assert(!emailVerificationRequired(undefined));
+  assert(!emailVerificationRequired(""));
+  assert(!emailVerificationRequired("  "));
+  assert(!emailVerificationRequired("0"));
+  assert(!emailVerificationRequired("false"));
+  assert(!emailVerificationRequired("no"));
+  assert(emailVerificationRequired("1"));
+  assert(emailVerificationRequired("true"));
+  assert(emailVerificationRequired(" yes "));
+  assert(emailVerificationRequired("TRUE"));
+});
+
 Deno.test("el consentimiento es un instante reciente", () => {
   assert(isConsentAt("2026-10-10T12:00:00.000Z", now));
   assert(!isConsentAt("ayer", now));
@@ -59,6 +73,7 @@ Deno.test("login, registro y OTP tienen límite, y Turnstile va en registro y re
   assert(isRateLimitedPath("/request-password-reset"));
   assert(isRateLimitedPath("/two-factor/verify-totp"));
   assert(isRateLimitedPath("/send-verification-email"));
+  assert(isRateLimitedPath("/verify-email"));
   assert(isRateLimitedPath("/passkey/verify-registration"));
   assert(isRateLimitedPath("/sign-in/passkey"));
   assert(isRateLimitedPath("/reset-password"));
