@@ -89,6 +89,7 @@ Deno.test("la migración copia fichas viejas y deja las tablas de origen", async
     VALUES ('news-1', 'prensa@enrailar.com', 'es', 'confirmed', 'hash-c', 'hash-u', '2026-10-03T00:00:00.000Z', '2026-10-03T00:00:00.000Z', NULL, '2026-10-03T00:00:00.000Z');
   `);
   db.exec(Deno.readTextFileSync(new URL("../migrations/0003_submissions.sql", import.meta.url)));
+  db.exec(Deno.readTextFileSync(new URL("../migrations/0006_sumate_volunteer.sql", import.meta.url)));
   const submissions = db.prepare("SELECT id, message FROM submissions ORDER BY id").all() as Array<{ id: string; message: string }>;
   assertEquals(submissions, [
     { id: "con-1", message: "Quiero sumarme." },
@@ -110,8 +111,11 @@ Deno.test("la migración copia fichas viejas y deja las tablas de origen", async
   await store.insertSubmission({
     id: "sum-1",
     email: "hackatrain@enrailar.com",
-    name: undefined,
+    name: "Equipo",
     city: "Tandil",
+    region: "Buenos Aires",
+    profile: "dev",
+    howHelp: "Quiero el mapa.",
     link: "https://enrailar.com",
     message: undefined,
     locale: "en",
@@ -119,6 +123,13 @@ Deno.test("la migración copia fichas viejas y deja las tablas de origen", async
     consentAt: "2026-10-09T00:00:00.000Z",
     createdAt: "2026-10-09T00:00:00.000Z",
   });
+  const stored = await store.getSubmission("sum-1");
+  assertEquals(stored?.clickupStatus, "retry");
+  assertEquals(stored?.region, "Buenos Aires");
+  assertEquals(stored?.howHelp, "Quiero el mapa.");
+  await store.markSubmissionClickup("sum-1", "synced", "task-1");
+  assertEquals((await store.getSubmission("sum-1"))?.clickupTaskId, "task-1");
+  assertEquals(await store.latestClickupTaskId("hackatrain@enrailar.com"), "task-1");
   const added = db.prepare("SELECT intent FROM submission_intents WHERE submission_id = 'sum-1' ORDER BY intent").all() as Array<{ intent: string }>;
   assertEquals(added.map((row) => row.intent), ["boletin", "donar"]);
   db.close();

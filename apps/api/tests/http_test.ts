@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "@std/assert";
-import type { MailJob } from "@enrailar/shared";
+import type { CrmContact, CrmUpsertResult, MailJob } from "@enrailar/shared";
 import { createApp } from "../src/app.ts";
 import type { ApiDeps, LogEvent } from "../src/deps.ts";
 import { createMemoryStore } from "../src/store.ts";
@@ -16,9 +16,17 @@ const valid = {
   company_url: "",
 };
 
-function harness(): { deps: ApiDeps; logs: LogEvent[]; jobs: MailJob[] } {
+function harness(): {
+  deps: ApiDeps;
+  logs: LogEvent[];
+  jobs: MailJob[];
+  contacts: CrmContact[];
+  setCrmResult: (result: CrmUpsertResult) => void;
+} {
   const logs: LogEvent[] = [];
   const jobs: MailJob[] = [];
+  const contacts: CrmContact[] = [];
+  let crmResult: CrmUpsertResult = { ok: true, taskId: "task-1", action: "created" };
   const deps: ApiDeps = {
     store: createMemoryStore(),
     now: () => "2026-10-09T12:00:00.000Z",
@@ -32,9 +40,13 @@ function harness(): { deps: ApiDeps; logs: LogEvent[]; jobs: MailJob[] } {
       jobs.push(job);
       return Promise.resolve();
     },
+    upsertCrmContact(contact) {
+      contacts.push(contact);
+      return Promise.resolve(crmResult);
+    },
     rateLimit: { limit: 3, windowMs: 60_000 },
   };
-  return { deps, logs, jobs };
+  return { deps, logs, jobs, contacts, setCrmResult: (result) => { crmResult = result; } };
 }
 
 async function withServer(deps: ApiDeps, run: (base: string) => Promise<void>): Promise<void> {
@@ -130,8 +142,11 @@ Deno.test("sin consentimiento o sin turno el formulario no entra", async () => {
 const sumate = {
   intents: ["hackatrain", "ciudad"],
   email: "hola@enrailar.com",
-  name: "",
-  city: "",
+  name: "Equipo",
+  city: "Tandil",
+  region: "Buenos Aires",
+  profile: "ingenieria",
+  howHelp: "Quiero relevar el ramal.",
   link: "https://enrailar.com",
   message: "",
   locale: "es",
@@ -193,6 +208,55 @@ Deno.test("sumate registra cada intención y el boletín sigue con doble opt-in"
   const dumped = JSON.stringify(logs);
   assert(!dumped.includes("@"));
   assert(!dumped.includes("token-ok"));
+});
+
+Deno.test("sumate crea el contacto y, si ClickUp falla, igual responde y deja la fila para reintento", async () => {
+  const { deps, jobs, contacts, setCrmResult } = harness();
+  const marks: Array<{ id: string; status: string; taskId: string | undefined }> = [];
+  const mark = deps.store.markSubmissionClickup.bind(deps.store);
+  deps.store.markSubmissionClickup = (id, status, taskId) => {
+    marks.push({ id, status, taskId });
+    return mark(id, status, taskId);
+  };
+  await withServer(deps, async (base) => {
+    const headers = { "content-type": "application/json", "cf-connecting-ip": "203.0.113.60" };
+    const created = await fetch(`${base}/v1/sumate`, { method: "POST", headers, body: JSON.stringify(sumate) });
+    assertEquals(created.status, 202);
+    const contact = contacts[0];
+    assert(contact);
+    assertEquals(contact.fuente, "sumate");
+    assertEquals(contact.tags, ["voluntario"]);
+    assert(!contact.title.includes("@"));
+    assert(!contact.summary.includes("@"));
+    assert(contact.note.includes(sumate.email));
+    assertEquals(marks[0]?.status, "synced");
+    assertEquals(marks[0]?.taskId, "task-1");
+    const saved = marks[0] ? await deps.store.getSubmission(marks[0].id) : undefined;
+    assertEquals(saved?.clickupStatus, "synced");
+    assertEquals(saved?.howHelp, sumate.howHelp);
+    assertEquals(saved?.region, "Buenos Aires");
+
+    setCrmResult({ ok: false, taskId: "task-retry" });
+    const again = await fetch(`${base}/v1/sumate`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "cf-connecting-ip": "203.0.113.61" },
+      body: JSON.stringify({ ...sumate, email: "prensa@enrailar.com" }),
+    });
+    assertEquals(again.status, 202);
+    assertEquals(marks[1]?.status, "retry");
+    assertEquals(marks[1]?.taskId, "task-retry");
+    assertEquals(contacts[1]?.taskId, undefined);
+
+    deps.upsertCrmContact = () => Promise.reject(new Error("clickup"));
+    const thrown = await fetch(`${base}/v1/sumate`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "cf-connecting-ip": "203.0.113.62" },
+      body: JSON.stringify({ ...sumate, city: "", region: "Patagonia" }),
+    });
+    assertEquals(thrown.status, 202);
+    assertEquals(marks[2]?.status, "retry");
+  });
+  assertEquals(jobs.length, 0);
 });
 
 Deno.test("sumate corta por límite", async () => {

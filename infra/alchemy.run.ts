@@ -3,8 +3,10 @@ import { adopt } from "alchemy/AdoptPolicy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
+import * as Redacted from "effect/Redacted";
 import { ROLE_MAILBOXES, TRANSACTIONAL_FROM } from "@enrailar/shared";
 import { accessPolicies } from "./src/access.ts";
+import { optionalSecret } from "./src/clickup-env.ts";
 import { DOMAIN, isProductionStage, stubPath } from "./src/stage.ts";
 
 const compatibility = {
@@ -71,6 +73,12 @@ export default Stack(
     // `false` apaga la URL estable de workers.dev y los preview URLs.
     // Un preview no tiene dominio propio, así que solo se cierra en prod.
     const closedDev = production ? { workersDev: false as const } : {};
+    const clickupToken = yield* optionalSecret("CLICKUP_API_TOKEN");
+    const clickupListId = (yield* Config.String("CLICKUP_LIST_ID").pipe(Config.withDefault(""))).trim();
+    const clickupEnv = {
+      ...(Redacted.value(clickupToken).length > 0 ? { CLICKUP_API_TOKEN: clickupToken } : {}),
+      ...(clickupListId.length > 0 ? { CLICKUP_LIST_ID: clickupListId } : {}),
+    };
 
     const api = yield* Cloudflare.Worker("Api", {
       main: new URL("../apps/api/src/worker.ts", import.meta.url).pathname,
@@ -82,6 +90,7 @@ export default Stack(
         AUDIT_QUEUE: audit,
         TURNSTILE_SITE_KEY: turnstile.sitekey,
         TURNSTILE_SECRET_KEY: turnstile.secret,
+        ...clickupEnv,
       },
     });
 

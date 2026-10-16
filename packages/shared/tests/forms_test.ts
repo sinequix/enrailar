@@ -1,4 +1,4 @@
-import { assertEquals, assertFalse } from "@std/assert";
+import { assert, assertEquals, assertFalse } from "@std/assert";
 import { contactSchema, newsletterSchema, preinscriptionSchema, sumateSchema } from "../src/index.ts";
 
 const turnstileToken = "token-de-prueba";
@@ -40,8 +40,11 @@ Deno.test("un correo mal formado se rechaza", () => {
 const sumate = {
   intents: ["hackatrain"],
   email: "hola@enrailar.com",
-  name: "",
-  city: "",
+  name: "Equipo",
+  city: "Tandil",
+  region: "",
+  profile: "ingenieria",
+  howHelp: "Quiero relevar vías.",
   link: "",
   message: "",
   locale: "es" as const,
@@ -50,15 +53,22 @@ const sumate = {
   company_url: "",
 };
 
-Deno.test("la ficha única pide al menos una intención y acepta el resto vacío", () => {
+Deno.test("la ficha única pide nombre, perfil, ayuda y ciudad o región", () => {
   const parsed = sumateSchema.parse(sumate);
   assertEquals(parsed.intents, ["hackatrain"]);
-  assertEquals(parsed.name, undefined);
-  assertEquals(parsed.city, undefined);
+  assertEquals(parsed.name, "Equipo");
+  assertEquals(parsed.city, "Tandil");
+  assertEquals(parsed.region, undefined);
+  assertEquals(parsed.profile, "ingenieria");
   assertEquals(parsed.link, undefined);
   assertEquals(parsed.message, undefined);
   assertFalse(sumateSchema.safeParse({ ...sumate, intents: [] }).success);
   assertFalse(sumateSchema.safeParse({ ...sumate, intents: ["otra"] }).success);
+  assertFalse(sumateSchema.safeParse({ ...sumate, name: "  " }).success);
+  assertFalse(sumateSchema.safeParse({ ...sumate, profile: "otra" }).success);
+  assertFalse(sumateSchema.safeParse({ ...sumate, howHelp: "" }).success);
+  assertFalse(sumateSchema.safeParse({ ...sumate, city: "", region: "" }).success);
+  assert(sumateSchema.safeParse({ ...sumate, city: "", region: "Buenos Aires" }).success);
 });
 
 Deno.test("la ficha única deduplica intenciones y acepta un https cualquiera", () => {

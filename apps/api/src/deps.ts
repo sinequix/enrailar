@@ -1,4 +1,4 @@
-import type { MailJob } from "@enrailar/shared";
+import type { CrmContact, CrmUpsertResult, MailJob } from "@enrailar/shared";
 import type { Store } from "./store.ts";
 
 export interface LogEvent {
@@ -13,6 +13,7 @@ export interface ApiDeps {
   log: (event: LogEvent) => void;
   verifyTurnstile: (token: string, ip: string | undefined) => Promise<boolean>;
   enqueue: (job: MailJob) => Promise<void>;
+  upsertCrmContact: (contact: CrmContact) => Promise<CrmUpsertResult>;
   rateLimit: { limit: number; windowMs: number };
 }
 
