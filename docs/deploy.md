@@ -38,6 +38,8 @@ Los valores no van en el repositorio, ni en ejemplos, ni en logs. [`.env.example
 | `ACCESS_SERVICE_TOKEN_IDS` | Lista separada por comas de ids de service tokens de Access. Opcional: vacía, la política no incluye tokens y `require-secrets.sh` no corta el deploy. Con ids, inbox y admin suman una política Service Auth para que un redeploy no los borre. El valor no se escribe en el repo. |
 | `POLICY_AUD` | Binding secreto del inbox. Es el `aud` de la aplicación de Access que crea Alchemy, leído del entorno. |
 | `TEAM_DOMAIN` | Binding secreto del inbox. URL del equipo de Access, o la URL completa de los certificados. Sale de la organización de Zero Trust que ya existe en la cuenta. |
+| `CLICKUP_API_TOKEN` | Único secreto de ClickUp del Worker de la API. Alchemy lo guarda como secret text. Es el mismo token que ya usan los workflows de sync. Vacío, el deploy sigue: la ficha de Sumate se guarda en D1 y queda para reintento. El valor no se escribe en el repo. |
+| `CLICKUP_LIST_ID` | Id numérico de la lista de CRM de Enrailar. Es una variable de texto del Worker, no un secreto. Vacía, la ficha también queda para reintento. El valor no se escribe en el repo. |
 
 `FORWARD_TO` tiene que ser una dirección ya verificada en Email Routing de la cuenta. Sin esa verificación, Cloudflare rechaza el reenvío. El binding existe para que un buzón externo (por ejemplo un cliente de correo) reciba copia de `hola@`, `hackatrain@` y `prensa@enrailar.com`. El valor no se escribe en la definición ni en un recurso `Email.Address`.
 
@@ -53,7 +55,9 @@ La API, el inbox, los workers de correo y la web ya tienen entrypoint propio. La
 
 `NEXT_PUBLIC_API_ORIGIN` y `NEXT_PUBLIC_TURNSTILE_SITE_KEY` son públicas. En [`.env.example`](../.env.example) quedan vacías. Si el origen no está, el formulario apunta a `https://api.enrailar.com`. La clave de Turnstile es el sitekey del widget, no el secret.
 
-La web manda una sola ficha a `POST /v1/sumate`. Cada opción queda como una intención en D1 (`submissions` y `submission_intents`). Si una de ellas es el boletín, el doble opt-in sigue por `newsletter.confirm`, igual que `POST /v1/newsletter`. Las rutas `POST /v1/preinscripcion`, `POST /v1/contacto` y `POST /v1/newsletter` siguen aceptando el contrato anterior. `0003_submissions.sql` copia las fichas ya guardadas y no borra las tablas de origen.
+La web manda una sola ficha a `POST /v1/sumate`. Cada opción queda como una intención en D1 (`submissions` y `submission_intents`). La ficha también guarda nombre, correo, ciudad, región o país, perfil y cómo quiere ayudar (`0006_sumate_volunteer.sql`). Si una de las opciones es el boletín, el doble opt-in sigue por `newsletter.confirm`, igual que `POST /v1/newsletter`. El alta de voluntario no manda otro correo. Las rutas `POST /v1/preinscripcion`, `POST /v1/contacto` y `POST /v1/newsletter` siguen aceptando el contrato anterior. `0003_submissions.sql` copia las fichas ya guardadas y no borra las tablas de origen.
+
+Después de guardar, la API hace create-or-update de un contacto en la lista `CLICKUP_LIST_ID`, deduplicado por el custom field `email`. Si no existe, lo crea. La fuente queda en el custom field `fuente` (`sumate`; el worker de correo entrante puede reutilizar `upsertCrmContact` de `@enrailar/shared` con `email`). La etiqueta `voluntario` se agrega en Sumate. Si el custom field `fuente` no se puede escribir, se usa la etiqueta `fuente-sumate`. El título y la descripción no llevan nombre ni correo, porque el sync publica esos campos en un issue público: van en un comentario con `notify_all` en falso. Si ClickUp falla, la respuesta sigue siendo 202 y `clickup_status` queda en `retry`. El token solo entra como secreto del Worker.
 
 ### Cómo llega el sitekey de Turnstile a la web
 

@@ -27,6 +27,8 @@ jobs:
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
       EMAIL_VERIFICATION_REQUIRED: ${{ secrets.EMAIL_VERIFICATION_REQUIRED }}
+      CLICKUP_API_TOKEN: ${{ secrets.CLICKUP_API_TOKEN }}
+      CLICKUP_LIST_ID: ${{ secrets.CLICKUP_LIST_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -76,6 +78,8 @@ jobs:
       TEAM_DOMAIN: ${{ secrets.TEAM_DOMAIN }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
       EMAIL_VERIFICATION_REQUIRED: ${{ secrets.EMAIL_VERIFICATION_REQUIRED }}
+      CLICKUP_API_TOKEN: ${{ secrets.CLICKUP_API_TOKEN }}
+      CLICKUP_LIST_ID: ${{ secrets.CLICKUP_LIST_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

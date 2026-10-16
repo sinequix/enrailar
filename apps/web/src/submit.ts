@@ -15,9 +15,12 @@ export const SUMATE_PATH = "/v1/sumate";
 
 export const SUMATE_FIELDS = [
   "intents",
-  "email",
   "name",
+  "email",
   "city",
+  "region",
+  "profile",
+  "howHelp",
   "link",
   "message",
   "consent",
@@ -98,6 +101,9 @@ export interface SumateFields {
   email: string;
   name: string;
   city: string;
+  region: string;
+  profile: string;
+  howHelp: string;
   link: string;
   message: string;
   locale: string;

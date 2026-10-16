@@ -6,12 +6,14 @@ import {
   sumateSchema,
   type ContactInput,
   type NewsletterInput,
+  type CrmUpsertResult,
   type PreinscriptionInput,
   type SumateInput,
 } from "@enrailar/shared";
 import type { NextFunction, Request, Response, Router } from "express";
 import type { ApiDeps } from "./deps.ts";
 import { clientIp } from "./deps.ts";
+import { sumateCrmContact } from "./sumate-crm.ts";
 import type { AuditEvent } from "./store.ts";
 import { randomToken, sha256 } from "./tokens.ts";
 
@@ -188,6 +190,9 @@ async function handleSumate(deps: ApiDeps, req: Request, res: Response): Promise
     email: data.email,
     name: data.name,
     city: data.city,
+    region: data.region,
+    profile: data.profile,
+    howHelp: data.howHelp,
     link: data.link,
     message: data.message,
     locale: data.locale,
@@ -196,6 +201,18 @@ async function handleSumate(deps: ApiDeps, req: Request, res: Response): Promise
     createdAt: now,
   });
   await deps.store.appendAudit({ recordId: id, kind: "sumate.accepted", createdAt: now });
+  let pushed: CrmUpsertResult = { ok: false };
+  try {
+    const known = await deps.store.latestClickupTaskId(data.email);
+    pushed = await deps.upsertCrmContact(sumateCrmContact({ ...data, id, taskId: known }));
+  } catch {
+    pushed = { ok: false };
+  }
+  try {
+    await deps.store.markSubmissionClickup(id, pushed.ok ? "synced" : "retry", pushed.taskId);
+  } catch {
+    // La fila ya se guardó en retry. El visitante igual recibe la ficha.
+  }
   if (data.intents.includes("boletin")) {
     await startNewsletter(deps, data, now);
   }

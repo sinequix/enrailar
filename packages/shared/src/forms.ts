@@ -40,6 +40,23 @@ export function isJoinIntent(value: string): value is JoinIntent {
   return (JOIN_INTENTS as readonly string[]).includes(value);
 }
 
+export const VOLUNTEER_PROFILES = [
+  "ingenieria",
+  "ferroviario",
+  "vecino",
+  "institucional",
+  "carga",
+  "dev",
+] as const;
+
+export const volunteerProfileSchema = z.enum(VOLUNTEER_PROFILES);
+
+export type VolunteerProfile = z.infer<typeof volunteerProfileSchema>;
+
+export function isVolunteerProfile(value: string): value is VolunteerProfile {
+  return (VOLUNTEER_PROFILES as readonly string[]).includes(value);
+}
+
 function uniqueStrings(value: unknown): unknown {
   if (!Array.isArray(value)) return value;
   const seen = new Set<string>();
@@ -121,17 +138,30 @@ export const newsletterSchema = z.object({
   company_url: honeypotSchema,
 });
 
+const requiredText = (max: number) => z.string().trim().min(1).max(max);
+
 export const sumateSchema = z.object({
   intents: intentsSchema,
   email: emailSchema,
-  name: optionalText(120),
+  name: requiredText(120),
   city: optionalText(120),
+  region: optionalText(120),
+  profile: volunteerProfileSchema,
+  howHelp: requiredText(4000),
   link: linkSchema,
   message: optionalMessageSchema,
   locale: localeSchema,
   consent: consentSchema,
   turnstileToken: turnstileTokenSchema,
   company_url: honeypotSchema,
+}).superRefine((value, ctx) => {
+  if (value.city === undefined && value.region === undefined) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["city"],
+      message: "Indicá la ciudad o la región",
+    });
+  }
 });
 
 export type PreinscriptionInput = z.infer<typeof preinscriptionSchema>;

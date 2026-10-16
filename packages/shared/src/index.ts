@@ -7,6 +7,7 @@ export {
   honeypotSchema,
   intentsSchema,
   isJoinIntent,
+  isVolunteerProfile,
   JOIN_INTENTS,
   joinIntentSchema,
   linkedinSchema,
@@ -18,6 +19,8 @@ export {
   preinscriptionSchema,
   sumateSchema,
   turnstileTokenSchema,
+  VOLUNTEER_PROFILES,
+  volunteerProfileSchema,
 } from "./forms.ts";
 export type {
   ContactInput,
@@ -26,7 +29,11 @@ export type {
   NewsletterInput,
   PreinscriptionInput,
   SumateInput,
+  VolunteerProfile,
 } from "./forms.ts";
+export { fuenteTag, publicCrmText, upsertCrmContact } from "./clickup-crm.ts";
+export type { CrmContact, CrmFetch, CrmFuente, CrmRequest, CrmResponse, CrmUpsertResult } from "./clickup-crm.ts";
+export { CRM_FUENTES, isCrmFuente } from "./clickup-crm.ts";
 export { mailJobSchema } from "./mail.ts";
 export type { MailJob } from "./mail.ts";
 export {

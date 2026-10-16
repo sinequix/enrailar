@@ -1,6 +1,6 @@
 "use client";
 
-import { JOIN_INTENTS, type JoinIntent } from "@enrailar/shared";
+import { JOIN_INTENTS, VOLUNTEER_PROFILES, type JoinIntent, type VolunteerProfile } from "@enrailar/shared";
 import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { Button } from "./components/ui/button.tsx";
 import { Checkbox } from "./components/ui/checkbox.tsx";
@@ -32,6 +32,11 @@ export interface Labels {
   email: string;
   name: string;
   city: string;
+  region: string;
+  profile: string;
+  profilePlaceholder: string;
+  profiles: Record<VolunteerProfile, string>;
+  howHelp: string;
   link: string;
   message: string;
   consent: string;
@@ -292,8 +297,11 @@ export function SumateForm({
       email: String(data.get("email") ?? ""),
       name: String(data.get("name") ?? ""),
       city: String(data.get("city") ?? ""),
+      region: String(data.get("region") ?? ""),
+      profile: String(data.get("profile") ?? ""),
+      howHelp: String(data.get("howHelp") ?? ""),
       link: String(data.get("link") ?? ""),
-      message: String(data.get("message") ?? ""),
+      message: "",
       locale,
       consent,
       turnstileToken: String(data.get("cf-turnstile-response") ?? ""),
@@ -395,19 +403,6 @@ export function SumateForm({
         </div>
         {fieldError("sumate-intents-error", errors.intents)}
       </fieldset>
-      <Label className="field" htmlFor="sumate-email">
-        {labels.email}
-        <Input
-          id="sumate-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          aria-invalid={errors.email ? true : undefined}
-          aria-describedby={errors.email ? "sumate-email-error" : undefined}
-          onChange={() => clearField("email")}
-        />
-        {fieldError("sumate-email-error", errors.email)}
-      </Label>
       <Label className="field" htmlFor="sumate-name">
         {labels.name}
         <Input
@@ -421,6 +416,19 @@ export function SumateForm({
           onChange={() => clearField("name")}
         />
         {fieldError("sumate-name-error", errors.name)}
+      </Label>
+      <Label className="field" htmlFor="sumate-email">
+        {labels.email}
+        <Input
+          id="sumate-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          aria-invalid={errors.email ? true : undefined}
+          aria-describedby={errors.email ? "sumate-email-error" : undefined}
+          onChange={() => clearField("email")}
+        />
+        {fieldError("sumate-email-error", errors.email)}
       </Label>
       <Label className="field" htmlFor="sumate-city">
         {labels.city}
@@ -436,6 +444,37 @@ export function SumateForm({
         />
         {fieldError("sumate-city-error", errors.city)}
       </Label>
+      <Label className="field" htmlFor="sumate-region">
+        {labels.region}
+        <Input
+          id="sumate-region"
+          name="region"
+          type="text"
+          autoComplete="country-name"
+          maxLength={120}
+          aria-invalid={errors.region ? true : undefined}
+          aria-describedby={errors.region ? "sumate-region-error" : undefined}
+          onChange={() => clearField("region")}
+        />
+        {fieldError("sumate-region-error", errors.region)}
+      </Label>
+      <Label className="field" htmlFor="sumate-profile">
+        {labels.profile}
+        <select
+          id="sumate-profile"
+          name="profile"
+          defaultValue=""
+          aria-invalid={errors.profile ? true : undefined}
+          aria-describedby={errors.profile ? "sumate-profile-error" : undefined}
+          onChange={() => clearField("profile")}
+        >
+          <option value="">{labels.profilePlaceholder}</option>
+          {VOLUNTEER_PROFILES.map((profile) => (
+            <option key={profile} value={profile}>{labels.profiles[profile]}</option>
+          ))}
+        </select>
+        {fieldError("sumate-profile-error", errors.profile)}
+      </Label>
       <Label className="field" htmlFor="sumate-link">
         {labels.link}
         <Input
@@ -450,17 +489,17 @@ export function SumateForm({
         />
         {fieldError("sumate-link-error", errors.link)}
       </Label>
-      <Label className="field" htmlFor="sumate-message">
-        {labels.message}
+      <Label className="field" htmlFor="sumate-howHelp">
+        {labels.howHelp}
         <Textarea
-          id="sumate-message"
-          name="message"
+          id="sumate-howHelp"
+          name="howHelp"
           maxLength={4000}
-          aria-invalid={errors.message ? true : undefined}
-          aria-describedby={errors.message ? "sumate-message-error" : undefined}
-          onChange={() => clearField("message")}
+          aria-invalid={errors.howHelp ? true : undefined}
+          aria-describedby={errors.howHelp ? "sumate-howHelp-error" : undefined}
+          onChange={() => clearField("howHelp")}
         />
-        {fieldError("sumate-message-error", errors.message)}
+        {fieldError("sumate-howHelp-error", errors.howHelp)}
       </Label>
       <label className="hp" aria-hidden="true">
         Company

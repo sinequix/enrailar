@@ -1,4 +1,4 @@
-import type { JoinIntent } from "@enrailar/shared";
+import { isJoinIntent, isVolunteerProfile, type JoinIntent, type VolunteerProfile } from "@enrailar/shared";
 
 export interface AuditEvent {
   recordId: string;
@@ -37,11 +37,16 @@ export interface NewsletterPending {
   createdAt: string;
 }
 
+export type ClickupSyncStatus = "retry" | "synced";
+
 export interface SubmissionRow {
   id: string;
   email: string;
-  name: string | undefined;
+  name: string;
   city: string | undefined;
+  region: string | undefined;
+  profile: VolunteerProfile;
+  howHelp: string;
   link: string | undefined;
   message: string | undefined;
   locale: "es" | "en";
@@ -50,10 +55,19 @@ export interface SubmissionRow {
   createdAt: string;
 }
 
+export interface StoredSubmission extends Omit<SubmissionRow, "profile"> {
+  profile: VolunteerProfile | undefined;
+  clickupTaskId: string | undefined;
+  clickupStatus: ClickupSyncStatus | undefined;
+}
+
 export interface Store {
   insertPreinscription(row: PreinscriptionRow): Promise<void>;
   insertContact(row: ContactRow): Promise<void>;
   insertSubmission(row: SubmissionRow): Promise<void>;
+  getSubmission(id: string): Promise<StoredSubmission | undefined>;
+  latestClickupTaskId(email: string): Promise<string | undefined>;
+  markSubmissionClickup(id: string, status: ClickupSyncStatus, taskId: string | undefined): Promise<void>;
   saveNewsletterPending(row: NewsletterPending): Promise<string>;
   confirmNewsletter(tokenHash: string, at: string): Promise<string | undefined>;
   unsubscribeNewsletter(tokenHash: string, at: string): Promise<string | undefined>;
@@ -82,7 +96,7 @@ export function rateDecision(
 export function createMemoryStore(): Store {
   const preinscriptions: PreinscriptionRow[] = [];
   const contacts: ContactRow[] = [];
-  const submissions: SubmissionRow[] = [];
+  const submissions: StoredSubmission[] = [];
   const newsletter = new Map<string, NewsletterPending & { status: string; confirmedAt?: string; unsubscribedAt?: string }>();
   const audit: AuditEvent[] = [];
   const rates = new Map<string, RateRow>();
@@ -97,7 +111,30 @@ export function createMemoryStore(): Store {
       return Promise.resolve();
     },
     insertSubmission(row) {
-      submissions.push({ ...row, intents: [...new Set(row.intents)] });
+      submissions.push({
+        ...row,
+        intents: [...new Set(row.intents)],
+        clickupTaskId: undefined,
+        clickupStatus: "retry",
+      });
+      return Promise.resolve();
+    },
+    getSubmission(id) {
+      const row = submissions.find((item) => item.id === id);
+      return Promise.resolve(row ? { ...row, intents: [...row.intents] } : undefined);
+    },
+    latestClickupTaskId(email) {
+      const wanted = email.trim().toLowerCase();
+      const row = [...submissions].reverse().find((item) =>
+        item.email.trim().toLowerCase() === wanted && item.clickupTaskId !== undefined
+      );
+      return Promise.resolve(row?.clickupTaskId);
+    },
+    markSubmissionClickup(id, status, taskId) {
+      const row = submissions.find((item) => item.id === id);
+      if (!row) return Promise.reject(new Error("missing submission"));
+      row.clickupStatus = status;
+      if (taskId) row.clickupTaskId = taskId;
       return Promise.resolve();
     },
     saveNewsletterPending(row) {
@@ -136,6 +173,23 @@ export function createMemoryStore(): Store {
   };
 }
 
+interface SubmissionSql {
+  id: string;
+  email: string;
+  name: string | null;
+  city: string | null;
+  region: string | null;
+  profile: string | null;
+  howHelp: string | null;
+  link: string | null;
+  message: string | null;
+  locale: string;
+  consentAt: string;
+  createdAt: string;
+  clickupTaskId: string | null;
+  clickupStatus: string | null;
+}
+
 export interface Prepared {
   bind(...values: unknown[]): {
     all<T>(): Promise<{ results?: T[] }>;
@@ -168,13 +222,17 @@ export function createD1Store(database: SqlDatabase): Store {
     },
     async insertSubmission(row) {
       await database.prepare(
-        `INSERT INTO submissions (id, email, name, city, link, message, locale, consent_at, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO submissions
+           (id, email, name, city, region, profile, how_help, link, message, locale, consent_at, created_at, clickup_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'retry')`,
       ).bind(
         row.id,
         row.email,
-        row.name ?? null,
+        row.name,
         row.city ?? null,
+        row.region ?? null,
+        row.profile,
+        row.howHelp,
         row.link ?? null,
         row.message ?? null,
         row.locale,
@@ -186,6 +244,51 @@ export function createD1Store(database: SqlDatabase): Store {
           `INSERT INTO submission_intents (submission_id, intent) VALUES (?, ?)`,
         ).bind(row.id, intent).run();
       }
+    },
+    async getSubmission(id) {
+      const row = await database.prepare(
+        `SELECT id, email, name, city, region, profile, how_help AS howHelp, link, message, locale,
+                consent_at AS consentAt, created_at AS createdAt,
+                clickup_task_id AS clickupTaskId, clickup_status AS clickupStatus
+         FROM submissions WHERE id = ?`,
+      ).bind(id).first<SubmissionSql>();
+      if (!row || (row.locale !== "es" && row.locale !== "en")) return undefined;
+      const intents = await database.prepare(
+        `SELECT intent FROM submission_intents WHERE submission_id = ? ORDER BY intent`,
+      ).bind(id).all<{ intent: string }>();
+      return {
+        id: row.id,
+        email: row.email,
+        name: row.name ?? "",
+        city: row.city ?? undefined,
+        region: row.region ?? undefined,
+        profile: row.profile && isVolunteerProfile(row.profile) ? row.profile : undefined,
+        howHelp: row.howHelp ?? "",
+        link: row.link ?? undefined,
+        message: row.message ?? undefined,
+        locale: row.locale,
+        intents: (intents.results ?? []).flatMap((item) => isJoinIntent(item.intent) ? [item.intent] : []),
+        consentAt: row.consentAt,
+        createdAt: row.createdAt,
+        clickupTaskId: row.clickupTaskId ?? undefined,
+        clickupStatus: row.clickupStatus === "retry" || row.clickupStatus === "synced" ? row.clickupStatus : undefined,
+      };
+    },
+    async latestClickupTaskId(email) {
+      const row = await database.prepare(
+        `SELECT clickup_task_id AS clickupTaskId FROM submissions
+         WHERE lower(email) = ? AND clickup_task_id IS NOT NULL
+         ORDER BY created_at DESC LIMIT 1`,
+      ).bind(email.trim().toLowerCase()).first<{ clickupTaskId: string }>();
+      return row?.clickupTaskId;
+    },
+    async markSubmissionClickup(id, status, taskId) {
+      await database.prepare(
+        `UPDATE submissions
+         SET clickup_status = ?,
+             clickup_task_id = CASE WHEN ? IS NULL THEN clickup_task_id ELSE ? END
+         WHERE id = ?`,
+      ).bind(status, taskId ?? null, taskId ?? null, id).run();
     },
     async saveNewsletterPending(row) {
       await database.prepare(

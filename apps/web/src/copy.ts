@@ -1,4 +1,4 @@
-import { CONSENT_COPY, HACKATRAIN_WHEN } from "@enrailar/shared";
+import { CONSENT_COPY, HACKATRAIN_WHEN, type VolunteerProfile } from "@enrailar/shared";
 
 export const LOCALES = ["es", "en"] as const;
 
@@ -90,6 +90,11 @@ interface Copy {
   email: string;
   name: string;
   city: string;
+  region: string;
+  profile: string;
+  profilePlaceholder: string;
+  profiles: Record<VolunteerProfile, string>;
+  howHelp: string;
   link: string;
   message: string;
   intent: string;
@@ -115,6 +120,9 @@ interface Copy {
     email: string;
     name: string;
     city: string;
+    region: string;
+    profile: string;
+    howHelp: string;
     link: string;
     message: string;
     consent: string;
@@ -304,11 +312,23 @@ export const COPY: Record<Locale, Copy> = {
     postSource: "Texto de origen",
     participate: "Sumate",
     joinLede: "Una sola ficha. Marcá lo que querés hacer. La lee una persona del proyecto.",
-    formHint: "Podés elegir más de una opción.",
+    formHint: "Podés elegir más de una opción. Hace falta la ciudad o la región.",
     consent: CONSENT_COPY,
     email: "Correo",
-    name: "Nombre (opcional)",
-    city: "Ciudad (opcional)",
+    name: "Nombre",
+    city: "Ciudad",
+    region: "Región o país",
+    profile: "Perfil",
+    profilePlaceholder: "Elegí un perfil",
+    profiles: {
+      ingenieria: "Ingeniería",
+      ferroviario: "Ferroviario",
+      vecino: "Vecino o investigador",
+      institucional: "Contacto institucional",
+      carga: "Empresa o carga",
+      dev: "Dev",
+    },
+    howHelp: "Cómo querés ayudar",
     link: "LinkedIn o web (opcional)",
     message: "Mensaje (opcional)",
     intent: "Quiero…",
@@ -332,8 +352,11 @@ export const COPY: Record<Locale, Copy> = {
     errors: {
       intents: "Elegí al menos una opción.",
       email: "El correo es obligatorio y tiene que ser válido.",
-      name: "El nombre es demasiado largo.",
-      city: "La ciudad es demasiado larga.",
+      name: "El nombre es obligatorio.",
+      city: "Indicá la ciudad o la región.",
+      region: "La región o el país es demasiado largo.",
+      profile: "Elegí un perfil.",
+      howHelp: "Contanos cómo querés ayudar.",
       link: "El enlace tiene que ser https.",
       message: "El mensaje es demasiado largo.",
       consent: "Hace falta el consentimiento para tratar los datos según la Ley 25.326.",
@@ -519,12 +542,24 @@ export const COPY: Record<Locale, Copy> = {
     postSource: "Source note",
     participate: "Join",
     joinLede: "One form. Mark what you want to do. A person from the project reads it.",
-    formHint: "You can choose more than one.",
+    formHint: "You can choose more than one. A city or a region is required.",
     consent:
       "I agree that Enrailar may process my email and the rest of this data under Law 25.326 to answer this request and, if I subscribe, send me updates. I can ask for access, correction or deletion.",
     email: "Email",
-    name: "Name (optional)",
-    city: "City (optional)",
+    name: "Name",
+    city: "City",
+    region: "Region or country",
+    profile: "Profile",
+    profilePlaceholder: "Choose a profile",
+    profiles: {
+      ingenieria: "Engineering",
+      ferroviario: "Railway worker",
+      vecino: "Neighbor or researcher",
+      institucional: "Institutional contact",
+      carga: "Business or freight",
+      dev: "Dev",
+    },
+    howHelp: "How do you want to help",
     link: "LinkedIn or website (optional)",
     message: "Message (optional)",
     intent: "I want to…",
@@ -548,8 +583,11 @@ export const COPY: Record<Locale, Copy> = {
     errors: {
       intents: "Choose at least one option.",
       email: "Email is required and has to be valid.",
-      name: "The name is too long.",
-      city: "The city is too long.",
+      name: "Name is required.",
+      city: "Add a city or a region.",
+      region: "The region or country is too long.",
+      profile: "Choose a profile.",
+      howHelp: "Tell us how you want to help.",
       link: "The link has to be https.",
       message: "The message is too long.",
       consent: "Consent is required to process this data under Law 25.326.",
