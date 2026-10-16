@@ -7,6 +7,9 @@ export const ROLE_MAILBOXES = [
 
 export type RoleMailbox = (typeof ROLE_MAILBOXES)[number];
 
+/** Casilla pública. Es la primera de las de rol. */
+export const PUBLIC_CONTACT: RoleMailbox = "hola@enrailar.com";
+
 /**
  * Remitente de los correos de cuenta. No es una casilla de entrada:
  * el catch-all de Routing descarta lo que llega ahí.

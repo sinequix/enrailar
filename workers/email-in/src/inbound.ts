@@ -1,4 +1,6 @@
-import { ROLE_MAILBOXES, type RoleMailbox } from "@enrailar/shared";
+import { PUBLIC_CONTACT, ROLE_MAILBOXES, type RoleMailbox } from "@enrailar/shared";
+import type { ContactSync } from "./crm.ts";
+import { readContact } from "./parse.ts";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
@@ -7,7 +9,6 @@ export interface InboundMessage {
   readonly to: string;
   readonly raw: ReadableStream<Uint8Array>;
   readonly rawSize: number;
-  forward(destination: string): Promise<void>;
   setReject(reason: string): void;
 }
 
@@ -16,13 +17,14 @@ export interface MailboxDelivery {
 }
 
 export interface InboundEnv {
-  readonly FORWARD_TO: string;
   readonly MAILBOX: MailboxDelivery;
+  readonly CONTACTS: ContactSync;
 }
 
 export interface InboundLog {
-  status: "forwarded" | "rejected";
-  reason?: "empty" | "mailbox" | "size" | "inbox" | "forward";
+  status: "stored" | "rejected";
+  reason?: "mailbox" | "size" | "inbox";
+  clickup?: "synced" | "retry" | "skipped";
 }
 
 function isRoleMailbox(value: string): value is RoleMailbox {
@@ -35,12 +37,6 @@ export async function handleInbound(
   env: InboundEnv,
   log: (event: InboundLog) => void,
 ): Promise<void> {
-  const destination = env.FORWARD_TO.trim();
-  if (destination.length === 0) {
-    message.setReject("FORWARD_TO is empty");
-    log({ status: "rejected", reason: "empty" });
-    return;
-  }
   if (!isRoleMailbox(message.to)) {
     message.setReject("mailbox not accepted");
     log({ status: "rejected", reason: "mailbox" });
@@ -62,12 +58,11 @@ export async function handleInbound(
     return;
   }
 
-  try {
-    await message.forward(destination);
-  } catch {
-    message.setReject("forward failed");
-    log({ status: "rejected", reason: "forward" });
+  if (mailbox !== PUBLIC_CONTACT) {
+    log({ status: "stored", clickup: "skipped" });
     return;
   }
-  log({ status: "forwarded" });
+  const contact = await readContact(bytes, message.from);
+  const clickup = await env.CONTACTS.sync(contact);
+  log({ status: "stored", clickup });
 }

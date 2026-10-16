@@ -1,4 +1,4 @@
-import { HACKATRAIN_START, HACKATRAIN_WHEN } from "@enrailar/shared";
+import { HACKATRAIN_START, HACKATRAIN_WHEN, PUBLIC_CONTACT } from "@enrailar/shared";
 import { notFound } from "next/navigation";
 import { Countdown } from "../countdown.tsx";
 import { HtmlLang } from "../components/html-lang.tsx";
@@ -46,6 +46,11 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   return <HomePage locale={locale} />;
+}
+
+function mailLine(template: string) {
+  const [before, after = ""] = template.split("{email}");
+  return <>{before}<a href={`mailto:${PUBLIC_CONTACT}`}>{PUBLIC_CONTACT}</a>{after}</>;
 }
 
 function HomePage({ locale }: { locale: Locale }) {
@@ -248,6 +253,7 @@ function HomePage({ locale }: { locale: Locale }) {
               <p className="eyebrow eyebrow--sol">{copy.nav.join}</p>
               <h2 id="sumate-title">{copy.participate}</h2>
               <p className="lede">{copy.joinLede}</p>
+              <p className="join-mail">{mailLine(copy.joinMail)}</p>
               <p className="consent-note">{copy.consent}</p>
             </div>
             <JoinForms locale={locale} labels={labels} hint={copy.formHint} initialSiteKey={siteKey} />

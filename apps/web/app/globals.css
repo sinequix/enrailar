@@ -1330,6 +1330,10 @@ html[data-sumate-boletin="1"] .sumate-confirm {
   color: var(--ink);
 }
 
+.site-footer .footer-contact {
+  color: var(--ink);
+}
+
 /* Bitácora */
 .posts {
   display: grid;

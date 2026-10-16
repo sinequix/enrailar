@@ -85,6 +85,8 @@ interface Copy {
   postSource: string;
   participate: string;
   joinLede: string;
+  /** "{email}" es la casilla pública. */
+  joinMail: string;
   formHint: string;
   consent: string;
   email: string;
@@ -192,6 +194,7 @@ interface Copy {
   language: string;
   footer: {
     about: string;
+    contact: string;
     mailboxes: string;
     project: string;
     code: string;
@@ -312,6 +315,7 @@ export const COPY: Record<Locale, Copy> = {
     postSource: "Texto de origen",
     participate: "Sumate",
     joinLede: "Una sola ficha. Marcá lo que querés hacer. La lee una persona del proyecto.",
+    joinMail: "También podés escribir a {email}.",
     formHint: "Podés elegir más de una opción. Hace falta la ciudad o la región.",
     consent: CONSENT_COPY,
     email: "Correo",
@@ -426,6 +430,7 @@ export const COPY: Record<Locale, Copy> = {
     language: "Idioma",
     footer: {
       about: "Enrailar es una iniciativa de Sinequix para recuperar los trenes de Argentina. Proyecto abierto, con código Apache-2.0.",
+      contact: "Contacto",
       mailboxes: "Casillas",
       project: "Proyecto",
       code: "Código en GitHub",
@@ -542,6 +547,7 @@ export const COPY: Record<Locale, Copy> = {
     postSource: "Source note",
     participate: "Join",
     joinLede: "One form. Mark what you want to do. A person from the project reads it.",
+    joinMail: "You can also write to {email}.",
     formHint: "You can choose more than one. A city or a region is required.",
     consent:
       "I agree that Enrailar may process my email and the rest of this data under Law 25.326 to answer this request and, if I subscribe, send me updates. I can ask for access, correction or deletion.",
@@ -657,6 +663,7 @@ export const COPY: Record<Locale, Copy> = {
     language: "Language",
     footer: {
       about: "Enrailar is a Sinequix initiative to restore Argentina's railways. An open project, with Apache-2.0 code.",
+      contact: "Contact",
       mailboxes: "Mailboxes",
       project: "Project",
       code: "Code on GitHub",

@@ -1,4 +1,4 @@
-import { ROLE_MAILBOXES } from "@enrailar/shared";
+import { PUBLIC_CONTACT, ROLE_MAILBOXES } from "@enrailar/shared";
 import { COPY, type Locale, REPO_URL, SINEQUIX_URL } from "../../src/copy.ts";
 
 export function SiteFooter({ locale }: { locale: Locale }) {
@@ -12,6 +12,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           <img src="/brand/logo-horizontal.svg" width={148} height={32} alt="Enrailar" />
           <p className="tagline">{copy.tagline}</p>
           <p>{copy.footer.about}</p>
+          <p className="footer-contact">{copy.footer.contact}: <a href={`mailto:${PUBLIC_CONTACT}`}>{PUBLIC_CONTACT}</a></p>
           <p>{copy.footer.copyright.replaceAll("{year}", String(year))}</p>
           <p>{ventureBefore}<a href={SINEQUIX_URL} target="_blank" rel="noopener">Sinequix</a>{ventureAfter}</p>
         </div>

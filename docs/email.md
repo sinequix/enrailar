@@ -4,16 +4,24 @@ Tres casillas de rol: `hola@enrailar.com`, `hackatrain@enrailar.com` y `prensa@e
 
 ## Entrada
 
-`workers/email-in` recibe el mensaje de Email Routing.
+`workers/email-in` recibe el mensaje de Email Routing. No reenvía a terceros: no existe `FORWARD_TO` y el worker no llama a `message.forward()`.
 
-1. Rechaza si `FORWARD_TO` está vacío o si el sobre no es una de esas tres casillas.
-2. Asegura en R2 la marca `mailboxes/<casilla>.json` de las tres casillas de rol. `forwarding.email` queda vacío: el reenvío no lo hace esa marca.
+1. Rechaza si el sobre no es una de esas tres casillas, o si el tamaño es cero o pasa de 10 MB.
+2. Asegura en R2 la marca `mailboxes/<casilla>.json` de las tres casillas de rol. `forwarding.email` queda vacío.
 3. Llama a `receiveEmail` de agentic-inbox. Ese código escribe en el Durable Object `MailboxDO` del inbox (binding cruzado `MAILBOX`) y avisa a `EmailAgent`.
-4. Reenvía con `message.forward()` al valor de `FORWARD_TO`.
+4. Si el sobre es `hola@enrailar.com`, crea o actualiza un contacto en la lista de CRM de ClickUp. `hackatrain@` y `prensa@` se quedan solo en el inbox.
 
-Ese valor es un binding secreto de Alchemy. Tiene que ser una dirección ya verificada en Email Routing de la cuenta. Sin esa verificación Cloudflare rechaza el reenvío. Sirve para que un buzón externo lea la copia. El valor no está en el repo.
+El token (`CLICKUP_API_TOKEN`) es el mismo secreto que usa el Worker de la API. El id de lista de este worker es `CLICKUP_LIST_ID_CONTACTS`, una variable de Actions (`vars.CLICKUP_LIST_ID_CONTACTS`), no un secreto: la lista Contactos, `901717736444`. Sumate usa otra variable, `CLICKUP_LIST_ID_WEB` (`901717736446`, Voluntarios y Hackatrain), en el Worker de la API. No comparten el binding, así que las listas pueden diferir. Los dos workflows de deploy las inyectan y Alchemy las declara como texto en cada recurso.
 
-El worker no escribe direcciones en los logs. Si la entrega al Durable Object tira, no reenvía: Email Routing puede reintentar. `receiveEmail` elige el buzón por el destinatario del MIME, no por el sobre, y solo si está en `EMAIL_ADDRESSES`.
+La deduplicación es la de `upsertCrmContact` en `@enrailar/shared`: el custom field `email`. El título público sale del asunto y la descripción del cuerpo, con el correo y el nombre sacados, porque el sync publica esos campos. Remitente, asunto y cuerpo van en un comentario con `notify_all` en falso. `fuente` queda en `email` y la etiqueta es `contacto`.
+
+Un fallo de ClickUp no rechaza el correo. La copia ya está en el inbox y la ficha queda en D1 (`crm_email_retries`, migración `0007_crm_email_retry.sql`) para reintentar. En `prod` un cron de 15 minutos vuelve a intentar las filas pendientes. Sin token o sin id de lista, tampoco se rechaza: queda la fila hasta que el binding exista.
+
+El worker no escribe direcciones en los logs. Si la entrega al Durable Object tira, Email Routing puede reintentar y no se llama a ClickUp. `receiveEmail` elige el buzón por el destinatario del MIME, no por el sobre, y solo si está en `EMAIL_ADDRESSES`.
+
+## Regla de Email Routing
+
+En `prod`, Alchemy ya crea una regla por casilla de rol. La de `hola@enrailar.com` matchea el destinatario literal y la acción es el Worker `email-in`. El catch-all descarta el resto. No hay que crear esa regla a mano si el stage `prod` está desplegado con este stack. Si el dashboard no la muestra, el deploy de `prod` es el paso que la escribe.
 
 ## Inbox
 
@@ -47,15 +55,27 @@ Vacío, `0` o `false` (el default): el alta no bloquea el ingreso. El worker igu
 
 `1`, `true` o `yes`: hay que verificar el correo antes de ingresar. Un fallo al encolar el correo se propaga como hasta ahora.
 
-## DNS de Email Sending
+## DNS
 
-Email Routing (entrada) y Email Sending (salida) se onboarded por separado. Alchemy declara Routing en `prod`. Sending no tiene un recurso en este stack: `enrailar.com` tiene que estar onboarded en Email Sending de la cuenta antes del primer envío. Al onboarded, Cloudflare agrega y deja bloqueados estos registros, distintos de los MX, SPF y DKIM del ápice:
+Email Routing (entrada) y Email Sending (salida) se onboarded por separado. En `prod`, Alchemy adopta o crea estos registros del ápice. Las prioridades de los MX son las que ya publica la zona, para no duplicarlas:
 
-| Registro | Nombre | Para qué |
+| Registro | Nombre | Valor |
 | --- | --- | --- |
-| MX | `cf-bounce.enrailar.com` | Rebotes, hacia `route1.mx.cloudflare.net`, `route2.mx.cloudflare.net` y `route3.mx.cloudflare.net` |
-| TXT SPF | `cf-bounce.enrailar.com` | `v=spf1 include:_spf.mx.cloudflare.net ~all` |
-| TXT DKIM | `cf-bounce._domainkey.enrailar.com` | Firma de salida. El selector y la clave los administra Cloudflare. |
-| TXT DMARC | `_dmarc.enrailar.com` | Política. Conviene `p=none` hasta mirar los reportes. |
+| MX | `@` | `route1.mx.cloudflare.net` prioridad 97, `route2.mx.cloudflare.net` prioridad 98, `route3.mx.cloudflare.net` prioridad 77 |
+| TXT SPF | `@` | `v=spf1 include:_spf.mx.cloudflare.net ~all`. Uno solo. No se agrega un segundo SPF en el ápice. |
+| TXT DMARC | `_dmarc` | `v=DMARC1; p=none; rua=mailto:hola@enrailar.com` |
 
-El valor de DKIM no se copia a este repo: sale del onboarding. No hay que mezclar estos registros con los de Email Routing.
+Si Email Routing dejó esos MX o el SPF bloqueados, hay que abrirlos en Email Routing → Settings antes del deploy que los adopta. El contenido declarado es el que ya está en la zona. DMARC no estaba: este stack lo crea en `p=none`.
+
+### DKIM y Email Sending
+
+La clave DKIM no se copia a este repo. La pone el onboarding y el registro queda bloqueado.
+
+| Uso | Nombre | Qué pasa |
+| --- | --- | --- |
+| DKIM de Routing | `cf2024-1._domainkey` | Ya lo publicó Email Routing. No se declara en Alchemy. |
+| MX de Sending | `cf-bounce` | Hacia `route1.mx.cloudflare.net`, `route2.mx.cloudflare.net` y `route3.mx.cloudflare.net`. Los crea el onboarding de Email Sending. |
+| TXT SPF de Sending | `cf-bounce` | `v=spf1 include:_spf.mx.cloudflare.net ~all`. Distinto del SPF del ápice. |
+| TXT DKIM de Sending | `cf-bounce._domainkey` | Firma de salida. El selector y la clave los administra Cloudflare al onboarded Email Sending. |
+
+`enrailar.com` tiene que estar onboarded en Email Sending antes del primer envío. Si ese onboarding quiere reescribir `_dmarc`, se deja el valor de esta tabla (`p=none` y `rua` a `hola@enrailar.com`) hasta mirar los reportes. No se mezcla el DKIM de Routing con el de Sending.

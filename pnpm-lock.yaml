@@ -141,6 +141,9 @@ importers:
       '@enrailar/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      postal-mime:
+        specifier: 2.7.3
+        version: 2.7.3
     devDependencies:
       typescript:
         specifier: 7.0.2
@@ -2812,6 +2815,9 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  postal-mime@2.7.3:
+    resolution: {integrity: sha512-MjhXadAJaWgYzevi46+3kLak8y6gbg0ku14O1gO/LNOuay8dO+1PtcSGvAdgDR0DoIsSaiIA8y/Ddw6MnrO0Tw==}
+
   postcss-value-parser@4.2.0:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
 
@@ -5415,6 +5421,8 @@ snapshots:
       playwright-core: 1.56.1
     optionalDependencies:
       fsevents: 2.3.2
+
+  postal-mime@2.7.3: {}
 
   postcss-value-parser@4.2.0: {}
 
