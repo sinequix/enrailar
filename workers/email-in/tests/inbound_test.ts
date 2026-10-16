@@ -61,6 +61,34 @@ Deno.test("hola@ queda en el inbox y arma el contacto, sin reenviar", async () =
   assert(!JSON.stringify(logs).includes("@"));
 });
 
+Deno.test("un html sin texto plano queda en texto, sin el script", async () => {
+  const html = [
+    "From: Persona <remitente@example.com>",
+    "To: hola@enrailar.com",
+    "Subject: Mapa",
+    "Message-ID: <html@example.com>",
+    "MIME-Version: 1.0",
+    "Content-Type: text/html; charset=utf-8",
+    "",
+    "<p>Quiero ver el mapa &amp; la vía.</p><script>alert(1)</script >",
+    "",
+  ].join("\r\n");
+  const { inbound, rejected } = message("hola@enrailar.com", html);
+  let contact: InboundContact | undefined;
+  await handleInbound(inbound, {
+    MAILBOX: { deliver: () => Promise.resolve() },
+    CONTACTS: {
+      sync(value) {
+        contact = value;
+        return Promise.resolve("synced");
+      },
+    },
+  }, () => undefined);
+  assertEquals(rejected, []);
+  assertEquals(contact?.body, "Quiero ver el mapa & la vía.");
+  assertEquals(contact?.body.includes("alert"), false);
+});
+
 Deno.test("si ClickUp falla el correo igual queda aceptado y marcado para reintento", async () => {
   const { inbound, rejected } = message("hola@enrailar.com", mime);
   let stored = false;

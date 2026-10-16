@@ -30,19 +30,28 @@ function bodyFrom(text: string | undefined, html: string | undefined): string {
   return htmlToText((html ?? "").slice(0, HTML_CAP)).slice(0, BODY_CAP);
 }
 
+const ENTITIES: Record<string, string> = {
+  "&nbsp;": " ",
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": "\"",
+  "&apos;": "'",
+  "&#39;": "'",
+};
+
 function htmlToText(html: string): string {
-  return html
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&quot;/gi, "\"")
-    .replace(/\s+/g, " ")
-    .trim();
+  const withoutBlocks = html
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, " ")
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, " ");
+  const text = withoutBlocks.replace(/<[^>]*>/g, " ");
+  return decodeEntities(text).replace(/\s+/g, " ").trim();
+}
+
+function decodeEntities(value: string): string {
+  return value.replace(/&(?:nbsp|amp|lt|gt|quot|apos|#39);/gi, (entity) => {
+    return ENTITIES[entity.toLowerCase()] ?? entity;
+  });
 }
 
 async function sha256(raw: Uint8Array): Promise<string> {
