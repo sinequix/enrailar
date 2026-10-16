@@ -9,7 +9,8 @@
     "test": "deno test --allow-env --allow-read tests"
   },
   "dependencies": {
-    "@enrailar/shared": "workspace:*"
+    "@enrailar/shared": "workspace:*",
+    "postal-mime": "2.7.3"
   },
   "devDependencies": {
     "typescript": "7.0.2"

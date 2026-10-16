@@ -223,6 +223,15 @@ Deno.test("el pie atribuye el copyright a Sinequix", () => {
   assert(footer.includes('rel="noopener"'));
   assert(footer.includes("getFullYear()"));
   assert(footer.includes(">Sinequix</a>"));
+  assert(footer.includes("PUBLIC_CONTACT"));
+  assert(footer.includes("footer-contact"));
+  assertEquals(COPY.es.footer.contact, "Contacto");
+  assertEquals(COPY.en.footer.contact, "Contact");
+  assertEquals(COPY.es.joinMail, "También podés escribir a {email}.");
+  assertEquals(COPY.en.joinMail, "You can also write to {email}.");
+  const home = Deno.readTextFileSync(new URL("../app/[locale]/page.tsx", import.meta.url));
+  assert(home.includes("join-mail"));
+  assert(home.includes("PUBLIC_CONTACT"));
   for (const page of ["../app/[locale]/page.tsx", "../app/[locale]/blog/page.tsx", "../app/[locale]/blog/[slug]/page.tsx"]) {
     const source = Deno.readTextFileSync(new URL(page, import.meta.url));
     assert(source.includes("<SiteFooter"));

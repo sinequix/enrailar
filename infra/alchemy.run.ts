@@ -7,6 +7,7 @@ import * as Redacted from "effect/Redacted";
 import { ROLE_MAILBOXES, TRANSACTIONAL_FROM } from "@enrailar/shared";
 import { accessPolicies } from "./src/access.ts";
 import { optionalSecret } from "./src/clickup-env.ts";
+import { APEX_SPF, DMARC, ROUTING_MX } from "./src/email-dns.ts";
 import { DOMAIN, isProductionStage, stubPath } from "./src/stage.ts";
 
 const compatibility = {
@@ -73,12 +74,11 @@ export default Stack(
     // `false` apaga la URL estable de workers.dev y los preview URLs.
     // Un preview no tiene dominio propio, así que solo se cierra en prod.
     const closedDev = production ? { workersDev: false as const } : {};
+    // Sumate corre en el Worker de la API. email-in usa otra lista.
+    // Las dos entran como variables de texto (vars de Actions), no como secretos.
     const clickupToken = yield* optionalSecret("CLICKUP_API_TOKEN");
-    const clickupListId = (yield* Config.String("CLICKUP_LIST_ID").pipe(Config.withDefault(""))).trim();
-    const clickupEnv = {
-      ...(Redacted.value(clickupToken).length > 0 ? { CLICKUP_API_TOKEN: clickupToken } : {}),
-      ...(clickupListId.length > 0 ? { CLICKUP_LIST_ID: clickupListId } : {}),
-    };
+    const clickupListIdWeb = (yield* Config.String("CLICKUP_LIST_ID_WEB").pipe(Config.withDefault(""))).trim();
+    const clickupListIdContacts = (yield* Config.String("CLICKUP_LIST_ID_CONTACTS").pipe(Config.withDefault(""))).trim();
 
     const api = yield* Cloudflare.Worker("Api", {
       main: new URL("../apps/api/src/worker.ts", import.meta.url).pathname,
@@ -90,7 +90,8 @@ export default Stack(
         AUDIT_QUEUE: audit,
         TURNSTILE_SITE_KEY: turnstile.sitekey,
         TURNSTILE_SECRET_KEY: turnstile.secret,
-        ...clickupEnv,
+        ...(Redacted.value(clickupToken).length > 0 ? { CLICKUP_API_TOKEN: clickupToken } : {}),
+        ...(clickupListIdWeb.length > 0 ? { CLICKUP_LIST_ID_WEB: clickupListIdWeb } : {}),
       },
     });
 
@@ -134,8 +135,11 @@ export default Stack(
       main: new URL("../workers/email-in/src/worker.ts", import.meta.url).pathname,
       compatibility,
       ...closedDev,
+      ...(production ? { crons: ["*/15 * * * *"] } : {}),
       env: {
-        FORWARD_TO: Config.Redacted("FORWARD_TO"),
+        ...(Redacted.value(clickupToken).length > 0 ? { CLICKUP_API_TOKEN: clickupToken } : {}),
+        ...(clickupListIdContacts.length > 0 ? { CLICKUP_LIST_ID_CONTACTS: clickupListIdContacts } : {}),
+        DB: database,
         BUCKET: bucket,
         EMAIL_ADDRESSES: [...ROLE_MAILBOXES],
         MAILBOX: Cloudflare.DurableObject("Mailbox", {
@@ -186,6 +190,27 @@ export default Stack(
     });
 
     if (zone !== undefined) {
+      for (const mx of ROUTING_MX) {
+        yield* Cloudflare.DNS.Record(mx.id, {
+          zoneId: zone.zoneId,
+          name: "@",
+          type: "MX",
+          content: mx.host,
+          priority: mx.priority,
+        }).pipe(adopt(true));
+      }
+      yield* Cloudflare.DNS.Record("SpfApex", {
+        zoneId: zone.zoneId,
+        name: "@",
+        type: "TXT",
+        content: APEX_SPF,
+      }).pipe(adopt(true));
+      yield* Cloudflare.DNS.Record("Dmarc", {
+        zoneId: zone.zoneId,
+        name: "_dmarc",
+        type: "TXT",
+        content: DMARC,
+      }).pipe(adopt(true));
       const routing = yield* Cloudflare.Email.Routing("Routing", { zone: zone.zoneId });
       for (const mailbox of ROLE_MAILBOXES) {
         const label = mailbox.slice(0, mailbox.indexOf("@"));

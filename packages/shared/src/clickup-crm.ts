@@ -2,9 +2,10 @@
  * Alta o actualización de un contacto en una lista de ClickUp.
  *
  * Sumate llama con `fuente: "sumate"` y la etiqueta `voluntario`.
- * El worker de correo entrante puede reutilizar el mismo módulo con
- * `fuente: "email"`. El token no se escribe en el repo: entra como secreto
- * del Worker. El id de la lista es una variable de texto, no un secreto.
+ * El worker de correo llama con `fuente: "email"` y la etiqueta `contacto`.
+ * Cada caller pasa su propio `listId`: no comparten la lista. El token no se
+ * escribe en el repo: entra como secreto del Worker. El id de la lista es una
+ * variable de texto, no un secreto.
  *
  * El correo no va en el título ni en la descripción: el sync de ClickUp
  * publica esos campos en un issue público. Queda en el custom field `email`

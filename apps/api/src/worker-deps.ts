@@ -9,7 +9,7 @@ interface WorkerEnv {
   MAIL_QUEUE: QueueLike;
   TURNSTILE_SECRET_KEY: string;
   CLICKUP_API_TOKEN?: string;
-  CLICKUP_LIST_ID?: string;
+  CLICKUP_LIST_ID_WEB?: string;
 }
 
 function bindingText(value: unknown): string {
@@ -37,7 +37,7 @@ export function workerDeps(): ApiDeps {
       const runtime = bindings();
       return pushCrmContact(contact, {
         token: bindingText(runtime.CLICKUP_API_TOKEN),
-        listId: bindingText(runtime.CLICKUP_LIST_ID),
+        listId: bindingText(runtime.CLICKUP_LIST_ID_WEB),
       });
     },
     rateLimit: { limit: 8, windowMs: 10 * 60 * 1000 },

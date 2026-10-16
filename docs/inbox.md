@@ -32,7 +32,7 @@ Bindings:
 
 Cloudflare Access cubre el Worker entero: la UI y `/mcp`. La política deja pasar el dominio `enrailar.com` y las direcciones de `ACCESS_ALLOWED_EMAILS`. Los ids de `ACCESS_SERVICE_TOKEN_IDS` entran en una política Service Auth aparte, así un cliente con `CF-Access-Client-Id` y `CF-Access-Client-Secret` llega a la UI y a `/mcp` sin login. El IdP se configura en la cuenta. `POLICY_AUD` es el `aud` de la aplicación que crea Alchemy y entra por el entorno.
 
-`email-in` no entra por HTTP. Tiene bindings cruzados `MAILBOX` (`MailboxDO`) y `EMAIL_AGENT` al script de este Worker, y el mismo R2. Antes de llamar a `receiveEmail` escribe `mailboxes/<casilla>.json` si falta. `forwarding.email` queda `""`: el `message.forward()` de `email-in` es el único reenvío, y el destino sale de `FORWARD_TO`.
+`email-in` no entra por HTTP. Tiene bindings cruzados `MAILBOX` (`MailboxDO`) y `EMAIL_AGENT` al script de este Worker, y el mismo R2. Antes de llamar a `receiveEmail` escribe `mailboxes/<casilla>.json` si falta. `forwarding.email` queda `""`. Ese worker no reenvía a nadie: no llama a `message.forward()`.
 
 ### Incompatibilidad con Alchemy beta
 
