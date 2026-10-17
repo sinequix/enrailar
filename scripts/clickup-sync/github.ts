@@ -226,13 +226,13 @@ export class GithubClient {
       return "ok";
     }
     const text = await response.text();
-    if (response.status === 422 && /already/i.test(text)) return "ok";
+    if (response.status === 422 && isDuplicateSubIssue(text)) return "ok";
     if (response.status === 404 || response.status === 410) {
       return "unsupported";
     }
     throw new HttpStatusError(
       response.status,
-      `GitHub POST sub_issues → ${response.status}`,
+      `GitHub POST sub_issues → ${response.status} ${text.slice(0, 300)}`,
     );
   }
 
@@ -511,6 +511,10 @@ export class GithubClient {
       "X-GitHub-Api-Version": "2022-11-28",
     };
   }
+}
+
+export function isDuplicateSubIssue(body: string): boolean {
+  return /already|duplicate sub-issue|only have one parent/i.test(body);
 }
 
 function parseIssue(
