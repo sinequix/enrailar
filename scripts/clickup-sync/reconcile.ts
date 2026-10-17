@@ -16,7 +16,11 @@ import {
   tagPatch,
   withGithubLink,
 } from "./plan.ts";
-import { type PullRequestRef, resolveClickupStatus } from "./state.ts";
+import {
+  type AvailableStatus,
+  type PullRequestRef,
+  resolveClickupStatus,
+} from "./state.ts";
 import { assigneePatch, type UserLink } from "./users.ts";
 
 export async function reconcileLinkedTask(input: {
@@ -25,7 +29,7 @@ export async function reconcileLinkedTask(input: {
   users: readonly UserLink[];
   task: ClickupTask;
   issue: GithubIssue;
-  availableStatuses: readonly string[];
+  availableStatuses: readonly (string | AvailableStatus)[];
   extraPullRequests?: readonly PullRequestRef[];
 }): Promise<void> {
   const fromTimeline = await input.github.linkedPullRequests(
