@@ -18,7 +18,8 @@ import {
 } from "./plan.ts";
 import {
   type AvailableStatus,
-  type PullRequestRef,
+  type LinkedPullRequest,
+  mergeLinkedPullRequests,
   resolveClickupStatus,
 } from "./state.ts";
 import { assigneePatch, type UserLink } from "./users.ts";
@@ -30,12 +31,12 @@ export async function reconcileLinkedTask(input: {
   task: ClickupTask;
   issue: GithubIssue;
   availableStatuses: readonly (string | AvailableStatus)[];
-  extraPullRequests?: readonly PullRequestRef[];
+  extraPullRequests?: readonly LinkedPullRequest[];
 }): Promise<void> {
   const fromTimeline = await input.github.linkedPullRequests(
     input.issue.number,
   );
-  const pullRequests = mergePullRequests(
+  const pullRequests = mergeLinkedPullRequests(
     fromTimeline,
     input.extraPullRequests ?? [],
   );
@@ -153,20 +154,6 @@ async function upsertComment(
   for (const extra of matches.slice(1)) {
     await clickup.deleteComment(extra.id);
   }
-}
-
-function mergePullRequests(
-  fromApi: readonly PullRequestRef[],
-  extra: readonly PullRequestRef[],
-): PullRequestRef[] {
-  const byNumber = new Map<number, PullRequestRef>();
-  for (const pullRequest of fromApi) {
-    byNumber.set(pullRequest.number, pullRequest);
-  }
-  for (const pullRequest of extra) {
-    byNumber.set(pullRequest.number, pullRequest);
-  }
-  return [...byNumber.values()];
 }
 
 export function isAuthFailure(error: unknown): boolean {

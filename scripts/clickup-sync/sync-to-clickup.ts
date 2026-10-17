@@ -3,7 +3,7 @@ import { asRecord, asString, idString } from "./json.ts";
 import { parseClickupTaskId } from "./marker.ts";
 import { referencedIssueNumbers } from "./references.ts";
 import { isAuthFailure, isMissing, reconcileLinkedTask } from "./reconcile.ts";
-import type { PullRequestRef } from "./state.ts";
+import type { LinkedPullRequest, PullRequestRef } from "./state.ts";
 
 export async function syncGithubToClickup(ctx: SyncContext): Promise<void> {
   const eventName = Deno.env.get("GITHUB_EVENT_NAME") ?? "";
@@ -55,9 +55,11 @@ async function syncPullRequestEvent(
     asString(pullRequest.body) ?? ""
   }`;
   const numbers = new Set(referencedIssueNumbers(text, ctx.repo));
+  const closing = new Set<number>();
   try {
-    for (const closing of await ctx.github.closingIssueNumbers(number)) {
-      numbers.add(closing);
+    for (const issueNumber of await ctx.github.closingIssueNumbers(number)) {
+      closing.add(issueNumber);
+      numbers.add(issueNumber);
     }
   } catch (error) {
     if (isAuthFailure(error)) throw error;
@@ -65,7 +67,11 @@ async function syncPullRequestEvent(
   }
   let matched = 0;
   for (const issueNumber of numbers) {
-    const updated = await reconcileIssue(ctx, issueNumber, [ref], true);
+    const linked: LinkedPullRequest = {
+      ...ref,
+      closes: ref.merged && closing.has(issueNumber),
+    };
+    const updated = await reconcileIssue(ctx, issueNumber, [linked], true);
     if (updated) matched += 1;
   }
   if (matched === 0) {
@@ -76,7 +82,7 @@ async function syncPullRequestEvent(
 async function reconcileIssue(
   ctx: SyncContext,
   issueNumber: number,
-  extraPullRequests: readonly PullRequestRef[],
+  extraPullRequests: readonly LinkedPullRequest[],
   quiet = false,
 ): Promise<boolean> {
   let issue;

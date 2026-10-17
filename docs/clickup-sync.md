@@ -25,17 +25,26 @@ no van nombres de personas, correos ni montos.
 El código está en `scripts/clickup-sync/state.ts`. Elige el primer estado que
 exista en la lista, sin distinguir mayúsculas.
 
-| Situación en GitHub                                                 | Estado que busca en ClickUp                                                                                                                                                                                                 |
-| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Issue abierto, sin PR abierta ni PR mergeada que lo referencie      | `to do`, o el equivalente abierto de la lista: `por hacer`, `idea`, `planificada`, `identificado`, `pendiente`, `objetivo`, `detectada`, `preinscripto`. Si el nombre no está en la lista, el estado de tipo `open`.       |
-| Issue abierto, con una PR abierta que lo referencia (también draft) | `in progress`, `en curso`, `pr abierto`, `en preparación`, `priorizada` o `asignada a agente`                                                                                                                              |
-| PR mergeada que lo referencia, o issue cerrado como completed       | `complete`, `hecha`, `mergeada`, `publicado`, `listo`, `comunicada`, `participó` o `cerrada`. Si ninguno está, el primer estado de tipo `done`, o el único `closed` que no sea un descarte.                               |
-| Issue cerrado como not planned o duplicate                          | `cancelled`, `closed`, `descartada`, `descartado`, `no avanza`, `no comunicable`, `no contactar` o `perdida`                                                                                                                |
+| Situación en GitHub                                                                                                      | Estado que busca en ClickUp                                                                                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Issue abierto, sin PR abierta                                                                                            | `to do`, o el equivalente abierto de la lista: `por hacer`, `idea`, `planificada`, `identificado`, `pendiente`, `objetivo`, `detectada`, `preinscripto`. Si el nombre no está en la lista, el estado de tipo `open`. |
+| Issue abierto, con una PR abierta que lo menciona o que aparece en el timeline (también draft)                          | `in progress`, `en curso`, `pr abierto`, `en preparación`, `priorizada` o `asignada a agente`                                                                                                                        |
+| PR mergeada y el issue está en `closingIssuesReferences` de esa PR, sin otra PR abierta                                  | `complete`, `hecha`, `mergeada`, `publicado`, `listo`, `comunicada`, `participó` o `cerrada`. Si ninguno está, el primer estado de tipo `done`, o el único `closed` que no sea un descarte.                         |
+| Issue cerrado como completed                                                                                             | Los mismos nombres de cierre de la fila anterior.                                                                                                                                                                     |
+| Issue cerrado como not planned o duplicate                                                                               | `cancelled`, `closed`, `descartada`, `descartado`, `no avanza`, `no comunicable`, `no contactar` o `perdida`                                                                                                          |
 
-Una PR referencia al issue si el título o el cuerpo mencionan `#N` (o
-`owner/repo#N`) o si GitHub la marca como PR que lo cierra (`Closes`, `Fixes`,
-`Resolves`, también en el mensaje del commit). Si hay una PR abierta y otra ya
-mergeada, sigue en progreso.
+Una PR abierta deja la tarea en progreso si el título o el cuerpo mencionan
+`#N` (o `owner/repo#N`) o si el timeline del issue tiene un evento
+`cross-referenced` o `connected` hacia esa PR. También cuenta un draft. Esa
+mención, y ese cross-reference, no completan la tarea: si la PR se mergea sin
+más, el issue sigue abierto y la tarea vuelve al estado de pendiente.
+
+La tarea pasa a hecha por una PR solo cuando GitHub lista el issue en
+`closingIssuesReferences` de esa PR y la PR está mergeada. Eso es lo que
+escriben `Closes`, `Fixes` o `Resolves` (en el cuerpo de la PR o en el mensaje
+del commit). Una PR cerrada sin merge no cuenta: no la deja en progreso ni la
+completa. Si queda una PR abierta y otra ya mergeada que sí cierra el issue,
+sigue en progreso.
 
 Al importar una tarea que ya está cerrada en ClickUp, el issue nace cerrado:
 `complete`, `hecha` o `mergeada` como completed; `cancelled`, `closed` o

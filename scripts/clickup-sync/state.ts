@@ -62,10 +62,15 @@ export type PullRequestRef = {
   url: string;
 };
 
+/** Una PR vista desde un issue. `closes` es true solo si ese issue está en closingIssuesReferences. */
+export type LinkedPullRequest = PullRequestRef & {
+  closes: boolean;
+};
+
 export type StatusInput = {
   issueState: "open" | "closed";
   stateReason: CloseReason;
-  pullRequests: readonly PullRequestRef[];
+  pullRequests: readonly LinkedPullRequest[];
 };
 
 export type StatusResolution =
@@ -111,10 +116,32 @@ export function statusBucket(input: StatusInput): StatusBucket {
   if (input.pullRequests.some((pullRequest) => pullRequest.state === "open")) {
     return "in_progress";
   }
-  if (input.pullRequests.some((pullRequest) => pullRequest.merged)) {
+  if (
+    input.pullRequests.some((pullRequest) =>
+      pullRequest.merged && pullRequest.closes
+    )
+  ) {
     return "complete";
   }
   return "todo";
+}
+
+export function mergeLinkedPullRequests(
+  fromApi: readonly LinkedPullRequest[],
+  extra: readonly LinkedPullRequest[],
+): LinkedPullRequest[] {
+  const byNumber = new Map<number, LinkedPullRequest>();
+  for (const pullRequest of fromApi) {
+    byNumber.set(pullRequest.number, pullRequest);
+  }
+  for (const pullRequest of extra) {
+    const previous = byNumber.get(pullRequest.number);
+    byNumber.set(pullRequest.number, {
+      ...pullRequest,
+      closes: pullRequest.closes || previous?.closes === true,
+    });
+  }
+  return [...byNumber.values()];
 }
 
 export function resolveClickupStatus(

@@ -2,7 +2,8 @@ import { assertEquals } from "@std/assert";
 import {
   type CloseReason,
   initialGithubClose,
-  type PullRequestRef,
+  type LinkedPullRequest,
+  mergeLinkedPullRequests,
   resolveClickupStatus,
   STATUS_CANDIDATES,
   type StatusInput,
@@ -18,7 +19,7 @@ Deno.test("abierto sin PR queda en to do", () => {
   });
 });
 
-Deno.test("un PR abierto pide in progress y no lo inventa si la lista no lo tiene", () => {
+Deno.test("una PR abierta que menciona el issue pide in progress y no lo inventa si la lista no lo tiene", () => {
   const resolved = resolveClickupStatus(
     open({ pullRequests: [pull()] }),
     today,
@@ -42,17 +43,25 @@ Deno.test("un PR en draft también es in progress", () => {
   });
 });
 
-Deno.test("un PR cerrado sin merge deja la tarea en to do", () => {
+Deno.test("un PR cerrado sin merge no mueve la tarea", () => {
   const resolved = resolveClickupStatus(
-    open({ pullRequests: [pull({ state: "closed" })] }),
+    open({
+      pullRequests: [pull({ state: "closed", closes: true })],
+    }),
     today,
   );
-  assertEquals(resolved.kind === "status" ? resolved.status : null, "to do");
+  assertEquals(resolved, {
+    bucket: "todo",
+    kind: "status",
+    status: "to do",
+  });
 });
 
-Deno.test("un PR mergeado completa la tarea aunque el issue siga abierto", () => {
+Deno.test("una PR mergeada completa solo si el issue está en closingIssuesReferences", () => {
   const resolved = resolveClickupStatus(
-    open({ pullRequests: [pull({ state: "closed", merged: true })] }),
+    open({
+      pullRequests: [pull({ state: "closed", merged: true, closes: true })],
+    }),
     today,
   );
   assertEquals(resolved, {
@@ -62,12 +71,26 @@ Deno.test("un PR mergeado completa la tarea aunque el issue siga abierto", () =>
   });
 });
 
-Deno.test("si hay un PR abierto y otro mergeado, sigue en progreso", () => {
+Deno.test("una PR mergeada que solo menciona o tiene cross-reference no completa", () => {
+  const resolved = resolveClickupStatus(
+    open({
+      pullRequests: [pull({ state: "closed", merged: true, closes: false })],
+    }),
+    today,
+  );
+  assertEquals(resolved, {
+    bucket: "todo",
+    kind: "status",
+    status: "to do",
+  });
+});
+
+Deno.test("si hay un PR abierto y otro mergeado que sí cierra, sigue en progreso", () => {
   const resolved = resolveClickupStatus(
     open({
       pullRequests: [
-        pull({ number: 1, state: "closed", merged: true }),
-        pull({ number: 2 }),
+        pull({ number: 1, state: "closed", merged: true, closes: true }),
+        pull({ number: 2, closes: false }),
       ],
     }),
     ["to do", "in progress", "complete"],
@@ -274,12 +297,21 @@ function closed(stateReason: CloseReason): StatusInput {
   return { issueState: "closed", stateReason, pullRequests: [] };
 }
 
-function pull(extra: Partial<PullRequestRef> = {}): PullRequestRef {
+Deno.test("al juntar PRs, closes se conserva si alguna fuente lo trae", () => {
+  const merged = mergeLinkedPullRequests(
+    [pull({ number: 4, state: "closed", merged: true, closes: true })],
+    [pull({ number: 4, state: "closed", merged: true, closes: false })],
+  );
+  assertEquals(merged[0]?.closes, true);
+});
+
+function pull(extra: Partial<LinkedPullRequest> = {}): LinkedPullRequest {
   return {
     number: 1,
     state: "open",
     merged: false,
     draft: false,
+    closes: false,
     url: "https://github.com/sinequix/enrailar/pull/1",
     ...extra,
   };
