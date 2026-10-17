@@ -279,6 +279,7 @@ export default Stack(
       emailIn: emailIn.workerName,
       emailOut: emailOut.workerName,
       news: news.workerName,
+      newsUrl: news.url,
       newsDatabase: newsDatabase.databaseName,
       newsMedia: newsMedia.bucketName,
     };

@@ -7,7 +7,7 @@
     "seed": "seed/seed.json"
   },
   "scripts": {
-    "dev": "astro dev",
+    "dev": "NEWS_RUNTIME=node astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "lint": "deno lint --config ../../deno.json src/host.ts src/lib tests",

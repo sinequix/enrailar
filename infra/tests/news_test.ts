@@ -20,6 +20,7 @@ Deno.test("noticias es un Worker de Astro con D1 y R2 propios", () => {
   assert(newsBlock.includes("ACCESS_AUD: newsAdmin.aud"));
   assert(newsBlock.includes("ACCESS_TEAM_DOMAIN"));
   assert(newsBlock.includes('NEWS_ADMIN: production ? "on" : "off"'));
+  assert(alchemy.includes("newsUrl: news.url"));
   assert(!newsBlock.includes("access"));
   assert(!alchemy.includes("worker_loaders"));
   assert(!/\bLOADER\s*:/.test(alchemy));

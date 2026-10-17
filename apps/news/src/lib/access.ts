@@ -1,5 +1,6 @@
 const CERTS_PATH = "/cdn-cgi/access/certs";
 const KEY_TTL_MS = 60 * 60 * 1000;
+const REFRESH_COOLDOWN_MS = 60 * 1000;
 
 export interface AccessRequest {
   pathname: string;
@@ -9,6 +10,8 @@ export interface AccessRequest {
   aud: string;
   teamDomain: string;
   now: number;
+  /** Solo `astro dev` con `NEWS_RUNTIME=node` puede saltear la validación. */
+  dev: boolean;
 }
 
 export type AccessVerdict =
@@ -28,9 +31,16 @@ interface CachedKeys {
 }
 
 const keyCache = new Map<string, CachedKeys>();
+const lastFetchAt = new Map<string, number>();
 
 export function resetAccessKeyCache(): void {
   keyCache.clear();
+  lastFetchAt.clear();
+}
+
+/** El admin local solo se abre con las dos marcas. Cualquier otro runtime valida. */
+export function isLocalDev(request: Pick<AccessRequest, "runtime" | "dev">): boolean {
+  return request.runtime === "node" && request.dev;
 }
 
 export function isEmDashPath(pathname: string): boolean {
@@ -88,9 +98,20 @@ function audienceMatches(claim: unknown, expected: string): boolean {
   return claim.some((item) => item === expected);
 }
 
-async function keysFor(certsUrl: string, fetchCerts: (url: string) => Promise<unknown>, force: boolean): Promise<Map<string, CryptoKey>> {
+async function keysFor(
+  certsUrl: string,
+  fetchCerts: (url: string) => Promise<unknown>,
+  now: number,
+  force: boolean,
+): Promise<Map<string, CryptoKey>> {
   const cached = keyCache.get(certsUrl);
-  if (!force && cached !== undefined && Date.now() - cached.fetchedAt < KEY_TTL_MS) return cached.byKid;
+  if (!force && cached !== undefined && now - cached.fetchedAt < KEY_TTL_MS) return cached.byKid;
+  const attemptedAt = lastFetchAt.get(certsUrl);
+  if (attemptedAt !== undefined && now - attemptedAt < REFRESH_COOLDOWN_MS) {
+    if (cached !== undefined) return cached.byKid;
+    throw new Error("jwks");
+  }
+  lastFetchAt.set(certsUrl, now);
   const body = await fetchCerts(certsUrl);
   if (!isRecord(body) || !Array.isArray(body.keys)) throw new Error("jwks");
   const byKid = new Map<string, CryptoKey>();
@@ -105,7 +126,7 @@ async function keysFor(certsUrl: string, fetchCerts: (url: string) => Promise<un
     );
     byKid.set(jwk.kid, key);
   }
-  keyCache.set(certsUrl, { fetchedAt: Date.now(), byKid });
+  keyCache.set(certsUrl, { fetchedAt: now, byKid });
   return byKid;
 }
 
@@ -113,6 +134,7 @@ async function signatureOk(
   token: string,
   certsUrl: string,
   fetchCerts: (url: string) => Promise<unknown>,
+  now: number,
 ): Promise<boolean> {
   const parts = token.split(".");
   if (parts.length !== 3) return false;
@@ -125,10 +147,10 @@ async function signatureOk(
   const encoded = new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`);
   const data = new Uint8Array(new ArrayBuffer(encoded.byteLength));
   data.set(encoded);
-  let keys = await keysFor(certsUrl, fetchCerts, false);
+  let keys = await keysFor(certsUrl, fetchCerts, now, false);
   let key = keys.get(header.kid);
   if (key === undefined) {
-    keys = await keysFor(certsUrl, fetchCerts, true);
+    keys = await keysFor(certsUrl, fetchCerts, now, true);
     key = keys.get(header.kid);
   }
   if (key === undefined) return false;
@@ -144,21 +166,22 @@ function payloadOf(token: string): Record<string, unknown> | undefined {
 
 /**
  * `/_emdash` solo sigue si el JWT de Access verifica. El resto del sitio pasa.
- * Fuera de Cloudflare (astro dev) el admin local no pide el header.
+ * La validación se saltea únicamente en `astro dev` con `NEWS_RUNTIME=node`.
+ * Un runtime vacío, `cloudflare` u otro valor siempre exige el JWT.
  */
 export async function decideAccess(
   request: AccessRequest,
   fetchCerts: (url: string) => Promise<unknown>,
 ): Promise<AccessVerdict> {
   if (!isEmDashPath(request.pathname)) return { kind: "pass" };
-  if (request.runtime !== "cloudflare") return { kind: "pass" };
+  if (isLocalDev(request)) return { kind: "pass" };
   if (request.admin !== "on") return { kind: "deny", reason: "admin-off" };
   const urls = accessUrls(request.teamDomain);
   if (urls === undefined || request.aud.trim().length === 0) return { kind: "deny", reason: "config" };
   if (request.token === null || request.token.trim().length === 0) return { kind: "deny", reason: "missing-token" };
   let signed = false;
   try {
-    signed = await signatureOk(request.token, urls.certsUrl, fetchCerts);
+    signed = await signatureOk(request.token, urls.certsUrl, fetchCerts, request.now);
   } catch {
     return { kind: "deny", reason: "bad-signature" };
   }

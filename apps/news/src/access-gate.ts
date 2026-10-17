@@ -55,6 +55,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     aud: await binding("ACCESS_AUD"),
     teamDomain: await binding("ACCESS_TEAM_DOMAIN"),
     now: Date.now(),
+    dev: import.meta.env.DEV === true,
   }, fetchCerts);
   const pathname = context.url.pathname;
   if (verdict.kind === "pass" && isEmDashPath(pathname)) {

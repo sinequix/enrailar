@@ -60,6 +60,9 @@ jobs:
         env:
           NODE_OPTIONS: --import ${{ github.workspace }}/scripts/ci/inbox-vite-hooks.mjs
         run: pnpm --filter @enrailar/infra exec alchemy deploy --yes --no-input --stage "pr-${{ github.event.pull_request.number }}"
+      - name: Smoke news admin
+        if: steps.deploy.outcome == 'success'
+        run: bash scripts/ci/news-admin-smoke.sh "pr-${{ github.event.pull_request.number }}"
       - name: Destroy pr stage
         if: always() && (steps.deploy.outcome == 'success' || steps.deploy.outcome == 'failure')
         env:
