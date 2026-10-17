@@ -5,12 +5,12 @@ export function withBase(base: string, slug?: string): string {
   return `${prefix}/${slug}`;
 }
 
-/** Solo http(s). Un valor raro no se vuelve un enlace. */
+/** Solo https. http, javascript y cualquier otro esquema no se vuelven un enlace. */
 export function publicHttpUrl(value: unknown): string | undefined {
   if (typeof value !== "string" || value.length === 0) return undefined;
   try {
     const url = new URL(value);
-    if (url.protocol === "https:" || url.protocol === "http:") return url.toString();
+    if (url.protocol === "https:") return url.toString();
   } catch {
     return undefined;
   }

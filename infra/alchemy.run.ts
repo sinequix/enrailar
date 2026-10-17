@@ -168,14 +168,23 @@ export default Stack(
 
     const newsDatabase = yield* Cloudflare.D1.Database("NewsDatabase");
     const newsMedia = yield* Cloudflare.R2.Bucket("NewsMedia");
-    // El admin de EmDash queda detrás de Access y, además, del login del CMS.
-    // En prod la app cubre solo `/_emdash`: el sitio público no pide Access.
-    // Un preview no tiene hostname propio, así que el Worker entero entra en
-    // la app dedicada, igual que inbox y admin.
+    // La app existe antes que el Worker: el env lee `newsAdmin.aud`, así que
+    // Alchemy no despliega Noticias si Access no se creó. El dominio es solo
+    // `/_emdash`. No se usa `access` en el Worker: eso inscribiría todo el
+    // tráfico, también la portada. En un preview no hay hostname propio y el
+    // admin queda apagado (`NEWS_ADMIN=off`); `/_emdash` responde 403.
+    const newsAdmin = production
+      ? yield* Cloudflare.Access.Application("NewsAdmin", {
+        type: "self_hosted",
+        domain: `noticias.${DOMAIN}/_emdash`,
+        destinations: [{ type: "public", uri: `noticias.${DOMAIN}/_emdash` }],
+        sessionDuration: accessSession,
+        policies,
+      })
+      : undefined;
     const news = yield* Cloudflare.Website.Astro("News", {
       rootDir: decodeURIComponent(new URL("../apps/news/", import.meta.url).pathname),
       compatibility,
-      ...(production ? {} : { access }),
       ...closedDev,
       ...domain(`noticias.${DOMAIN}`),
       sessionKVBindingName: false,
@@ -184,19 +193,17 @@ export default Stack(
         DB: newsDatabase,
         MEDIA: newsMedia,
         NEWS_RUNTIME: "cloudflare",
+        NEWS_ADMIN: production ? "on" : "off",
         EMDASH_ENCRYPTION_KEY: Config.Redacted("EMDASH_ENCRYPTION_KEY"),
+        ...(newsAdmin
+          ? {
+            ACCESS_AUD: newsAdmin.aud,
+            ACCESS_TEAM_DOMAIN: Config.Redacted("TEAM_DOMAIN"),
+          }
+          : {}),
         ...(production ? { EMDASH_SITE_URL: `https://noticias.${DOMAIN}` } : {}),
       },
     });
-    if (production) {
-      yield* Cloudflare.Access.Application("NewsAdmin", {
-        type: "self_hosted",
-        domain: `noticias.${DOMAIN}/_emdash`,
-        destinations: [{ type: "public", uri: `noticias.${DOMAIN}/_emdash` }],
-        sessionDuration: accessSession,
-        policies,
-      });
-    }
 
     const web = yield* Cloudflare.Website.Vinext("Web", {
       rootDir: decodeURIComponent(new URL("../apps/web/", import.meta.url).pathname),

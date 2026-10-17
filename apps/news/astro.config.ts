@@ -28,7 +28,13 @@ export default defineConfig({
         ? r2({ binding: "MEDIA" })
         : local({ directory: "./data/uploads", baseUrl: "/_emdash/api/media/file" }),
       admin: { locales: ["es-419", "en"] },
+      middleware: { outer: "./src/access-gate.ts" },
     }),
   ],
+  vite: {
+    ssr: {
+      external: ["cloudflare:workers"],
+    },
+  },
   devToolbar: { enabled: false },
 });

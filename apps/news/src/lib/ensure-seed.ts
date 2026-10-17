@@ -1,10 +1,10 @@
-import { getEmDashEntry } from "emdash";
 import { getDb } from "emdash/runtime";
 import { applySeed, validateSeed, type SeedFile } from "emdash/seed";
+import { sql } from "kysely";
 import seedJson from "../../seed/seed.json" with { type: "json" };
-import { NOTICIA_COLLECTION, YPF_SLUG } from "../host.ts";
+import { CREATE_SEED_FLAG_SQL, runSeedOnce, SEED_FLAG_ID } from "./seed-guard.ts";
 
-let ready: Promise<void> | undefined;
+let done: Promise<void> | undefined;
 
 function seedFile(): SeedFile {
   const seed = seedJson as SeedFile;
@@ -15,22 +15,39 @@ function seedFile(): SeedFile {
   return seed;
 }
 
-async function apply(): Promise<void> {
-  const found = await getEmDashEntry(NOTICIA_COLLECTION, YPF_SLUG, { locale: "es" }).catch(() => undefined);
-  if (found?.entry) return;
+async function applyOnce(): Promise<void> {
   const db = await getDb();
-  await applySeed(db, seedFile(), { includeContent: true, onConflict: "skip" });
+  await runSeedOnce({
+    flagSet: async () => {
+      await sql.raw(CREATE_SEED_FLAG_SQL).execute(db);
+      const found = await sql<{ id: string }>`
+        select id from enrailar_news_seed where id = ${SEED_FLAG_ID}
+      `.execute(db);
+      return found.rows.length > 0;
+    },
+    applyContent: async () => {
+      await applySeed(db, seedFile(), { includeContent: true, onConflict: "skip" });
+    },
+    markApplied: async () => {
+      const appliedAt = new Date().toISOString();
+      await sql`
+        insert into enrailar_news_seed (id, applied_at)
+        values (${SEED_FLAG_ID}, ${appliedAt})
+        on conflict (id) do nothing
+      `.execute(db);
+    },
+  });
 }
 
 /**
- * Aplica el seed con el contenido la primera vez que el isolate no encuentra
- * la nota. El asistente de EmDash no copia el contenido de ejemplo salvo que
- * alguien lo pida; esta llamada lo deja publicado igual.
+ * Corre solo después de Access, en `/_emdash`. La marca en D1 impide una
+ * segunda escritura: si alguien borra la nota, no se vuelve a crear.
+ * Las páginas públicas no llaman esto.
  */
 export function ensureNoticiaSeed(): Promise<void> {
-  ready ??= apply().catch((error: unknown) => {
-    ready = undefined;
+  done ??= applyOnce().catch((error: unknown) => {
+    done = undefined;
     throw error;
   });
-  return ready;
+  return done;
 }

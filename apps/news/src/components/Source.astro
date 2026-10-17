@@ -17,12 +17,12 @@ const originalHref = publicHttpUrl(originalPostUrl);
   <p class="eyebrow">Fuente</p>
   <p>
     <strong>
-      {sourceHref ? <a href={sourceHref}>{sourceName}</a> : sourceName}
+      {sourceHref ? <a href={sourceHref} rel="noopener noreferrer">{sourceName}</a> : sourceName}
     </strong>
   </p>
   {originalHref && (
     <p>
-      Publicación original: <a href={originalHref}>{originalHref}</a>
+      Publicación original: <a href={originalHref} rel="noopener noreferrer">{originalHref}</a>
     </p>
   )}
   {via && <p>Vía {via}</p>}

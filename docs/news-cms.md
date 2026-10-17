@@ -17,7 +17,7 @@ Para pasar el sitio a `/noticias` más adelante:
 
 EmDash puede correr plugins en un isolate con el binding `LOADER` (Worker Loader). Eso pide el plan de pago de Workers. Este sitio no declara `sandboxRunner` ni `LOADER`. Tampoco usa el binding de Images: las notas no transforman imágenes en el Worker.
 
-La publicación programada de EmDash pide el handler `scheduled` de `@emdash-cms/cloudflare/worker`. Alchemy arma el entrypoint del Worker y no deja poner ese handler sin salir del adaptador del repo. Una nota se publica en el momento, desde el admin. No hay cron de noticias.
+La publicación es inmediata. No hay handler `scheduled` ni cron: Alchemy arma el entrypoint del Worker y no engancha el de `@emdash-cms/cloudflare/worker`. Una nota se ve en cuanto alguien la publica en el admin. No hay publicación programada.
 
 ## Datos
 
@@ -43,16 +43,19 @@ El seed está en [`apps/news/seed/seed.json`](../apps/news/seed/seed.json). EmDa
 | `lines` | multi-select: Urquiza, Mitre, San Martín, Roca, Sarmiento, Belgrano | sí |
 | `category` | select: carga, pasajeros, infraestructura, política | sí |
 
-Cada nota en el sitio muestra la fuente, el enlace y, si están, la publicación original y la vía. El cuerpo es un resumen escrito para Enrailar. No se pega el texto del medio.
+Cada nota en el sitio muestra la fuente, el enlace y, si están, la publicación original y la vía. El esquema de `source_url` y `original_post_url` pide `^https://`. El render también: un `http` u otro esquema no se vuelve un enlace. Los enlaces llevan `rel="noopener noreferrer"`. El cuerpo es un resumen escrito para Enrailar. No se pega el texto del medio.
 
-La primera nota, `ypf-arena-fractura-vaca-muerta`, va en el seed. `emdash seed` la aplica en SQLite. En el Worker, `ensureNoticiaSeed` vuelve a aplicar el seed con el contenido si esa nota no está: el asistente de EmDash, si nadie marca «incluir contenido de ejemplo», deja el esquema y no las notas. Hace falta igual completar el asistente una vez para crear la cuenta de admin.
+La primera nota, `ypf-arena-fractura-vaca-muerta`, va en el seed. En local, `pnpm --filter @enrailar/news seed` la escribe en SQLite. En el Worker no se escribe desde una visita pública. `ensureNoticiaSeed` corre una sola vez, después de que Access dejó pasar un request a `/_emdash`, y deja la marca `noticia-v1` en la tabla `enrailar_news_seed`. Si esa marca ya está, no vuelve a insertar contenido: borrar la nota de YPF no la recrea. Hasta esa primera entrada autenticada, la portada puede estar vacía. Hace falta igual completar el asistente una vez para crear la cuenta de admin.
 
 ## Cómo entra alguien a editar
 
-Hay dos puertas, las dos obligatorias.
+Hay dos puertas, las dos obligatorias. EmDash convierte en admin a quien completa el asistente primero, así que `/_emdash` no puede atender a nadie antes de Access.
 
-1. **Cloudflare Access**, con la misma política que inbox y admin: dominio `enrailar.com` y los correos de `ACCESS_ALLOWED_EMAILS`. Si `ACCESS_SERVICE_TOKEN_IDS` trae ids, también entra la política Service Auth. En `prod` la aplicación `NewsAdmin` cubre solo `noticias.enrailar.com/_emdash` (el admin, la API y el MCP). La portada queda pública. En un preview el Worker no tiene hostname propio: Access cubre el Worker entero, así el asistente no queda abierto en `workers.dev`.
-2. **La cuenta de EmDash.** La primera persona que pasa Access abre `/_emdash/admin` y termina el asistente (passkey). Las visitas siguientes usan esa cuenta. El login de EmDash no se reemplaza por Access.
+1. **Cloudflare Access**, con la misma política que inbox y admin: dominio `enrailar.com` y los correos de `ACCESS_ALLOWED_EMAILS`. Si `ACCESS_SERVICE_TOKEN_IDS` trae ids, también entra la política Service Auth. En `prod`, Alchemy crea la aplicación `NewsAdmin` (`noticias.enrailar.com/_emdash`) **antes** del Worker. El Worker lee `ACCESS_AUD` del `aud` de esa app: si Access no se creó, el Worker no se despliega. La portada no está en esa app. No se usa la prop `access` del Worker, porque inscribiría todo el tráfico.
+2. **El JWT en el Worker.** Un middleware externo de Astro (`src/access-gate.ts`, `middleware.outer`) corre antes del setup de EmDash. En `/_emdash` y debajo (admin, API, MCP, asistente) exige `Cf-Access-Jwt-Assertion`. Verifica la firma con las claves de `https://<team>.cloudflareaccess.com/cdn-cgi/access/certs` (las guarda en memoria una hora), `exp`, `iss` igual al origen del equipo y `aud` igual a `ACCESS_AUD`. Si falta el header o no verifica, responde 403 y no llama al resto: el asistente no corre. `ACCESS_TEAM_DOMAIN` es el mismo `TEAM_DOMAIN` que ya usa el inbox. No se adopta la organización de Zero Trust: ese recurso hace PUT del singleton de la cuenta.
+3. **La cuenta de EmDash.** La primera persona que pasa las dos puertas abre `/_emdash/admin` y termina el asistente (passkey). Las visitas siguientes usan esa cuenta. El login de EmDash no se reemplaza por Access.
+
+En un preview no hay hostname propio y no se crea `NewsAdmin` sobre `noticias.enrailar.com` (esa app es de prod). `NEWS_ADMIN` queda en `off`. Cualquier request a `/_emdash` responde 403, con o sin JWT. El admin del preview no está abierto. `astro dev` en la máquina local no es un preview: ahí el admin sigue disponible, sin Access.
 
 ## Cómo se agrega una nota
 
@@ -95,8 +98,9 @@ Cargarlo en el entorno `production` como `EMDASH_ENCRYPTION_KEY` antes del prime
 
 Lo demás ya está en el stack:
 
-- El DNS de `noticias.enrailar.com` lo crea el custom domain del Worker en el stage `prod`. No hace falta un registro a mano si el deploy termina bien.
-- La aplicación de Access `NewsAdmin` también sale de Alchemy, en el mismo deploy. El proveedor de identidad es el que ya tiene la cuenta. Si el primer deploy crea el hostname y Access todavía no lo ve, un segundo deploy de `prod` alcanza: no hay que armar la app en el tablero.
-- La cuenta de admin de EmDash sí es manual: alguien de la política de Access abre `/_emdash/admin` una vez y registra la passkey. La nota de YPF no se carga a mano.
+- El DNS de `noticias.enrailar.com` lo crea el custom domain del Worker en el stage `prod`. La zona ya está adoptada. `NewsAdmin` se crea antes que el Worker. Si Cloudflare rechaza la app porque el hostname todavía no está en la zona, el Worker no se despliega: se corrige el DNS y se vuelve a correr prod. No hay que publicar el Worker solo para «abrir» el admin.
+- `ACCESS_AUD` no es un secreto de GitHub. Sale del `aud` de `NewsAdmin` y Alchemy lo pone en el Worker. `ACCESS_TEAM_DOMAIN` reutiliza el secreto `TEAM_DOMAIN` que prod ya exige para el inbox. No hay un secreto nuevo de Access.
+- El proveedor de identidad es el que ya tiene la cuenta. No hay que armar la app en el tablero.
+- La cuenta de admin de EmDash sí es manual: alguien de la política de Access abre `/_emdash/admin` una vez y registra la passkey. Esa visita, ya autenticada, aplica el seed una sola vez. La nota de YPF no se carga a mano. Borrarla después no la vuelve a crear.
 
-`POLICY_AUD` y `TEAM_DOMAIN` siguen siendo del inbox. Noticias no los usa: Access corta en el borde y EmDash tiene su propia sesión.
+`POLICY_AUD` sigue siendo solo del inbox. Noticias usa el `aud` de su propia app.

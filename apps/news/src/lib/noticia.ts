@@ -1,6 +1,5 @@
 import { getEmDashCollection, getEmDashEntry } from "emdash";
 import { NOTICIA_COLLECTION, YPF_SLUG } from "../host.ts";
-import { ensureNoticiaSeed } from "./ensure-seed.ts";
 
 export const NOTICIA = NOTICIA_COLLECTION;
 
@@ -59,7 +58,6 @@ function asRecord(value: unknown): Record<string, unknown> {
 }
 
 export async function listNoticias(): Promise<{ items: Noticia[]; error: boolean }> {
-  await ensureNoticiaSeed();
   const result = await getEmDashCollection(NOTICIA, {
     locale: "es",
     orderBy: { published_at: "desc" },
@@ -72,7 +70,6 @@ export async function listNoticias(): Promise<{ items: Noticia[]; error: boolean
 }
 
 export async function loadNoticia(slug: string): Promise<{ item?: Noticia; error: boolean }> {
-  await ensureNoticiaSeed();
   const result = await getEmDashEntry(NOTICIA, slug, { locale: "es" });
   if (result.error) return { error: true };
   if (!result.entry) return { error: false };

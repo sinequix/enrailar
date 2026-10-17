@@ -13,6 +13,14 @@ Deno.test("noticias es un Worker de Astro con D1 y R2 propios", () => {
   assert(alchemy.includes("`noticias.${DOMAIN}`"));
   assert(alchemy.includes("EMDASH_ENCRYPTION_KEY"));
   assert(alchemy.includes('domain: `noticias.${DOMAIN}/_emdash`'));
+  const adminAt = alchemy.indexOf('Cloudflare.Access.Application("NewsAdmin"');
+  const newsAt = alchemy.indexOf('Cloudflare.Website.Astro("News"');
+  assert(adminAt > 0 && newsAt > adminAt);
+  const newsBlock = alchemy.slice(newsAt, alchemy.indexOf('Cloudflare.Website.Vinext("Web"'));
+  assert(newsBlock.includes("ACCESS_AUD: newsAdmin.aud"));
+  assert(newsBlock.includes("ACCESS_TEAM_DOMAIN"));
+  assert(newsBlock.includes('NEWS_ADMIN: production ? "on" : "off"'));
+  assert(!newsBlock.includes("access"));
   assert(!alchemy.includes("worker_loaders"));
   assert(!/\bLOADER\s*:/.test(alchemy));
   assert(!/sandboxRunner\s*:/.test(newsConfig));

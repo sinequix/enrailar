@@ -8,8 +8,9 @@ Deno.test("el camino público respeta el base de Astro", () => {
   assertEquals(withBase("/noticias/", "ypf"), "/noticias/ypf");
 });
 
-Deno.test("la cita solo enlaza http o https", () => {
+Deno.test("la cita solo enlaza https", () => {
   assertEquals(publicHttpUrl("https://www.rionegro.com.ar/energia/"), "https://www.rionegro.com.ar/energia/");
+  assertEquals(publicHttpUrl("http://www.rionegro.com.ar/energia/"), undefined);
   assertEquals(publicHttpUrl("javascript:alert(1)"), undefined);
   assertEquals(publicHttpUrl("nota"), undefined);
   assertEquals(publicHttpUrl(""), undefined);

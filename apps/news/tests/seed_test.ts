@@ -46,6 +46,10 @@ Deno.test("el seed declara la colección noticia y la nota de YPF", () => {
   assertEquals(fields.get("category")?.type, "select");
   assertEquals(fields.get("body")?.type, "portableText");
   assertEquals(fields.get("original_post_url")?.required, undefined);
+  const sourceUrl = collection.fields.find((field) => field.slug === "source_url") as SeedField & { validation?: { pattern?: string } };
+  const originalUrl = collection.fields.find((field) => field.slug === "original_post_url") as SeedField & { validation?: { pattern?: string } };
+  assertEquals(sourceUrl.validation?.pattern, "^https://");
+  assertEquals(originalUrl.validation?.pattern, "^https://");
   assertEquals(fields.get("via")?.required, undefined);
   assert(!fields.has("slug"));
   assert(!fields.has("published_at"));

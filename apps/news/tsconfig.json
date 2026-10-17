@@ -5,6 +5,6 @@
     "verbatimModuleSyntax": true,
     "jsx": "react-jsx"
   },
-  "include": [".astro/types.d.ts", "src/**/*.ts", "src/**/*.astro"],
+  "include": [".astro/types.d.ts", "src/**/*.ts", "src/**/*.d.ts", "src/**/*.astro"],
   "exclude": ["dist", "data", "tests"]
 }

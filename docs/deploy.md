@@ -70,7 +70,7 @@ Si una página se sirviera prerenderizada (hoy `vinext()` no tiene `prerender` a
 
 `inbox` y `admin` exigen Cloudflare Access. La política `allow` deja pasar identidades del dominio `enrailar.com` y las direcciones de `ACCESS_ALLOWED_EMAILS`. Si `ACCESS_SERVICE_TOKEN_IDS` trae ids, la misma aplicación suma una política Service Auth (`non_identity`) con esos tokens: Access no acepta un service token dentro de la política de correos. El proveedor de identidad se configura en la cuenta, no en este repo. En `prod` los dos Workers entran en la misma aplicación. El `aud` de esa aplicación se carga en `POLICY_AUD`.
 
-Noticias (`noticias.enrailar.com`) es otro Worker, Astro + EmDash. En `prod` Access cubre solo `/_emdash`. El detalle, el secreto `EMDASH_ENCRYPTION_KEY` y el modelo de contenido están en [`news-cms.md`](news-cms.md).
+Noticias (`noticias.enrailar.com`) es otro Worker, Astro + EmDash. En `prod` la app `NewsAdmin` existe antes que el Worker y cubre solo `/_emdash`. El Worker además verifica el JWT de Access. En un preview `/_emdash` responde 403. El detalle, el secreto `EMDASH_ENCRYPTION_KEY` y el modelo de contenido están en [`news-cms.md`](news-cms.md).
 
 ## State
 
