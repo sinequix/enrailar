@@ -27,6 +27,7 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@alchemy.run/frontend-frameworks": "2.0.0-beta.81",
     "@astrojs/check": "0.9.10",
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",

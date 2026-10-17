@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import node from "@astrojs/node";
 import react from "@astrojs/react";
 import { d1, r2 } from "@emdash-cms/cloudflare";
@@ -8,6 +9,17 @@ import { sqlite } from "emdash/db";
 
 const onCloudflare = process.env.NEWS_RUNTIME === "cloudflare";
 const base = process.env.NEWS_BASE?.trim() || "/";
+
+/**
+ * Alchemy envuelve este módulo en `\0distilled:worker-entry:` y lo vuelve a
+ * resolver sin importer, desde la raíz de `apps/news`. Sin el paquete en
+ * este proyecto, Rolldown no encuentra el entry y el Worker no buildea.
+ * El alias apunta al archivo: el export no tiene condición `default`.
+ */
+const ALCHEMY_SERVER_ENTRY = "@alchemy.run/frontend-frameworks/astro/entrypoints/server";
+const alchemyServerEntry = onCloudflare
+  ? fileURLToPath(import.meta.resolve(ALCHEMY_SERVER_ENTRY))
+  : undefined;
 
 /**
  * Alchemy inyecta el adaptador de Cloudflare en el deploy y rechaza otro
@@ -32,6 +44,14 @@ export default defineConfig({
     }),
   ],
   vite: {
+    resolve: alchemyServerEntry
+      ? {
+        alias: [{
+          find: /^@alchemy\.run\/frontend-frameworks\/astro\/entrypoints\/server$/,
+          replacement: alchemyServerEntry,
+        }],
+      }
+      : {},
     ssr: {
       external: ["cloudflare:workers"],
     },
