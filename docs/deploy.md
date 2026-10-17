@@ -40,6 +40,7 @@ Los valores no van en el repositorio, ni en ejemplos, ni en logs. [`.env.example
 | `CLICKUP_API_TOKEN` | Secreto compartido del Worker de la API y de `email-in`. Alchemy lo guarda como secret text solo si tiene valor. Es el mismo token que ya usan los workflows de sync. Vacío, el deploy sigue: Sumate guarda la ficha en D1 y el correo a `hola@` queda para reintento. El valor no se escribe en el repo. `require-secrets.sh` no lo pide. |
 | `CLICKUP_LIST_ID_WEB` | Variable de GitHub Actions (`vars.CLICKUP_LIST_ID_WEB`), no un secreto. La lee el Worker de la API, que es el que guarda Sumate. Lista Voluntarios y Hackatrain: `901717736446`. Vacía, la ficha queda para reintento. |
 | `CLICKUP_LIST_ID_CONTACTS` | Variable de GitHub Actions (`vars.CLICKUP_LIST_ID_CONTACTS`), no un secreto. La lee solo `email-in`. Lista Contactos: `901717736444`. Puede diferir de la de Sumate. Vacía, el correo igual se guarda en el inbox y la fila queda para reintento. |
+| `EMDASH_ENCRYPTION_KEY` | Secreto del Worker de noticias. Cifra ajustes de plugins de EmDash. `require-secrets.sh` lo pide. El preview genera uno efímero. El valor no se escribe en el repo. Ver [`news-cms.md`](news-cms.md). |
 
 `email-in` no reenvía. No hay `FORWARD_TO` ni `message.forward()`. Los workflows de preview y de prod inyectan las dos variables de lista; Alchemy las ata como texto en el recurso de cada Worker.
 
@@ -68,6 +69,8 @@ Si una página se sirviera prerenderizada (hoy `vinext()` no tiene `prerender` a
 ## Access
 
 `inbox` y `admin` exigen Cloudflare Access. La política `allow` deja pasar identidades del dominio `enrailar.com` y las direcciones de `ACCESS_ALLOWED_EMAILS`. Si `ACCESS_SERVICE_TOKEN_IDS` trae ids, la misma aplicación suma una política Service Auth (`non_identity`) con esos tokens: Access no acepta un service token dentro de la política de correos. El proveedor de identidad se configura en la cuenta, no en este repo. En `prod` los dos Workers entran en la misma aplicación. El `aud` de esa aplicación se carga en `POLICY_AUD`.
+
+Noticias (`noticias.enrailar.com`) es otro Worker, Astro + EmDash. En `prod` Access cubre solo `/_emdash`. El detalle, el secreto `EMDASH_ENCRYPTION_KEY` y el modelo de contenido están en [`news-cms.md`](news-cms.md).
 
 ## State
 

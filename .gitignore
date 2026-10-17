@@ -5,6 +5,8 @@
 node_modules/
 dist/
 .vinext/
+.astro/
+apps/news/data/
 .vite/
 .next/
 apps/web/next-env.d.ts

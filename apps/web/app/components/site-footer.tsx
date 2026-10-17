@@ -1,4 +1,4 @@
-import { PUBLIC_CONTACT, ROLE_MAILBOXES } from "@enrailar/shared";
+import { NEWS_ORIGIN, PUBLIC_CONTACT, ROLE_MAILBOXES } from "@enrailar/shared";
 import { COPY, type Locale, REPO_URL, SINEQUIX_URL } from "../../src/copy.ts";
 
 export function SiteFooter({ locale }: { locale: Locale }) {
@@ -32,6 +32,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
             <li><a href={REPO_URL}>{copy.footer.code}</a></li>
             <li><a href={`${REPO_URL}/blob/main/LICENSE`}>{copy.footer.license}</a></li>
             <li><a href={`/${locale}/blog`}>{copy.blogTitle}</a></li>
+            <li><a href={NEWS_ORIGIN}>{copy.nav.news}</a></li>
           </ul>
         </div>
       </div>

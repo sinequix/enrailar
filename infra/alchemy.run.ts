@@ -166,6 +166,38 @@ export default Stack(
       },
     });
 
+    const newsDatabase = yield* Cloudflare.D1.Database("NewsDatabase");
+    const newsMedia = yield* Cloudflare.R2.Bucket("NewsMedia");
+    // El admin de EmDash queda detrás de Access y, además, del login del CMS.
+    // En prod la app cubre solo `/_emdash`: el sitio público no pide Access.
+    // Un preview no tiene hostname propio, así que el Worker entero entra en
+    // la app dedicada, igual que inbox y admin.
+    const news = yield* Cloudflare.Website.Astro("News", {
+      rootDir: decodeURIComponent(new URL("../apps/news/", import.meta.url).pathname),
+      compatibility,
+      ...(production ? {} : { access }),
+      ...closedDev,
+      ...domain(`noticias.${DOMAIN}`),
+      sessionKVBindingName: false,
+      observability: { enabled: true, traces: { enabled: true } },
+      env: {
+        DB: newsDatabase,
+        MEDIA: newsMedia,
+        NEWS_RUNTIME: "cloudflare",
+        EMDASH_ENCRYPTION_KEY: Config.Redacted("EMDASH_ENCRYPTION_KEY"),
+        ...(production ? { EMDASH_SITE_URL: `https://noticias.${DOMAIN}` } : {}),
+      },
+    });
+    if (production) {
+      yield* Cloudflare.Access.Application("NewsAdmin", {
+        type: "self_hosted",
+        domain: `noticias.${DOMAIN}/_emdash`,
+        destinations: [{ type: "public", uri: `noticias.${DOMAIN}/_emdash` }],
+        sessionDuration: accessSession,
+        policies,
+      });
+    }
+
     const web = yield* Cloudflare.Website.Vinext("Web", {
       rootDir: decodeURIComponent(new URL("../apps/web/", import.meta.url).pathname),
       compatibility,
@@ -239,6 +271,9 @@ export default Stack(
       admin: admin.workerName,
       emailIn: emailIn.workerName,
       emailOut: emailOut.workerName,
+      news: news.workerName,
+      newsDatabase: newsDatabase.databaseName,
+      newsMedia: newsMedia.bucketName,
     };
   }),
 );

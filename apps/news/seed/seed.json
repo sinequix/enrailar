@@ -1,0 +1,159 @@
+{
+  "$schema": "https://emdashcms.com/seed.schema.json",
+  "version": "1",
+  "defaultLocale": "es",
+  "meta": {
+    "name": "Noticias Enrailar",
+    "description": "Agregador de noticias ferroviarias con la fuente a la vista.",
+    "author": "Enrailar"
+  },
+  "settings": {
+    "title": "Noticias",
+    "tagline": "Novedades ferroviarias, con la fuente a la vista.",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "dateFormat": "d MMMM yyyy",
+    "postsPerPage": 20,
+    "url": "https://noticias.enrailar.com"
+  },
+  "collections": [
+    {
+      "slug": "noticia",
+      "label": "Noticias",
+      "labelSingular": "Noticia",
+      "description": "Una nota publicada con su cita de fuente.",
+      "icon": "newspaper",
+      "supports": ["drafts", "revisions", "search", "seo"],
+      "urlPattern": "/{slug}",
+      "routable": true,
+      "titleField": "title",
+      "admin": {
+        "listColumns": ["category", "source_name"]
+      },
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Título",
+          "type": "string",
+          "required": true,
+          "searchable": true,
+          "validation": { "minLength": 1, "maxLength": 200 }
+        },
+        {
+          "slug": "summary",
+          "label": "Resumen",
+          "type": "text",
+          "required": true,
+          "searchable": true,
+          "validation": { "minLength": 1, "maxLength": 500 }
+        },
+        {
+          "slug": "body",
+          "label": "Cuerpo",
+          "type": "portableText",
+          "required": true
+        },
+        {
+          "slug": "source_name",
+          "label": "Fuente",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "source_url",
+          "label": "URL de la fuente",
+          "type": "url",
+          "required": true
+        },
+        {
+          "slug": "original_post_url",
+          "label": "Publicación original",
+          "type": "url"
+        },
+        {
+          "slug": "via",
+          "label": "Vía",
+          "type": "string"
+        },
+        {
+          "slug": "lines",
+          "label": "Líneas",
+          "type": "multiSelect",
+          "required": true,
+          "validation": {
+            "options": ["Urquiza", "Mitre", "San Martín", "Roca", "Sarmiento", "Belgrano"],
+            "minItems": 1
+          }
+        },
+        {
+          "slug": "category",
+          "label": "Categoría",
+          "type": "select",
+          "required": true,
+          "validation": {
+            "options": ["carga", "pasajeros", "infraestructura", "política"]
+          }
+        }
+      ]
+    }
+  ],
+  "taxonomies": [
+    {
+      "name": "etiqueta",
+      "label": "Etiquetas",
+      "labelSingular": "Etiqueta",
+      "hierarchical": false,
+      "collections": ["noticia"]
+    }
+  ],
+  "content": {
+    "noticia": [
+      {
+        "id": "noticia-ypf-arena",
+        "slug": "ypf-arena-fractura-vaca-muerta",
+        "status": "published",
+        "locale": "es",
+        "data": {
+          "title": "YPF empieza a enviar arena de fractura a Vaca Muerta por tren",
+          "summary": "YPF, presidida por Horacio Marín, empezó a enviar arena de fractura a Vaca Muerta por tren. El movimiento usa las líneas Urquiza, Mitre y San Martín, con una capacidad de hasta un millón de toneladas por año.",
+          "body": [
+            {
+              "_type": "block",
+              "_key": "cuerpo-1",
+              "style": "normal",
+              "markDefs": [],
+              "children": [
+                {
+                  "_type": "span",
+                  "_key": "cuerpo-1a",
+                  "text": "YPF empezó a enviar arena de fractura a Vaca Muerta por tren. Horacio Marín es el presidente de la empresa.",
+                  "marks": []
+                }
+              ]
+            },
+            {
+              "_type": "block",
+              "_key": "cuerpo-2",
+              "style": "normal",
+              "markDefs": [],
+              "children": [
+                {
+                  "_type": "span",
+                  "_key": "cuerpo-2a",
+                  "text": "El envío usa las líneas Urquiza, Mitre y San Martín. La capacidad de ese esquema llega hasta un millón de toneladas por año.",
+                  "marks": []
+                }
+              ]
+            }
+          ],
+          "source_name": "Diario Río Negro",
+          "source_url": "https://www.rionegro.com.ar/energia/exclusiva-con-marin-de-ypf-ya-estamos-enviando-arena-por-tren-a-vaca-muerta/",
+          "original_post_url": "https://x.com/CristianGeo7/status/2111513323363557489",
+          "via": "@sebaherrera",
+          "lines": ["Urquiza", "Mitre", "San Martín"],
+          "category": "carga"
+        }
+      }
+    ]
+  }
+}

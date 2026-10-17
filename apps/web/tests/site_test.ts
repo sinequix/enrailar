@@ -108,6 +108,11 @@ Deno.test("la ficha única preselecciona desde el hash y exige una intención", 
   assert(header.includes("#sumate"));
   assert(!header.includes("quiero="));
   assert(header.includes("/cuenta/ingresar"));
+  assert(header.includes("NEWS_ORIGIN"));
+  const footer = Deno.readTextFileSync(new URL("../app/components/site-footer.tsx", import.meta.url));
+  assert(footer.includes("NEWS_ORIGIN"));
+  assertEquals(COPY.es.nav.news, "Noticias");
+  assertEquals(COPY.en.nav.news, "News");
   assert(header.includes("/cuenta/crear"));
   assertEquals(COPY.es.account.signIn, "Ingresar");
   assertEquals(COPY.en.account.signIn, "Sign in");

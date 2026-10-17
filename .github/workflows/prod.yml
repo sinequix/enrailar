@@ -51,6 +51,7 @@ jobs:
         env:
           NODE_OPTIONS: --import ${{ github.workspace }}/scripts/ci/inbox-vite-hooks.mjs
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          EMDASH_ENCRYPTION_KEY: ${{ secrets.EMDASH_ENCRYPTION_KEY }}
         run: |
           bash scripts/ci/require-secrets.sh
           pnpm --filter @enrailar/infra exec alchemy deploy --yes --no-input --stage prod

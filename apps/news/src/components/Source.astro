@@ -1,0 +1,29 @@
+---
+import { publicHttpUrl } from "../lib/paths.ts";
+
+interface Props {
+  sourceName: string;
+  sourceUrl: string;
+  originalPostUrl?: string;
+  via?: string;
+}
+
+const { sourceName, sourceUrl, originalPostUrl, via } = Astro.props;
+const sourceHref = publicHttpUrl(sourceUrl);
+const originalHref = publicHttpUrl(originalPostUrl);
+---
+
+<aside class="source">
+  <p class="eyebrow">Fuente</p>
+  <p>
+    <strong>
+      {sourceHref ? <a href={sourceHref}>{sourceName}</a> : sourceName}
+    </strong>
+  </p>
+  {originalHref && (
+    <p>
+      Publicación original: <a href={originalHref}>{originalHref}</a>
+    </p>
+  )}
+  {via && <p>Vía {via}</p>}
+</aside>
