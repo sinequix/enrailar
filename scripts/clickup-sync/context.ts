@@ -1,4 +1,4 @@
-import { CLICKUP_SPACE_ID, ClickupClient } from "./clickup.ts";
+import { CLICKUP_SPACE_ID, type ClickupStatus, ClickupClient } from "./clickup.ts";
 import { GithubClient } from "./github.ts";
 import { parseRepository, type RepositoryName } from "./references.ts";
 import { parseUserMap, type UserLink } from "./users.ts";
@@ -10,7 +10,7 @@ export type SyncContext = {
   clickup: ClickupClient;
   github: GithubClient;
   users: UserLink[];
-  statusByList: Map<string, string[]> | null;
+  statusByList: Map<string, ClickupStatus[]> | null;
 };
 
 export async function loadContext(
@@ -52,13 +52,11 @@ export async function loadContext(
 export async function statusesFor(
   ctx: SyncContext,
   listId: string,
-): Promise<readonly string[]> {
+): Promise<readonly ClickupStatus[]> {
   if (!ctx.statusByList) {
     const lists = await ctx.clickup.listsInSpace(ctx.spaceId);
     ctx.statusByList = new Map(
-      lists.map((
-        list,
-      ) => [list.id, list.statuses.map((status) => status.status)]),
+      lists.map((list) => [list.id, list.statuses]),
     );
   }
   if (listId.length === 0) return [];

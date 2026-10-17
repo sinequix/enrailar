@@ -2,7 +2,11 @@ import { HttpStatusError, readJson, sendWithRetry } from "./http.ts";
 import { asArray, asRecord, asString, idString } from "./json.ts";
 import { LABEL_COLORS, LABEL_DESCRIPTIONS } from "./labels.ts";
 import { nextLink, type RepositoryName } from "./references.ts";
-import { normalizeCloseReason, type PullRequestRef } from "./state.ts";
+import {
+  type LinkedPullRequest,
+  normalizeCloseReason,
+  type PullRequestRef,
+} from "./state.ts";
 
 const API = "https://api.github.com";
 
@@ -226,17 +230,17 @@ export class GithubClient {
       return "ok";
     }
     const text = await response.text();
-    if (response.status === 422 && /already/i.test(text)) return "ok";
+    if (response.status === 422 && isDuplicateSubIssue(text)) return "ok";
     if (response.status === 404 || response.status === 410) {
       return "unsupported";
     }
     throw new HttpStatusError(
       response.status,
-      `GitHub POST sub_issues → ${response.status}`,
+      `GitHub POST sub_issues → ${response.status} ${text.slice(0, 300)}`,
     );
   }
 
-  async linkedPullRequests(issueNumber: number): Promise<PullRequestRef[]> {
+  async linkedPullRequests(issueNumber: number): Promise<LinkedPullRequest[]> {
     const numbers = new Set<number>();
     const seen = new Set<string>();
     let url: string | null =
@@ -252,9 +256,12 @@ export class GithubClient {
       }
       url = next;
     }
-    const pullRequests: PullRequestRef[] = [];
+    const pullRequests: LinkedPullRequest[] = [];
     for (const number of numbers) {
-      pullRequests.push(await this.getPullRequest(number));
+      const pullRequest = await this.getPullRequest(number);
+      const closes = pullRequest.merged &&
+        (await this.closingIssueNumbers(number)).includes(issueNumber);
+      pullRequests.push({ ...pullRequest, closes });
     }
     return pullRequests;
   }
@@ -313,7 +320,7 @@ export class GithubClient {
   }
 
   rememberPullRequest(pullRequest: PullRequestRef): void {
-    this.#pulls.set(pullRequest.number, pullRequest);
+    this.#pulls.set(pullRequest.number, pullIdentity(pullRequest));
   }
 
   async listComments(number: number): Promise<GithubComment[]> {
@@ -393,13 +400,7 @@ export class GithubClient {
       body: asString(payload?.body) ?? "",
       headSha: asString(head?.sha) ?? "",
     };
-    this.#pulls.set(number, {
-      number: details.number,
-      state: details.state,
-      merged: details.merged,
-      draft: details.draft,
-      url: details.url,
-    });
+    this.#pulls.set(number, pullIdentity(details));
     return details;
   }
 
@@ -513,6 +514,10 @@ export class GithubClient {
   }
 }
 
+export function isDuplicateSubIssue(body: string): boolean {
+  return /already|duplicate sub-issue|only have one parent/i.test(body);
+}
+
 function parseIssue(
   record: Record<string, unknown> | null,
 ): GithubIssue | null {
@@ -597,6 +602,16 @@ function parseLogins(value: unknown): string[] {
     if (login && !login.includes("@")) logins.push(login);
   }
   return logins;
+}
+
+function pullIdentity(pullRequest: PullRequestRef): PullRequestRef {
+  return {
+    number: pullRequest.number,
+    state: pullRequest.state,
+    merged: pullRequest.merged,
+    draft: pullRequest.draft,
+    url: pullRequest.url,
+  };
 }
 
 function pullNumberFromTimeline(

@@ -25,44 +25,50 @@ no van nombres de personas, correos ni montos.
 El código está en `scripts/clickup-sync/state.ts`. Elige el primer estado que
 exista en la lista, sin distinguir mayúsculas.
 
-| Situación en GitHub                                                 | Estado que busca en ClickUp           |
-| ------------------------------------------------------------------- | ------------------------------------- |
-| Issue abierto, sin PR abierta ni PR mergeada que lo referencie      | `to do`                               |
-| Issue abierto, con una PR abierta que lo referencia (también draft) | `in progress`                         |
-| PR mergeada que lo referencia, o issue cerrado como completed       | `complete`                            |
-| Issue cerrado como not planned o duplicate                          | `cancelled`, y si no existe, `closed` |
+| Situación en GitHub                                                                                                      | Estado que busca en ClickUp                                                                                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Issue abierto, sin PR abierta                                                                                            | `to do`, o el equivalente abierto de la lista: `por hacer`, `idea`, `planificada`, `identificado`, `pendiente`, `objetivo`, `detectada`, `preinscripto`. Si el nombre no está en la lista, el estado de tipo `open`. |
+| Issue abierto, con una PR abierta que lo menciona o que aparece en el timeline (también draft)                          | `in progress`, `en curso`, `pr abierto`, `en preparación`, `priorizada` o `asignada a agente`                                                                                                                        |
+| PR mergeada y el issue está en `closingIssuesReferences` de esa PR, sin otra PR abierta                                  | `complete`, `hecha`, `mergeada`, `publicado`, `listo`, `comunicada`, `participó` o `cerrada`. Si ninguno está, el primer estado de tipo `done`, o el único `closed` que no sea un descarte.                         |
+| Issue cerrado como completed                                                                                             | Los mismos nombres de cierre de la fila anterior.                                                                                                                                                                     |
+| Issue cerrado como not planned o duplicate                                                                               | `cancelled`, `closed`, `descartada`, `descartado`, `no avanza`, `no comunicable`, `no contactar` o `perdida`                                                                                                          |
 
-Una PR referencia al issue si el título o el cuerpo mencionan `#N` (o
-`owner/repo#N`) o si GitHub la marca como PR que lo cierra (`Closes`, `Fixes`,
-`Resolves`, también en el mensaje del commit). Si hay una PR abierta y otra ya
-mergeada, sigue en progreso.
+Una PR abierta deja la tarea en progreso si el título o el cuerpo mencionan
+`#N` (o `owner/repo#N`) o si el timeline del issue tiene un evento
+`cross-referenced` o `connected` hacia esa PR. También cuenta un draft. Esa
+mención, y ese cross-reference, no completan la tarea: si la PR se mergea sin
+más, el issue sigue abierto y la tarea vuelve al estado de pendiente.
+
+La tarea pasa a hecha por una PR solo cuando GitHub lista el issue en
+`closingIssuesReferences` de esa PR y la PR está mergeada. Eso es lo que
+escriben `Closes`, `Fixes` o `Resolves` (en el cuerpo de la PR o en el mensaje
+del commit). Una PR cerrada sin merge no cuenta: no la deja en progreso ni la
+completa. Si queda una PR abierta y otra ya mergeada que sí cierra el issue,
+sigue en progreso.
 
 Al importar una tarea que ya está cerrada en ClickUp, el issue nace cerrado:
-`complete` como completed, `cancelled` o `closed` como not planned.
+`complete`, `hecha` o `mergeada` como completed; `cancelled`, `closed` o
+`descartada` como not planned.
 
-### Bloqueo: faltan estados en el espacio
+Cada lista puede tener su propio set. La de propuestas sigue en `to do` /
+`complete`. Marketing, CRM y agentes usan nombres en español (`idea`,
+`planificada`, `identificado`, `por hacer`, `mergeada`, `hecha`, …). El nombre
+se compara sin distinguir mayúsculas y tiene que coincidir con el tipo: un
+`activo` de tipo `done` no cuenta como pendiente. Si no hay un nombre conocido,
+el pendiente cae al estado `open` y el cierre al estado `done`.
 
-Hoy las listas del espacio solo tienen `to do` (open) y `complete` (closed). No
-existen `in progress`, `cancelled` ni `closed`.
-
-La sync no crea estados. Reemplazar el set por la API reescribe el espacio y
-puede mover tareas. Si el estado buscado no está en la lista, la tarea no cambia
-de estado y el comentario de sync lo dice.
-
-Para completar el mapeo, en la configuración del espacio hay que agregar:
-
-- `in progress`, tipo activo (custom)
-- `cancelled`, tipo cerrado, o en su lugar `closed`, tipo cerrado
-
-Con eso el mismo código aplica el mapeo de arriba. No hace falta otro cambio en
-el repo.
+La sync no crea estados. Si el estado buscado no está en la lista, la tarea no
+cambia de estado y el comentario de sync lo dice. Un fallo al leer o escribir
+una tarea no cambia el estado que se informa de las demás.
 
 ## Issues y subtareas
 
 Cada subtarea es su propio issue, con el mismo marcador. Se intenta colgarla
-como sub-issue de GitHub. Si la API no lo permite, el issue padre lleva un
-checklist entre `<!-- clickup-subtasks:start -->` y
-`<!-- clickup-subtasks:end -->`.
+como sub-issue de GitHub. Si ya es sub-issue de ese padre, GitHub responde 422
+(`duplicate sub-issues` / `only have one parent`) y la sync lo toma como hecho.
+Si una subtarea falla de verdad, se anota esa tarea y se sigue con las demás.
+Si la API no permite sub-issues, el issue padre lleva un checklist entre
+`<!-- clickup-subtasks:start -->` y `<!-- clickup-subtasks:end -->`.
 
 Labels del issue nuevo:
 
