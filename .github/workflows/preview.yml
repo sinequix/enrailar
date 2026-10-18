@@ -33,7 +33,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 10.33.3
       - name: Node
@@ -90,7 +90,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 10.33.3
       - name: Node
