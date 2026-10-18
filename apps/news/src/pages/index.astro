@@ -1,0 +1,36 @@
+---
+import Source from "../components/Source.astro";
+import NewsLayout from "../layouts/NewsLayout.astro";
+import { listNoticias } from "../lib/noticia.ts";
+import { formatPublished, withBase } from "../lib/paths.ts";
+
+const { items, error } = await listNoticias();
+const base = import.meta.env.BASE_URL;
+---
+
+<NewsLayout title="Noticias" description="Novedades ferroviarias, con la fuente a la vista.">
+  <p class="eyebrow">Noticias</p>
+  <h1>Noticias</h1>
+  <p class="lede">Lo que se publica acá cita la fuente. El texto es un resumen, no la nota original.</p>
+  {error && <p class="empty">No se pudieron cargar las noticias.</p>}
+  {!error && items.length === 0 && <p class="empty">Todavía no hay noticias publicadas.</p>}
+  <div class="list">
+    {items.map((item) => (
+      <article class="card">
+        <ul class="meta">
+          {item.category && <li class="chip">{item.category}</li>}
+          {item.lines.map((line) => <li class="chip chip--line">{line}</li>)}
+        </ul>
+        <h2><a href={withBase(base, item.slug)}>{item.title}</a></h2>
+        {item.publishedAt && <p>{formatPublished(item.publishedAt)}</p>}
+        <p class="summary">{item.summary}</p>
+        <Source
+          sourceName={item.sourceName}
+          sourceUrl={item.sourceUrl}
+          originalPostUrl={item.originalPostUrl}
+          via={item.via}
+        />
+      </article>
+    ))}
+  </div>
+</NewsLayout>

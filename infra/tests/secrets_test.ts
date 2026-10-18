@@ -10,6 +10,7 @@ const names = [
   "POLICY_AUD",
   "TEAM_DOMAIN",
   "BETTER_AUTH_SECRET",
+  "EMDASH_ENCRYPTION_KEY",
 ];
 
 function run(env: Record<string, string>) {

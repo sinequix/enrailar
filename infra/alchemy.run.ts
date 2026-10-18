@@ -166,6 +166,45 @@ export default Stack(
       },
     });
 
+    const newsDatabase = yield* Cloudflare.D1.Database("NewsDatabase");
+    const newsMedia = yield* Cloudflare.R2.Bucket("NewsMedia");
+    // La app existe antes que el Worker: el env lee `newsAdmin.aud`, así que
+    // Alchemy no despliega Noticias si Access no se creó. El dominio es solo
+    // `/_emdash`. No se usa `access` en el Worker: eso inscribiría todo el
+    // tráfico, también la portada. En un preview no hay hostname propio y el
+    // admin queda apagado (`NEWS_ADMIN=off`); `/_emdash` responde 403.
+    const newsAdmin = production
+      ? yield* Cloudflare.Access.Application("NewsAdmin", {
+        type: "self_hosted",
+        domain: `noticias.${DOMAIN}/_emdash`,
+        destinations: [{ type: "public", uri: `noticias.${DOMAIN}/_emdash` }],
+        sessionDuration: accessSession,
+        policies,
+      })
+      : undefined;
+    const news = yield* Cloudflare.Website.Astro("News", {
+      rootDir: decodeURIComponent(new URL("../apps/news/", import.meta.url).pathname),
+      compatibility,
+      ...closedDev,
+      ...domain(`noticias.${DOMAIN}`),
+      sessionKVBindingName: false,
+      observability: { enabled: true, traces: { enabled: true } },
+      env: {
+        DB: newsDatabase,
+        MEDIA: newsMedia,
+        NEWS_RUNTIME: "cloudflare",
+        NEWS_ADMIN: production ? "on" : "off",
+        EMDASH_ENCRYPTION_KEY: Config.Redacted("EMDASH_ENCRYPTION_KEY"),
+        ...(newsAdmin
+          ? {
+            ACCESS_AUD: newsAdmin.aud,
+            ACCESS_TEAM_DOMAIN: Config.Redacted("TEAM_DOMAIN"),
+          }
+          : {}),
+        ...(production ? { EMDASH_SITE_URL: `https://noticias.${DOMAIN}` } : {}),
+      },
+    });
+
     const web = yield* Cloudflare.Website.Vinext("Web", {
       rootDir: decodeURIComponent(new URL("../apps/web/", import.meta.url).pathname),
       compatibility,
@@ -239,6 +278,10 @@ export default Stack(
       admin: admin.workerName,
       emailIn: emailIn.workerName,
       emailOut: emailOut.workerName,
+      news: news.workerName,
+      newsUrl: news.url,
+      newsDatabase: newsDatabase.databaseName,
+      newsMedia: newsMedia.bucketName,
     };
   }),
 );

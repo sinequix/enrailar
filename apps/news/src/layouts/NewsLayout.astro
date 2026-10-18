@@ -1,0 +1,55 @@
+---
+import { NEWS_ORIGIN } from "@enrailar/shared";
+import { withBase } from "../lib/paths.ts";
+import "../styles/news.css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const home = withBase(import.meta.env.BASE_URL);
+const year = new Date().getFullYear();
+const pageTitle = title === "Noticias" ? "Noticias · Enrailar" : `${title} · Noticias · Enrailar`;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
+    <link rel="canonical" href={new URL(Astro.url.pathname, NEWS_ORIGIN).href} />
+  </head>
+  <body>
+    <a class="skip" href="#contenido">Saltar al contenido</a>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href={home}>
+          <img src="/brand/logo-horizontal.svg" width="148" height="32" alt="Enrailar" />
+        </a>
+        <nav class="nav" aria-label="Principal">
+          <a href={home} aria-current={Astro.url.pathname === home || Astro.url.pathname === `${home}/` ? "page" : undefined}>Noticias</a>
+          <a href="https://enrailar.com">Enrailar</a>
+        </nav>
+      </div>
+    </header>
+    <main id="contenido" class="wrap section">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <div>
+          <img src="/brand/logo-horizontal.svg" width="148" height="32" alt="Enrailar" />
+          <p>Novedades ferroviarias, con la fuente a la vista.</p>
+          <p>© {year} Sinequix. Todos los derechos reservados.</p>
+          <p>Un proyecto de <a href="https://sinequix.com" target="_blank" rel="noopener">Sinequix</a></p>
+        </div>
+        <p><a href="https://enrailar.com">Volver a Enrailar</a></p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -44,3 +44,5 @@ jobs:
         run: pnpm --filter @enrailar/web e2e
       - name: Build web
         run: pnpm --filter @enrailar/web build
+      - name: Build news
+        run: pnpm --filter @enrailar/news build

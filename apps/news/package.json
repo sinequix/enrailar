@@ -1,0 +1,36 @@
+{
+  "name": "@enrailar/news",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "emdash": {
+    "seed": "seed/seed.json"
+  },
+  "scripts": {
+    "dev": "NEWS_RUNTIME=node astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "lint": "deno lint --config ../../deno.json src/host.ts src/lib tests",
+    "typecheck": "astro check",
+    "test": "deno test --allow-env --allow-read --allow-write --allow-run --config ../../deno.json tests",
+    "seed": "emdash seed seed/seed.json --database ./data/news.db"
+  },
+  "dependencies": {
+    "@astrojs/node": "11.1.8",
+    "@astrojs/react": "7.1.0",
+    "@emdash-cms/cloudflare": "1.3.0",
+    "@enrailar/shared": "workspace:*",
+    "astro": "7.4.0",
+    "emdash": "1.3.0",
+    "kysely": "0.29.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@alchemy.run/frontend-frameworks": "2.0.0-beta.81",
+    "@astrojs/check": "0.9.10",
+    "@types/react": "19.2.15",
+    "@types/react-dom": "19.2.3",
+    "typescript": "6.0.3"
+  }
+}

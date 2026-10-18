@@ -1,3 +1,13 @@
+/**
+ * Host público del CMS de noticias.
+ * El sitio vive en este subdominio. Para pasarlo a un camino `/noticias`,
+ * hay que cambiar este origen y el `base` de Astro. El procedimiento está
+ * en `docs/news-cms.md`.
+ */
+export const NEWS_HOST = "noticias.enrailar.com";
+
+export const NEWS_ORIGIN = `https://${NEWS_HOST}`;
+
 /** Casillas de rol del proyecto. No son correos de personas. */
 export const ROLE_MAILBOXES = [
   "hola@enrailar.com",

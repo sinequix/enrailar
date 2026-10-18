@@ -50,6 +50,9 @@ jobs:
           secret="$(openssl rand -base64 32)"
           echo "::add-mask::${secret}"
           echo "BETTER_AUTH_SECRET=${secret}" >> "$GITHUB_ENV"
+          news="$(openssl rand -base64 32)"
+          echo "::add-mask::${news}"
+          echo "EMDASH_ENCRYPTION_KEY=${news}" >> "$GITHUB_ENV"
       - name: Fail closed
         run: bash scripts/ci/require-secrets.sh
       - name: Deploy pr stage
@@ -57,6 +60,9 @@ jobs:
         env:
           NODE_OPTIONS: --import ${{ github.workspace }}/scripts/ci/inbox-vite-hooks.mjs
         run: pnpm --filter @enrailar/infra exec alchemy deploy --yes --no-input --stage "pr-${{ github.event.pull_request.number }}"
+      - name: Smoke news admin
+        if: steps.deploy.outcome == 'success'
+        run: bash scripts/ci/news-admin-smoke.sh "pr-${{ github.event.pull_request.number }}"
       - name: Destroy pr stage
         if: always() && (steps.deploy.outcome == 'success' || steps.deploy.outcome == 'failure')
         env:
@@ -99,6 +105,9 @@ jobs:
           secret="$(openssl rand -base64 32)"
           echo "::add-mask::${secret}"
           echo "BETTER_AUTH_SECRET=${secret}" >> "$GITHUB_ENV"
+          news="$(openssl rand -base64 32)"
+          echo "::add-mask::${news}"
+          echo "EMDASH_ENCRYPTION_KEY=${news}" >> "$GITHUB_ENV"
       - name: Fail closed
         run: bash scripts/ci/require-secrets.sh
       - name: Destroy pr stage

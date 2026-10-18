@@ -2,5 +2,6 @@ packages:
   - "packages/*"
   - "apps/api"
   - "apps/web"
+  - "apps/news"
   - "workers/*"
   - "infra"

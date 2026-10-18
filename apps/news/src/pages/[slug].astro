@@ -1,0 +1,46 @@
+---
+import Source from "../components/Source.astro";
+import NewsLayout from "../layouts/NewsLayout.astro";
+import { loadNoticia } from "../lib/noticia.ts";
+import { formatPublished, portableTextParagraphs, withBase } from "../lib/paths.ts";
+
+const slug = Astro.params.slug ?? "";
+const { item, error } = slug.length > 0 ? await loadNoticia(slug) : { item: undefined, error: false };
+if (!item && !error) {
+  Astro.response.status = 404;
+}
+const paragraphs = item ? portableTextParagraphs(item.body) : [];
+const home = withBase(import.meta.env.BASE_URL);
+---
+
+<NewsLayout title={item?.title ?? "No está"} description={item?.summary ?? "Esta nota no está publicada."}>
+  <p class="back"><a href={home}>Noticias</a></p>
+  {error && <p class="empty">No se pudo cargar la nota.</p>}
+  {!error && !item && (
+    <>
+      <h1>Esta nota no está</h1>
+      <p>Puede que el enlace esté viejo o que la nota siga en borrador.</p>
+    </>
+  )}
+  {item && (
+    <article class="article-head">
+      <ul class="meta">
+        {item.category && <li class="chip">{item.category}</li>}
+        {item.lines.map((line) => <li class="chip chip--line">{line}</li>)}
+        {item.locale !== "es" && <li class="chip">{item.locale}</li>}
+      </ul>
+      <h1>{item.title}</h1>
+      {item.publishedAt && <p>{formatPublished(item.publishedAt)}</p>}
+      <Source
+        sourceName={item.sourceName}
+        sourceUrl={item.sourceUrl}
+        originalPostUrl={item.originalPostUrl}
+        via={item.via}
+      />
+      <p class="summary">{item.summary}</p>
+      <div class="body">
+        {paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+      </div>
+    </article>
+  )}
+</NewsLayout>

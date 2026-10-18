@@ -1,3 +1,4 @@
+import { NEWS_ORIGIN } from "@enrailar/shared";
 import { COPY, type Locale } from "../../src/copy.ts";
 import { Button } from "./ui/button.tsx";
 
@@ -17,6 +18,7 @@ export function SiteHeader({ locale, path = "" }: { locale: Locale; path?: strin
           <a className="nav-section" href={`${home}#que-viene`}>{copy.nav.next}</a>
           <a className="nav-section" href={`${home}#hackatrain`}>{copy.nav.hackatrain}</a>
           <a href={`${home}/blog`}>{copy.nav.blog}</a>
+          <a href={NEWS_ORIGIN}>{copy.nav.news}</a>
           <a className="nav-section" href={`${home}#sumate`}>{copy.nav.join}</a>
           <Button variant="ghost" asChild>
             <a href={`/${locale}/cuenta/ingresar`}>{copy.account.signIn}</a>
