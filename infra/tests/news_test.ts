@@ -27,6 +27,7 @@ Deno.test("noticias es un Worker de Astro con D1 y R2 propios", () => {
   assert(!/sandboxRunner\s*:/.test(newsConfig));
   assert(!newsConfig.includes("worker_loaders"));
   assert(newsConfig.includes('process.env.NEWS_RUNTIME === "cloudflare"'));
+  assert(newsConfig.includes("emdashEntryIntegration()"));
   assertEquals(NEWS_HOST, "noticias.enrailar.com");
   assertEquals(NEWS_ORIGIN, `https://${NEWS_HOST}`);
 });

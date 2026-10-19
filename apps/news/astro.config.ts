@@ -6,6 +6,7 @@ import { NEWS_ORIGIN } from "@enrailar/shared";
 import { defineConfig } from "astro/config";
 import emdash, { local } from "emdash/astro";
 import { sqlite } from "emdash/db";
+import { emdashEntryIntegration } from "./src/emdash-entry-integration.ts";
 
 const onCloudflare = process.env.NEWS_RUNTIME === "cloudflare";
 const base = process.env.NEWS_BASE?.trim() || "/";
@@ -34,6 +35,7 @@ export default defineConfig({
   ...(onCloudflare ? {} : { adapter: node({ mode: "standalone" }) }),
   integrations: [
     react(),
+    emdashEntryIntegration(),
     emdash({
       database: onCloudflare ? d1({ binding: "DB" }) : sqlite({ url: "file:./data/news.db" }),
       storage: onCloudflare

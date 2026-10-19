@@ -12,7 +12,7 @@
     "preview": "astro preview",
     "lint": "deno lint --config ../../deno.json src/host.ts src/lib tests",
     "typecheck": "astro check",
-    "test": "deno test --allow-env --allow-read --allow-write --allow-run --config ../../deno.json tests",
+    "test": "deno test --allow-env --allow-read --allow-write --allow-net --allow-run --config ../../deno.json tests",
     "seed": "emdash seed seed/seed.json --database ./data/news.db"
   },
   "dependencies": {

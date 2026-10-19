@@ -1,3 +1,11 @@
+/**
+ * `/_emdash` y `/_emdash/…` son el admin. Un slug de nota no puede ocuparlos:
+ * la ruta `[slug]` es de un solo segmento y si no, `/_emdash` cae ahí.
+ */
+export function isEmDashArticleSlug(slug: string): boolean {
+  return slug === "_emdash" || slug.startsWith("_emdash/");
+}
+
 /** Junta el `base` de Astro con un slug. `base` puede ser `/` o `/noticias/`. */
 export function withBase(base: string, slug?: string): string {
   const prefix = base.endsWith("/") ? base.slice(0, -1) : base;
