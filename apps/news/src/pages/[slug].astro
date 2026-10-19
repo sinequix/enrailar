@@ -2,9 +2,12 @@
 import Source from "../components/Source.astro";
 import NewsLayout from "../layouts/NewsLayout.astro";
 import { loadNoticia } from "../lib/noticia.ts";
-import { formatPublished, portableTextParagraphs, withBase } from "../lib/paths.ts";
+import { formatPublished, isEmDashArticleSlug, portableTextParagraphs, withBase } from "../lib/paths.ts";
 
 const slug = Astro.params.slug ?? "";
+if (isEmDashArticleSlug(slug)) {
+  return Astro.redirect("/_emdash/admin");
+}
 const { item, error } = slug.length > 0 ? await loadNoticia(slug) : { item: undefined, error: false };
 if (!item && !error) {
   Astro.response.status = 404;

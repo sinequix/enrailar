@@ -1,5 +1,12 @@
 import { assertEquals } from "@std/assert";
-import { asStringList, formatPublished, portableTextParagraphs, publicHttpUrl, withBase } from "../src/lib/paths.ts";
+import { asStringList, formatPublished, isEmDashArticleSlug, portableTextParagraphs, publicHttpUrl, withBase } from "../src/lib/paths.ts";
+
+Deno.test("un slug no puede ser la raíz del admin", () => {
+  assertEquals(isEmDashArticleSlug("_emdash"), true);
+  assertEquals(isEmDashArticleSlug("_emdash/admin"), true);
+  assertEquals(isEmDashArticleSlug("ypf-arena-fractura-vaca-muerta"), false);
+  assertEquals(isEmDashArticleSlug("_emdashfoo"), false);
+});
 
 Deno.test("el camino público respeta el base de Astro", () => {
   assertEquals(withBase("/"), "/");

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Después del deploy del stage, /_emdash del Worker de noticias tiene que
 # responder 403. La URL sale del output `newsUrl` que Alchemy persiste.
+# No se manda un JWT: aceptarlo acá exigiría un atajo en el Worker, y ese
+# atajo no puede existir en prod. El camino autenticado se prueba en local.
 set -euo pipefail
 
 stage="${1:?falta el stage}"
