@@ -7,9 +7,9 @@
  * escribe en el repo: entra como secreto del Worker. El id de la lista es una
  * variable de texto, no un secreto.
  *
- * El correo no va en el título ni en la descripción: el sync de ClickUp
- * publica esos campos en un issue público. Queda en el custom field `email`
- * y en un comentario con `notify_all` en falso.
+ * El correo no va en el título ni en la descripción. La sync no publica las
+ * listas del CRM. El correo queda en el custom field `email` y, con el
+ * nombre, en un comentario con `notify_all` en falso.
  */
 
 export const CRM_FUENTES = ["sumate", "email"] as const;

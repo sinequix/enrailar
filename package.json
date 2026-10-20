@@ -9,7 +9,7 @@
   "scripts": {
     "lint": "turbo lint && deno lint scripts/clickup-sync",
     "typecheck": "turbo typecheck && deno check scripts/clickup-sync/cli.ts",
-    "test": "turbo test && deno test --allow-env scripts/clickup-sync"
+    "test": "turbo test && deno test --allow-env --allow-read scripts/clickup-sync"
   },
   "devDependencies": {
     "turbo": "2.11.7",
