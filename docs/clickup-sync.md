@@ -103,6 +103,13 @@ Antes de crear un issue se listan los issues del repo, con paginación, y se
 busca el marcador en el cuerpo. Si está, no se crea otro. El mismo id en la
 misma corrida tampoco se crea dos veces.
 
+El marcador del issue no es el único vínculo. `tombstones.json` guarda pares
+`taskId` / número de issue. Al crear un issue, la tarea recibe un comentario
+`clickup-sync:tombstone` que solo lleva la URL. También cuentan la URL de este
+repo en la descripción, en el custom field `github` o en un comentario. Si ese
+issue está cerrado, fue borrado o ya no tiene el marcador, la tarea queda como
+lápida: no se crea otro issue y no se copia la descripción de ClickUp al issue.
+
 Las listas salen de `GET /space/{id}/list` y de las carpetas del espacio. Solo
 entran a GitHub las de la allowlist que no caen en el filtro de privacidad. Las
 tareas se piden de a 100 (`page`), con subtareas y cerradas, hasta una página
@@ -139,25 +146,31 @@ denegaciones:
 
 Denegación fija, en código. No se puede anular con el JSON ni con el entorno.
 
-| Motivo            | Qué cubre                                                                                                                                                    |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `deny-list`       | Cuentas `901717736443`, Contactos `901717736444`, Alianzas y sponsors `901717736445`, Voluntarios y Hackatrain `901717736446`                                |
-| `deny-folder`     | La carpeta CRM (el nombre es `crm`) y cualquier carpeta que contenga una de esas listas. Una lista nueva en esa carpeta también se salta.                    |
-| `deny-tag`        | Etiquetas `voluntario`, `contacto` o `lead`                                                                                                                  |
-| `deny-fuente`     | Custom field `fuente` o `source` en `sumate`, `email` (el alta de `hola@`) o `hola@`. También las etiquetas `fuente-sumate`, `fuente-email` y `fuente-hola`. |
-| `not-allowlisted` | Cualquier otra lista o carpeta                                                                                                                               |
+| Motivo            | Qué cubre                                                                                                                                                                                                                                                        |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deny-list`       | Cuentas `901717736443`, Contactos `901717736444`, Alianzas y sponsors `901717736445`, Voluntarios y Hackatrain `901717736446`. También una lista llamada `Contactos` o `Contactos y contexto`, aunque el id sea otro.                                            |
+| `deny-folder`     | La carpeta CRM (el nombre es `crm`), una carpeta llamada `Contactos` o `Contactos y contexto`, y cualquier carpeta que contenga una lista CRM. Una lista nueva ahí también se salta.                                                                             |
+| `deny-task`       | La tarea `86e3nbvhz`. Su id de lista no quedó en el issue después de retirar el cuerpo, así que se niega en cualquier lista.                                                                                                                                     |
+| `deny-tag`        | Etiquetas `voluntario`, `contacto` o `lead`                                                                                                                                                                                                                      |
+| `deny-fuente`     | Custom field `fuente` o `source` en `sumate`, `email` (el alta de `hola@`) o `hola@`. También las etiquetas `fuente-sumate`, `fuente-email` y `fuente-hola`.                                                                                                     |
+| `deny-content`    | En una lista permitida, un correo cuyo dominio no es `enrailar.com` ni `sinequix.com` (los subdominios de esos dos sí pasan), el nombre o la frase `contactos y contexto`, o una línea que es solo `Contactos`. Una frase como "contactos de prensa" no alcanza. |
+| `tombstone`       | La tarea ya tuvo issue. El vínculo está en `tombstones.json` o en la tarea, y el issue no se vuelve a crear.                                                                                                                                                     |
+| `not-allowlisted` | Cualquier otra lista o carpeta                                                                                                                                                                                                                                   |
 
 `email` es el valor que escribe el worker de `hola@`. No es una dirección.
 
 El log de cada corrida imprime cantidades, no personas:
 
 ```text
-skipped deny-list=0 deny-folder=0 deny-tag=0 deny-fuente=0 not-allowlisted=0
+skipped deny-list=0 deny-folder=0 deny-task=0 deny-tag=0 deny-fuente=0 deny-content=0 tombstone=0 not-allowlisted=0
 ```
 
-Las líneas de una tarea llevan el id de ClickUp o el número de issue. No llevan
-nombre, correo, ciudad, título ni cuerpo. Un issue que ya se haya publicado
-queda fuera de esta sync: no se borra ni se actualiza desde una tarea denegada.
+`deny-task`, `deny-content` y `tombstone` también dejan una línea
+`task=<id> skipped reason=<motivo>`. Esa línea no lleva nombre, correo, ciudad,
+título ni cuerpo. El resto de los motivos solo suma en el contador.
+
+Un issue que ya se haya publicado queda fuera de esta sync: no se borra ni se
+actualiza desde una tarea denegada, y una lápida no lo republica.
 
 Sumate y el correo a `hola@` siguen guardando la ficha en ClickUp y en D1. El
 título y la descripción de esas tareas no llevan perfil, lugar, intenciones, id

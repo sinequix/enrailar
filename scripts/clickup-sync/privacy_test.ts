@@ -9,14 +9,17 @@ import { GithubClient } from "./github.ts";
 import {
   classifyTask,
   CRM_LISTS,
+  DENIED_TASK_IDS,
   formatSkips,
   listGate,
   loadSyncPolicy,
   normalizeLabel,
   policyFromConfig,
+  type PrivacySubject,
   spacePrivacy,
   type SyncPolicy,
 } from "./privacy.ts";
+import { loadTombstones, tombstoneComment } from "./tombstone.ts";
 import { syncGithubToClickup } from "./sync-to-clickup.ts";
 import { syncClickupToGithub } from "./sync-to-github.ts";
 
@@ -260,6 +263,7 @@ Deno.test("la sync publica solo la lista permitida y el log no lleva datos perso
         }],
       };
     }
+    if (path.endsWith("/comment")) return { comments: [] };
     if (path.endsWith("/task")) {
       const listId = path.split("/list/")[1]?.split("/")[0];
       const ids: Record<string, string[]> = {
@@ -289,8 +293,11 @@ Deno.test("la sync publica solo la lista permitida y el log no lleva datos perso
     formatSkips({
       "deny-list": 1,
       "deny-folder": 1,
+      "deny-task": 0,
       "deny-tag": 1,
       "deny-fuente": 1,
+      "deny-content": 0,
+      "tombstone": 0,
       "not-allowlisted": 1,
     }),
   ));
@@ -356,6 +363,346 @@ Deno.test("el camino inverso no vincula una tarea del CRM ni una fuente sumate",
   assertFalse(logs.join("\n").includes("@"));
 });
 
+Deno.test("tombstones.json recuerda la tarea retirada y solo guarda ids", async () => {
+  const links = await loadTombstones();
+  assertEquals(links.get(DENIED_TASK_IDS[0]), 65);
+  assertEquals(links.size, 1);
+});
+
+Deno.test("la lista o carpeta Contactos se niega aunque no sea el id del CRM", () => {
+  const space = spacePrivacy(
+    [
+      list("901700000310", "Contactos y contexto", "901700000311", "Marketing"),
+      list("901700000312", "Notas", "901700000313", "Contactos"),
+    ],
+    policy(),
+  );
+  assertEquals(
+    listGate(
+      list("901700000310", "Contactos y contexto", "901700000311", "Marketing"),
+      space,
+    ),
+    "deny-list",
+  );
+  assertEquals(
+    listGate(list("901700000312", "Notas", "901700000313", "Contactos"), space),
+    "deny-folder",
+  );
+});
+
+Deno.test("un correo externo o un bloque Contactos no se publica; el dominio interno sí", () => {
+  const space = spacePrivacy([list(MARKETING, "Marketing")], policy());
+  const external = ["lead@gmail.com", "persona@example.com"];
+  for (const mail of external) {
+    assertEquals(
+      classifyTask(
+        subject({ text: `Escribir a ${mail} por la campaña.` }),
+        space,
+      ),
+      { action: "skip", reason: "deny-content" },
+    );
+  }
+  for (
+    const mail of [
+      "equipo@enrailar.com",
+      "ops@sinequix.com",
+      "mesa@mail.enrailar.com",
+    ]
+  ) {
+    assertEquals(
+      classifyTask(subject({ text: `Escribir a ${mail}.` }), space),
+      { action: "sync" },
+    );
+  }
+  assertEquals(
+    classifyTask(
+      subject({ text: "Los contactos de prensa confirman el horario." }),
+      space,
+    ),
+    { action: "sync" },
+  );
+  assertEquals(
+    classifyTask(subject({ name: "Contactos" }), space),
+    { action: "skip", reason: "deny-content" },
+  );
+  assertEquals(
+    classifyTask(subject({ text: "Notas\n# Contactos\n" }), space),
+    { action: "skip", reason: "deny-content" },
+  );
+  assertEquals(
+    classifyTask(
+      subject({ text: "Esto es contactos y contexto de la campaña." }),
+      space,
+    ),
+    { action: "skip", reason: "deny-content" },
+  );
+  assertEquals(
+    classifyTask(
+      subject({ taskId: DENIED_TASK_IDS[0], text: "Plan de la campaña." }),
+      space,
+    ),
+    { action: "skip", reason: "deny-task" },
+  );
+});
+
+Deno.test("la sync no publica la tarea retirada ni un cuerpo con correo externo", async () => {
+  const seen = new Set<string>();
+  const ctx = context((method, url) => {
+    const path = new URL(url).pathname;
+    if (method !== "GET") throw new Error(`escritura ${method} ${path}`);
+    if (path.endsWith("/list")) {
+      return { lists: [list(MARKETING, "Marketing")] };
+    }
+    if (path.endsWith("/folder")) return { folders: [] };
+    if (path.endsWith("/task")) {
+      return {
+        tasks: [
+          { id: DENIED_TASK_IDS[0], parent: null },
+          { id: "mail1", parent: null },
+          { id: "press1", parent: null },
+        ],
+        last_page: true,
+      };
+    }
+    if (path.endsWith("/comment")) return { comments: [] };
+    if (path.endsWith("/issues")) return [];
+    if (path.includes("/task/")) {
+      const id = path.split("/task/")[1] ?? "";
+      seen.add(id);
+      if (id === DENIED_TASK_IDS[0]) {
+        return publicTask(id, "Plan de la campaña.");
+      }
+      if (id === "mail1") return publicTask(id, "Avisar a lead@gmail.com.");
+      if (id === "press1") {
+        return publicTask(id, "Los contactos de prensa confirman el horario.");
+      }
+    }
+    throw new Error(`sin mock ${method} ${path}`);
+  }, true);
+
+  const output = await capture(() => syncClickupToGithub(ctx));
+  assert(seen.has(DENIED_TASK_IDS[0]));
+  assert(output.includes(
+    `task=${DENIED_TASK_IDS[0]} skipped reason=deny-task`,
+  ));
+  assert(output.includes("task=mail1 skipped reason=deny-content"));
+  assert(output.includes("dry-run task=press1 action=create-issue"));
+  assertFalse(output.includes("lead@gmail.com"));
+  assertFalse(output.includes("@"));
+  assertFalse(
+    output.includes(`task=${DENIED_TASK_IDS[0]} action=create-issue`),
+  );
+  assertFalse(output.includes("dry-run task=mail1 action=create-issue"));
+});
+
+Deno.test("sin marcador o con el issue borrado no se crea otro", async () => {
+  const posts: string[] = [];
+  const ctx = context(
+    (method, url) => {
+      const path = new URL(url).pathname;
+      if (method !== "GET") {
+        posts.push(path);
+        throw new Error(`escritura ${method} ${path}`);
+      }
+      if (path.endsWith("/list")) {
+        return {
+          lists: [list(MARKETING, "Marketing")],
+        };
+      }
+      if (path.endsWith("/folder")) return { folders: [] };
+      if (path.endsWith("/task")) {
+        return {
+          tasks: [
+            { id: "kept1", parent: null },
+            { id: "lost1", parent: null },
+            { id: "gone1", parent: null },
+            { id: "seed1", parent: null },
+          ],
+          last_page: true,
+        };
+      }
+      if (path.endsWith("/comment")) {
+        const id = path.split("/task/")[1]?.split("/")[0];
+        if (id === "gone1") {
+          return {
+            comments: [{
+              id: "c1",
+              comment_text: tombstoneComment(
+                "https://github.com/sinequix/enrailar/issues/66",
+              ),
+            }],
+          };
+        }
+        return { comments: [] };
+      }
+      if (path.endsWith("/issues")) {
+        return [{
+          id: 650,
+          number: 64,
+          title: "Aviso",
+          body: "Sigue vinculado.\n\n<!-- clickup:kept1 -->\n",
+          state: "closed",
+          state_reason: "completed",
+          html_url: "https://github.com/sinequix/enrailar/issues/64",
+        }];
+      }
+      if (path.endsWith("/issues/64")) {
+        return {
+          id: 650,
+          number: 64,
+          title: "Aviso",
+          body: "Sigue vinculado.\n\n<!-- clickup:kept1 -->\n",
+          state: "closed",
+          state_reason: "completed",
+          html_url: "https://github.com/sinequix/enrailar/issues/64",
+        };
+      }
+      if (path.endsWith("/issues/64/timeline")) return [];
+      if (path.endsWith("/issues/65")) {
+        return {
+          id: 651,
+          number: 65,
+          title: "Aviso",
+          body: "Retirado.",
+          state: "closed",
+          state_reason: "completed",
+          html_url: "https://github.com/sinequix/enrailar/issues/65",
+        };
+      }
+      if (path.endsWith("/issues/66")) {
+        return new Response("{}", {
+          status: 404,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      if (path.includes("/task/kept1")) return publicTask("kept1", "Sigue.");
+      if (path.includes("/task/lost1")) {
+        return publicTask(
+          "lost1",
+          "Plan.\n\n---\nGitHub: https://github.com/sinequix/enrailar/issues/65\n",
+        );
+      }
+      if (path.includes("/task/gone1")) return publicTask("gone1", "Plan.");
+      if (path.includes("/task/seed1")) return publicTask("seed1", "Plan.");
+      throw new Error(`sin mock ${method} ${path}`);
+    },
+    true,
+    new Map([["seed1", 65]]),
+  );
+
+  const output = await capture(() => syncClickupToGithub(ctx));
+  assertEquals(posts, []);
+  assertFalse(output.includes("action=create-issue"));
+  assert(output.includes("task=lost1 skipped reason=tombstone"));
+  assert(output.includes("task=gone1 skipped reason=tombstone"));
+  assert(output.includes("task=seed1 skipped reason=tombstone"));
+  assertFalse(output.includes("task=kept1 skipped reason=tombstone"));
+  assert(output.includes("tombstone=3"));
+});
+
+Deno.test("al crear un issue el vínculo queda en un comentario de ClickUp", async () => {
+  const comments: string[] = [];
+  const issuePosts: string[] = [];
+  const title = "Aviso de servicio";
+  const ctx = context((method, url, body) => {
+    const path = new URL(url).pathname;
+    if (path.endsWith("/list")) {
+      return { lists: [list(MARKETING, "Marketing")] };
+    }
+    if (path.endsWith("/folder")) return { folders: [] };
+    if (path.endsWith("/task") && method === "GET") {
+      return {
+        tasks: [{ id: "new1", parent: null }],
+        last_page: true,
+      };
+    }
+    if (path.endsWith("/comment") && method === "GET") return { comments: [] };
+    if (path.endsWith("/comment") && method === "POST") {
+      comments.push(body ?? "");
+      return {};
+    }
+    if (path.endsWith("/task/new1") && method === "GET") {
+      return publicTask("new1", "Plan de la campaña.", title);
+    }
+    if (path.endsWith("/task/new1") && method === "PUT") return {};
+    if (path.includes("/labels/")) return { name: "clickup", color: "ededed" };
+    if (path.endsWith("/issues") && method === "GET") return [];
+    if (path.endsWith("/issues") && method === "POST") {
+      issuePosts.push(body ?? "");
+      const sent = JSON.parse(body ?? "{}") as {
+        title?: string;
+        body?: string;
+      };
+      return {
+        id: 770,
+        number: 77,
+        title: sent.title ?? "",
+        body: sent.body ?? "",
+        state: "open",
+        html_url: "https://github.com/sinequix/enrailar/issues/77",
+      };
+    }
+    if (path.endsWith("/issues/77") && method === "GET") {
+      const sent = JSON.parse(issuePosts[0] ?? "{}") as { body?: string };
+      return {
+        id: 770,
+        number: 77,
+        title,
+        body: sent.body ?? "",
+        state: "open",
+        html_url: "https://github.com/sinequix/enrailar/issues/77",
+      };
+    }
+    if (path.endsWith("/timeline")) return [];
+    throw new Error(`sin mock ${method} ${path}`);
+  }, false);
+
+  await capture(() => syncClickupToGithub(ctx));
+  assertEquals(issuePosts.length, 1);
+  const link = tombstoneComment(
+    "https://github.com/sinequix/enrailar/issues/77",
+  );
+  assert(comments.some((raw) => JSON.parse(raw).comment_text === link));
+  for (const raw of comments) {
+    const text = JSON.parse(raw).comment_text as string;
+    if (!text.includes("clickup-sync:tombstone")) continue;
+    assertFalse(text.includes(title));
+    assertFalse(text.includes("Plan de la campaña."));
+  }
+});
+
+function subject(
+  partial: Partial<PrivacySubject> = {},
+): PrivacySubject {
+  return {
+    taskId: "task",
+    name: "Campaña",
+    text: "Plan de la campaña.",
+    listId: MARKETING,
+    listName: "Marketing",
+    folderId: null,
+    folderName: null,
+    tags: [],
+    fuente: null,
+    ...partial,
+  };
+}
+
+function publicTask(
+  id: string,
+  description: string,
+  name = "Campaña",
+): Record<string, unknown> {
+  return {
+    id,
+    name,
+    description,
+    status: { status: "to do", type: "open" },
+    tags: [],
+    list: { id: MARKETING, name: "Marketing" },
+  };
+}
+
 function taskPayload(id: string): Record<string, unknown> {
   switch (id) {
     case "vol1":
@@ -414,8 +761,13 @@ function taskPayload(id: string): Record<string, unknown> {
 }
 
 function context(
-  route: (method: string, url: string) => unknown,
+  route: (
+    method: string,
+    url: string,
+    body?: string,
+  ) => unknown | Response,
   dryRun: boolean,
+  tombstones: ReadonlyMap<string, number> = new Map(),
 ): SyncContext {
   const fetchImpl: typeof fetch = (input, init) => {
     const url = typeof input === "string"
@@ -424,7 +776,10 @@ function context(
       ? input.href
       : input.url;
     const method = init?.method ?? "GET";
-    return Promise.resolve(Response.json(route(method, url)));
+    const body = typeof init?.body === "string" ? init.body : undefined;
+    const payload = route(method, url, body);
+    if (payload instanceof Response) return Promise.resolve(payload);
+    return Promise.resolve(Response.json(payload));
   };
   const repo = { owner: "sinequix", name: "enrailar" };
   return {
@@ -435,6 +790,7 @@ function context(
     github: new GithubClient("token", repo, { dryRun, fetchImpl }),
     users: [],
     policy: policy(),
+    tombstones,
     lists: null,
     statusByList: null,
   };

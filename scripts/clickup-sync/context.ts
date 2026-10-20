@@ -7,6 +7,7 @@ import {
 import { GithubClient } from "./github.ts";
 import { loadSyncPolicy, type SyncPolicy } from "./privacy.ts";
 import { parseRepository, type RepositoryName } from "./references.ts";
+import { loadTombstones } from "./tombstone.ts";
 import { parseUserMap, type UserLink } from "./users.ts";
 
 export type SyncContext = {
@@ -17,6 +18,7 @@ export type SyncContext = {
   github: GithubClient;
   users: UserLink[];
   policy: SyncPolicy;
+  tombstones: ReadonlyMap<string, number>;
   lists: ClickupList[] | null;
   statusByList: Map<string, ClickupStatus[]> | null;
 };
@@ -54,6 +56,7 @@ export async function loadContext(
     github: new GithubClient(githubToken, repo, { dryRun: options.dryRun }),
     users: parsed.users,
     policy: await loadSyncPolicy(),
+    tombstones: await loadTombstones(),
     lists: null,
     statusByList: null,
   };

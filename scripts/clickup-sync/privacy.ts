@@ -13,11 +13,24 @@ const DENY_TAGS = new Set(["voluntario", "contacto", "lead"]);
 const FUENTE_TAGS = new Set(["fuente-sumate", "fuente-email", "fuente-hola"]);
 const FUENTE_FIELDS = new Set(["fuente", "source"]);
 
+/**
+ * Tarea retirada de GitHub. El id de lista no quedó en el issue; se niega
+ * igual en cualquier lista.
+ */
+export const DENIED_TASK_IDS = ["86e3nbvhz"] as const;
+
+const DENIED_PLACE_NAMES = new Set(["contactos", "contactos y contexto"]);
+const INTERNAL_DOMAINS = ["enrailar.com", "sinequix.com"] as const;
+const EMAIL = /[a-z0-9._%+-]+@([a-z0-9-]+(?:\.[a-z0-9-]+)+)/gi;
+
 export type SkipReason =
   | "deny-list"
   | "deny-folder"
+  | "deny-task"
   | "deny-tag"
   | "deny-fuente"
+  | "deny-content"
+  | "tombstone"
   | "not-allowlisted";
 
 export type PrivacyDecision =
@@ -40,6 +53,9 @@ export type SpacePrivacy = {
 };
 
 export type PrivacySubject = {
+  taskId?: string;
+  name?: string;
+  text?: string;
   listId: string;
   listName: string;
   folderId: string | null;
@@ -57,8 +73,11 @@ export function emptySkips(): SkipCounts {
   return {
     "deny-list": 0,
     "deny-folder": 0,
+    "deny-task": 0,
     "deny-tag": 0,
     "deny-fuente": 0,
+    "deny-content": 0,
+    "tombstone": 0,
     "not-allowlisted": 0,
   };
 }
@@ -68,8 +87,11 @@ export function formatSkips(counts: SkipCounts): string {
     "skipped",
     `deny-list=${counts["deny-list"]}`,
     `deny-folder=${counts["deny-folder"]}`,
+    `deny-task=${counts["deny-task"]}`,
     `deny-tag=${counts["deny-tag"]}`,
     `deny-fuente=${counts["deny-fuente"]}`,
+    `deny-content=${counts["deny-content"]}`,
+    `tombstone=${counts["tombstone"]}`,
     `not-allowlisted=${counts["not-allowlisted"]}`,
   ].join(" ");
 }
@@ -104,6 +126,9 @@ export function subjectOf(
   list?: Pick<ClickupList, "id" | "name" | "folderId" | "folderName"> | null,
 ): PrivacySubject {
   return {
+    taskId: task.id,
+    name: task.name,
+    text: task.markdown,
     listId: task.listId || list?.id || "",
     listName: task.listName || list?.name || "",
     folderId: task.folderId || list?.folderId || null,
@@ -158,7 +183,10 @@ export function spacePrivacy(
   const denyFolderIds = new Set(policy.denyFolderIds);
   for (const list of lists) {
     if (!list.folderId) continue;
-    if (policy.denyListIds.has(list.id) || isCrmFolderName(list.folderName)) {
+    if (
+      policy.denyListIds.has(list.id) || isCrmFolderName(list.folderName) ||
+      deniedPlace(null, list.folderName) === "deny-folder"
+    ) {
       denyFolderIds.add(list.folderId);
     }
   }
@@ -174,6 +202,8 @@ export function listGate(
     return "deny-folder";
   }
   if (isCrmFolderName(list.folderName)) return "deny-folder";
+  const named = deniedPlace(list.name, list.folderName);
+  if (named) return named;
   if (isListed(list.id, list.name, list.folderId, list.folderName, space)) {
     return null;
   }
@@ -184,6 +214,9 @@ export function classifyTask(
   subject: PrivacySubject,
   space: SpacePrivacy,
 ): PrivacyDecision {
+  if (deniedTask(subject.taskId)) {
+    return { action: "skip", reason: "deny-task" };
+  }
   if (space.policy.denyListIds.has(subject.listId)) {
     return { action: "skip", reason: "deny-list" };
   }
@@ -193,6 +226,8 @@ export function classifyTask(
   if (isCrmFolderName(subject.folderName)) {
     return { action: "skip", reason: "deny-folder" };
   }
+  const named = deniedPlace(subject.listName, subject.folderName);
+  if (named) return { action: "skip", reason: named };
   const tag = deniedTag(subject.tags);
   if (tag === "deny-tag") return { action: "skip", reason: "deny-tag" };
   if (tag === "deny-fuente" || deniedFuente(subject.fuente)) {
@@ -207,6 +242,9 @@ export function classifyTask(
       space,
     )
   ) {
+    if (deniedContent(subject.name ?? "", subject.text ?? "")) {
+      return { action: "skip", reason: "deny-content" };
+    }
     return { action: "sync" };
   }
   return { action: "skip", reason: "not-allowlisted" };
@@ -222,13 +260,19 @@ export function preferSkip(
 
 function rank(reason: SkipReason): number {
   switch (reason) {
+    case "deny-task":
+      return 8;
     case "deny-list":
-      return 5;
+      return 7;
     case "deny-folder":
-      return 4;
+      return 6;
     case "deny-tag":
-      return 3;
+      return 5;
     case "deny-fuente":
+      return 4;
+    case "deny-content":
+      return 3;
+    case "tombstone":
       return 2;
     case "not-allowlisted":
       return 1;
@@ -252,6 +296,65 @@ function isListed(
   if (listName && policy.allowNames.has(normalizeLabel(listName))) return true;
   if (folderName && policy.allowNames.has(normalizeLabel(folderName))) {
     return true;
+  }
+  return false;
+}
+
+function deniedTask(taskId: string | undefined): boolean {
+  if (!taskId) return false;
+  return (DENIED_TASK_IDS as readonly string[]).includes(taskId);
+}
+
+function deniedPlace(
+  listName: string | null,
+  folderName: string | null,
+): "deny-list" | "deny-folder" | null {
+  if (listName && DENIED_PLACE_NAMES.has(normalizeLabel(listName))) {
+    return "deny-list";
+  }
+  if (folderName && DENIED_PLACE_NAMES.has(normalizeLabel(folderName))) {
+    return "deny-folder";
+  }
+  return null;
+}
+
+function deniedContent(name: string, text: string): boolean {
+  return hasContactosContent(name, text) ||
+    hasExternalEmail(`${name}\n${text}`);
+}
+
+function hasContactosContent(name: string, text: string): boolean {
+  const nameKey = normalizeLabel(name);
+  if (nameKey === "contactos" || nameKey === "contactos y contexto") {
+    return true;
+  }
+  if (normalizeLabel(text).includes("contactos y contexto")) return true;
+  for (const line of text.split(/\r?\n/)) {
+    if (contactosLine(line)) return true;
+  }
+  return false;
+}
+
+function contactosLine(line: string): boolean {
+  const stripped = line.trim().replace(/^#{1,6}\s+/, "").replace(
+    /^[*_]+|[*_]+$/g,
+    "",
+  ).replace(/[.:]+$/g, "");
+  return normalizeLabel(stripped) === "contactos";
+}
+
+function hasExternalEmail(text: string): boolean {
+  const pattern = new RegExp(EMAIL.source, "gi");
+  for (const match of text.matchAll(pattern)) {
+    const domain = match[1]?.toLowerCase().replace(/\.+$/g, "") ?? "";
+    if (!isInternalDomain(domain)) return true;
+  }
+  return false;
+}
+
+function isInternalDomain(domain: string): boolean {
+  for (const allowed of INTERNAL_DOMAINS) {
+    if (domain === allowed || domain.endsWith(`.${allowed}`)) return true;
   }
   return false;
 }

@@ -24,6 +24,12 @@ import {
 } from "./privacy.ts";
 import { isAuthFailure, isMissing, reconcileLinkedTask } from "./reconcile.ts";
 import { initialGithubClose } from "./state.ts";
+import {
+  issueUrlFor,
+  linkedIssueNumbers,
+  TOMBSTONE_MARKER,
+  tombstoneComment,
+} from "./tombstone.ts";
 import { githubLoginFor } from "./users.ts";
 
 type Summary = { id: string; parentId: string | null };
@@ -57,9 +63,14 @@ export async function syncClickupToGithub(ctx: SyncContext): Promise<void> {
       const decision = classifyTask(subjectOf(task), space);
       if (decision.action === "skip") {
         skipped[decision.reason] += 1;
+        logSkip(summary.id, decision.reason);
         continue;
       }
-      await ensureIssue(ctx, task, index);
+      const ensured = await ensureIssue(ctx, task, index);
+      if (ensured === "tombstone") {
+        skipped.tombstone += 1;
+        continue;
+      }
       publish.push(summary);
     } catch (error) {
       if (isAuthFailure(error)) throw error;
@@ -82,6 +93,7 @@ export async function syncClickupToGithub(ctx: SyncContext): Promise<void> {
       const decision = classifyTask(subjectOf(task), space);
       if (decision.action === "skip") {
         skipped[decision.reason] += 1;
+        logSkip(summary.id, decision.reason);
         continue;
       }
       const fresh = await ctx.github.getIssue(issue.number);
@@ -112,15 +124,28 @@ export async function syncClickupToGithub(ctx: SyncContext): Promise<void> {
   }
 }
 
+function logSkip(taskId: string, reason: SkipReason): void {
+  if (
+    reason !== "deny-task" && reason !== "deny-content" &&
+    reason !== "tombstone"
+  ) {
+    return;
+  }
+  console.log(`task=${taskId} skipped reason=${reason}`);
+}
+
 async function ensureIssue(
   ctx: SyncContext,
   task: ClickupTask,
   index: Map<string, GithubIssue>,
-): Promise<void> {
-  if (index.has(task.id)) return;
+): Promise<"ready" | "tombstone"> {
+  if (index.has(task.id)) return "ready";
+  const persisted = await persistedLink(ctx, task, index);
+  if (persisted === "tombstone") return "tombstone";
+  if (persisted === "existing") return "ready";
   if (ctx.dryRun) {
     console.log(`dry-run task=${task.id} action=create-issue`);
-    return;
+    return "ready";
   }
   const assignees = task.assignees.flatMap((person) => {
     const login = githubLoginFor(ctx.users, person);
@@ -154,9 +179,65 @@ async function ensureIssue(
   }
   index.set(task.id, issue);
   console.log(`task=${task.id} issue=#${issue.number} action=created`);
+  if (issue.number > 0) {
+    const url = issue.htmlUrl || issueUrlFor(ctx.repo, issue.number);
+    await ctx.clickup.createComment(task.id, tombstoneComment(url));
+  }
   if (issue.state === "open" && issue.number > 0) {
     await postInitialPlanRequest(issue.number, ctx.repo, ctx.dryRun);
   }
+  return "ready";
+}
+
+async function persistedLink(
+  ctx: SyncContext,
+  task: ClickupTask,
+  index: Map<string, GithubIssue>,
+): Promise<"create" | "existing" | "tombstone"> {
+  if (ctx.tombstones.has(task.id)) {
+    console.log(`task=${task.id} skipped reason=tombstone`);
+    return "tombstone";
+  }
+  const comments = await ctx.clickup.comments(task.id);
+  const numbers = new Set<number>();
+  let marked = false;
+  const chunks = [
+    task.markdown,
+    ...task.customFields.map((field) => field.value ?? ""),
+    ...comments.map((comment) => comment.text),
+  ];
+  for (const chunk of chunks) {
+    if (chunk.includes(TOMBSTONE_MARKER)) marked = true;
+    for (const number of linkedIssueNumbers(chunk, ctx.repo)) {
+      numbers.add(number);
+    }
+  }
+  if (numbers.size === 0) {
+    if (!marked) return "create";
+    console.log(`task=${task.id} skipped reason=tombstone`);
+    return "tombstone";
+  }
+  let blocked = marked;
+  for (const number of numbers) {
+    try {
+      const issue = await ctx.github.getIssue(number);
+      if (parseClickupTaskId(issue.body) === task.id) {
+        index.set(task.id, issue);
+        return "existing";
+      }
+      blocked = true;
+    } catch (error) {
+      if (isAuthFailure(error)) throw error;
+      if (isMissing(error)) {
+        blocked = true;
+        continue;
+      }
+      throw error;
+    }
+  }
+  if (!blocked) return "create";
+  console.log(`task=${task.id} skipped reason=tombstone`);
+  return "tombstone";
 }
 
 async function linkSubtasks(
