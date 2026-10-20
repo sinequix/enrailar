@@ -6,6 +6,9 @@
 
 Si esta PR cierra una tarea, incluí `Closes #N` en este cuerpo. Al mergear, GitHub cierra el issue y el sync marca la tarea de ClickUp.
 
+Closes #N
+ClickUp: https://app.clickup.com/t/<id> <!-- referencia; el estado lo mueve el sync a través del issue -->
+
 ## Cómo probarlo
 
 <!-- Comandos o pasos. Si no aplica, decilo. -->
