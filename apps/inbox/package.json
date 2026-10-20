@@ -21,10 +21,10 @@
 		"typecheck": "npm run cf-typegen && react-router typegen && tsc -b"
 	},
 	"dependencies": {
-		"@cloudflare/ai-chat": "^0.1.8",
+		"@cloudflare/ai-chat": "^0.1.9",
 		"@cloudflare/kumo": "^1.13.0",
 		"@phosphor-icons/react": "^2.1.10",
-		"@tanstack/react-query": "^5.99.0",
+		"@tanstack/react-query": "^5.104.3",
 		"@tiptap/extension-color": "3.20.2",
 		"@tiptap/extension-highlight": "3.20.2",
 		"@tiptap/extension-image": "3.20.2",
@@ -35,21 +35,21 @@
 		"@tiptap/react": "3.20.2",
 		"@tiptap/starter-kit": "3.20.2",
 		"agents": "^0.7.6",
-		"ai": "^6.0.116",
-		"dompurify": "^3.3.3",
-		"drizzle-orm": "^0.45.1",
-		"hono": "^4.7.11",
-		"isbot": "^5.1.27",
-		"jose": "^6.2.1",
-		"postal-mime": "^2.6.1",
-		"react": "^19.1.0",
-		"react-dom": "^19.1.0",
+		"ai": "^6.0.308",
+		"dompurify": "^3.4.17",
+		"drizzle-orm": "^0.45.4",
+		"hono": "^4.13.13",
+		"isbot": "^5.2.2",
+		"jose": "^6.2.12",
+		"postal-mime": "^4.0.7",
+		"react": "^19.3.1",
+		"react-dom": "^19.3.1",
 		"react-markdown": "^10.1.0",
-		"react-router": "^7.5.3",
+		"react-router": "^8.4.0",
 		"remark-gfm": "^4.0.1",
 		"workers-ai-provider": "^3.1.2",
-		"zod": "^3.25.76",
-		"zustand": "^5.0.12"
+		"zod": "^4.6.7",
+		"zustand": "^5.0.15"
 	},
 	"overrides": {
 		"@cloudflare/kumo": {
@@ -81,18 +81,18 @@
 		"@tiptap/extension-text": "3.20.2"
 	},
 	"devDependencies": {
-		"@cloudflare/vite-plugin": "^1.0.12",
-		"@cloudflare/workers-types": "^4.20251128.0",
-		"@react-router/dev": "^7.5.3",
-		"@tailwindcss/vite": "^4.1.4",
-		"@types/dompurify": "^3.0.5",
-		"@types/node": "^20.19.37",
-		"@types/react": "^19.1.2",
-		"@types/react-dom": "^19.1.2",
+		"@cloudflare/vite-plugin": "^1.64.0",
+		"@cloudflare/workers-types": "^5.20261016.1",
+		"@react-router/dev": "^8.4.0",
+		"@tailwindcss/vite": "^4.3.3",
+		"@types/dompurify": "^3.2.0",
+		"@types/node": "^22.20.5",
+		"@types/react": "^19.3.0",
+		"@types/react-dom": "^19.3.0",
 		"tailwindcss": "^4.1.4",
-		"typescript": "^5.8.3",
-		"vite": "^7.3.7",
-		"vite-tsconfig-paths": "^5.1.4",
-		"wrangler": "^4.74.0"
+		"typescript": "^7.0.2",
+		"vite": "^8.3.4",
+		"vite-tsconfig-paths": "^6.1.1",
+		"wrangler": "^4.151.1"
 	}
 }

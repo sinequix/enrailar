@@ -5,3 +5,5 @@ packages:
   - "apps/news"
   - "workers/*"
   - "infra"
+minimumReleaseAge: 0
+strictDepBuilds: false
