@@ -89,12 +89,14 @@ Deno.test("un fallo de ClickUp deja la fila y el éxito la borra", async () => {
   const created = bodies
     .map((body) => JSON.parse(body) as { name?: string; markdown_description?: string; comment_text?: string })
     .find((body) => body.name !== undefined);
-  assertEquals(created?.name, "Mapa");
-  assertEquals(String(created?.markdown_description).includes("@"), false);
+  assertEquals(created?.name, "Contacto por correo");
+  assertEquals(created?.markdown_description, "Mensaje recibido por correo.");
   const note = bodies
     .map((body) => JSON.parse(body) as { comment_text?: string })
     .find((body) => body.comment_text !== undefined);
   assertEquals(note?.comment_text?.includes("remitente@example.com"), true);
+  assertEquals(note?.comment_text?.includes("Mapa"), true);
+  assertEquals(note?.comment_text?.includes("Quiero ver el mapa."), true);
   db.close();
 });
 

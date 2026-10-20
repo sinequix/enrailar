@@ -1,6 +1,7 @@
 import { AGENT_PLAN } from "./agent.ts";
 import { postInitialPlanRequest } from "./agent-run.ts";
-import { statusesFor, type SyncContext } from "./context.ts";
+import type { ClickupTask } from "./clickup.ts";
+import { loadLists, statusesFor, type SyncContext } from "./context.ts";
 import type { GithubIssue } from "./github.ts";
 import { labelsForNewIssue } from "./labels.ts";
 import { parseClickupTaskId } from "./marker.ts";
@@ -11,32 +12,70 @@ import {
   orderParentsFirst,
   upsertSubtaskSection,
 } from "./plan.ts";
+import {
+  classifyTask,
+  emptySkips,
+  formatSkips,
+  listGate,
+  preferSkip,
+  type SkipReason,
+  spacePrivacy,
+  subjectOf,
+} from "./privacy.ts";
 import { isAuthFailure, isMissing, reconcileLinkedTask } from "./reconcile.ts";
 import { initialGithubClose } from "./state.ts";
+import {
+  issueUrlFor,
+  linkedIssueNumbers,
+  TOMBSTONE_MARKER,
+  tombstoneComment,
+} from "./tombstone.ts";
 import { githubLoginFor } from "./users.ts";
 
 type Summary = { id: string; parentId: string | null };
 
 export async function syncClickupToGithub(ctx: SyncContext): Promise<void> {
-  const lists = await ctx.clickup.listsInSpace(ctx.spaceId);
-  ctx.statusByList = new Map(
-    lists.map((list) => [list.id, list.statuses]),
+  const lists = await loadLists(ctx);
+  const space = spacePrivacy(
+    lists,
+    ctx.policy,
+    new Set(ctx.tombstones.keys()),
   );
-  const summaries: Summary[] = [];
-  const seen = new Set<string>();
+  const skipped = emptySkips();
+  const blocked = new Map<string, SkipReason>();
+  const pending = new Map<string, Summary>();
   for (const list of lists) {
+    const reason = listGate(list, space);
     for (const task of await ctx.clickup.taskIdsInList(list.id)) {
-      if (seen.has(task.id)) continue;
-      seen.add(task.id);
-      summaries.push(task);
+      if (reason) {
+        blocked.set(task.id, preferSkip(blocked.get(task.id), reason));
+        pending.delete(task.id);
+        continue;
+      }
+      if (blocked.has(task.id) || pending.has(task.id)) continue;
+      pending.set(task.id, task);
     }
   }
+  for (const reason of blocked.values()) skipped[reason] += 1;
 
   const index = indexIssuesByTaskId(await ctx.github.listIssues());
   const failures: string[] = [];
-  for (const summary of orderParentsFirst(summaries)) {
+  const publish: Summary[] = [];
+  for (const summary of orderParentsFirst([...pending.values()])) {
     try {
-      await ensureIssue(ctx, summary, index);
+      const task = await ctx.clickup.getTask(summary.id);
+      const decision = classifyTask(subjectOf(task), space);
+      if (decision.action === "skip") {
+        skipped[decision.reason] += 1;
+        logSkip(summary.id, decision.reason);
+        continue;
+      }
+      const ensured = await ensureIssue(ctx, task, index);
+      if (ensured === "tombstone") {
+        skipped.tombstone += 1;
+        continue;
+      }
+      publish.push(summary);
     } catch (error) {
       if (isAuthFailure(error)) throw error;
       if (isMissing(error)) {
@@ -48,13 +87,19 @@ export async function syncClickupToGithub(ctx: SyncContext): Promise<void> {
     }
   }
 
-  failures.push(...await linkSubtasks(ctx, summaries, index));
+  failures.push(...await linkSubtasks(ctx, publish, index));
 
-  for (const summary of summaries) {
+  for (const summary of publish) {
     const issue = index.get(summary.id);
     if (!issue || issue.number === 0) continue;
     try {
       const task = await ctx.clickup.getTask(summary.id);
+      const decision = classifyTask(subjectOf(task), space);
+      if (decision.action === "skip") {
+        skipped[decision.reason] += 1;
+        logSkip(summary.id, decision.reason);
+        continue;
+      }
       const fresh = await ctx.github.getIssue(issue.number);
       await reconcileLinkedTask({
         clickup: ctx.clickup,
@@ -75,6 +120,7 @@ export async function syncClickupToGithub(ctx: SyncContext): Promise<void> {
     }
   }
 
+  console.log(formatSkips(skipped));
   if (failures.length > 0) {
     throw new Error(
       `Falló la sync de ${failures.length} tareas: ${failures.join(", ")}`,
@@ -82,16 +128,28 @@ export async function syncClickupToGithub(ctx: SyncContext): Promise<void> {
   }
 }
 
+function logSkip(taskId: string, reason: SkipReason): void {
+  if (
+    reason !== "deny-task" && reason !== "deny-content" &&
+    reason !== "tombstone"
+  ) {
+    return;
+  }
+  console.log(`task=${taskId} skipped reason=${reason}`);
+}
+
 async function ensureIssue(
   ctx: SyncContext,
-  summary: Summary,
+  task: ClickupTask,
   index: Map<string, GithubIssue>,
-): Promise<void> {
-  if (index.has(summary.id)) return;
-  const task = await ctx.clickup.getTask(summary.id);
+): Promise<"ready" | "tombstone"> {
+  if (index.has(task.id)) return "ready";
+  const persisted = await persistedLink(ctx, task, index);
+  if (persisted === "tombstone") return "tombstone";
+  if (persisted === "existing") return "ready";
   if (ctx.dryRun) {
     console.log(`dry-run task=${task.id} action=create-issue`);
-    return;
+    return "ready";
   }
   const assignees = task.assignees.flatMap((person) => {
     const login = githubLoginFor(ctx.users, person);
@@ -125,9 +183,65 @@ async function ensureIssue(
   }
   index.set(task.id, issue);
   console.log(`task=${task.id} issue=#${issue.number} action=created`);
+  if (issue.number > 0) {
+    const url = issue.htmlUrl || issueUrlFor(ctx.repo, issue.number);
+    await ctx.clickup.createComment(task.id, tombstoneComment(url));
+  }
   if (issue.state === "open" && issue.number > 0) {
     await postInitialPlanRequest(issue.number, ctx.repo, ctx.dryRun);
   }
+  return "ready";
+}
+
+async function persistedLink(
+  ctx: SyncContext,
+  task: ClickupTask,
+  index: Map<string, GithubIssue>,
+): Promise<"create" | "existing" | "tombstone"> {
+  if (ctx.tombstones.has(task.id)) {
+    console.log(`task=${task.id} skipped reason=tombstone`);
+    return "tombstone";
+  }
+  const comments = await ctx.clickup.comments(task.id);
+  const numbers = new Set<number>();
+  let marked = false;
+  const chunks = [
+    task.markdown,
+    ...task.customFields.map((field) => field.value ?? ""),
+    ...comments.map((comment) => comment.text),
+  ];
+  for (const chunk of chunks) {
+    if (chunk.includes(TOMBSTONE_MARKER)) marked = true;
+    for (const number of linkedIssueNumbers(chunk, ctx.repo)) {
+      numbers.add(number);
+    }
+  }
+  if (numbers.size === 0) {
+    if (!marked) return "create";
+    console.log(`task=${task.id} skipped reason=tombstone`);
+    return "tombstone";
+  }
+  let blocked = marked;
+  for (const number of numbers) {
+    try {
+      const issue = await ctx.github.getIssue(number);
+      if (parseClickupTaskId(issue.body) === task.id) {
+        index.set(task.id, issue);
+        return "existing";
+      }
+      blocked = true;
+    } catch (error) {
+      if (isAuthFailure(error)) throw error;
+      if (isMissing(error)) {
+        blocked = true;
+        continue;
+      }
+      throw error;
+    }
+  }
+  if (!blocked) return "create";
+  console.log(`task=${task.id} skipped reason=tombstone`);
+  return "tombstone";
 }
 
 async function linkSubtasks(
@@ -181,8 +295,7 @@ async function linkSubtasks(
     } catch (error) {
       if (isAuthFailure(error)) throw error;
       failed.push(parentId);
-      const detail = error instanceof Error ? error.message : "error";
-      console.error(`task=${parentId} error al vincular subtareas: ${detail}`);
+      console.error(`task=${parentId} error`);
     }
   }
   return failed;
@@ -200,10 +313,7 @@ export async function linkChildren(
     } catch (error) {
       if (isAuthFailure(error)) throw error;
       failed.push(child.taskId);
-      const detail = error instanceof Error ? error.message : "error";
-      console.error(
-        `task=${child.taskId} error al vincular subtarea: ${detail}`,
-      );
+      console.error(`task=${child.taskId} error`);
     }
   }
   return { mode: "sub-issues", failed };

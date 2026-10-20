@@ -9,11 +9,18 @@ import {
   NEEDS_HUMAN,
   planRequestComment,
 } from "./agent.ts";
-import { ClickupClient } from "./clickup.ts";
+import { CLICKUP_SPACE_ID, ClickupClient } from "./clickup.ts";
 import { AGENT_MENTION_WARNING } from "./guard.ts";
 import { GithubClient, type GithubIssue, type PullDetails } from "./github.ts";
 import { HttpStatusError } from "./http.ts";
 import { parseClickupTaskId } from "./marker.ts";
+import {
+  classifyTask,
+  loadSyncPolicy,
+  spacePrivacy,
+  subjectOf,
+} from "./privacy.ts";
+import { loadTombstones } from "./tombstone.ts";
 import {
   parseRepository,
   referencedIssueNumbers,
@@ -268,6 +275,31 @@ async function postClickup(
   const taskId = parseClickupTaskId(issueBody);
   if (!taskId) {
     console.log(`sin tarea de ClickUp para ${markerName}`);
+    return;
+  }
+  const spaceId = Deno.env.get("CLICKUP_SPACE_ID")?.trim() || CLICKUP_SPACE_ID;
+  if (!/^\d+$/.test(spaceId)) {
+    console.log(`task=${taskId} skipped reason=not-allowlisted`);
+    return;
+  }
+  let task;
+  try {
+    task = await clickup.getTask(taskId);
+    const decision = classifyTask(
+      subjectOf(task),
+      spacePrivacy(
+        await clickup.listsInSpace(spaceId),
+        await loadSyncPolicy(),
+        new Set((await loadTombstones()).keys()),
+      ),
+    );
+    if (decision.action === "skip") {
+      console.log(`task=${taskId} skipped reason=${decision.reason}`);
+      return;
+    }
+  } catch (error) {
+    if (error instanceof HttpStatusError && error.status === 401) throw error;
+    console.error(`task=${taskId} error`);
     return;
   }
   const needle = `agent-orch-clickup:${markerName}`;

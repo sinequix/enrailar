@@ -1,20 +1,27 @@
-import { statusesFor, type SyncContext } from "./context.ts";
+import { loadLists, statusesFor, type SyncContext } from "./context.ts";
 import { asRecord, asString, idString } from "./json.ts";
 import { parseClickupTaskId } from "./marker.ts";
+import { classifyTask, spacePrivacy, subjectOf } from "./privacy.ts";
 import { referencedIssueNumbers } from "./references.ts";
 import { isAuthFailure, isMissing, reconcileLinkedTask } from "./reconcile.ts";
 import type { LinkedPullRequest, PullRequestRef } from "./state.ts";
 
-export async function syncGithubToClickup(ctx: SyncContext): Promise<void> {
-  const eventName = Deno.env.get("GITHUB_EVENT_NAME") ?? "";
+export async function syncGithubToClickup(
+  ctx: SyncContext,
+  source?: { name: string; event: unknown },
+): Promise<void> {
+  const eventName = source?.name ?? Deno.env.get("GITHUB_EVENT_NAME") ?? "";
   const eventPath = Deno.env.get("GITHUB_EVENT_PATH");
   if (
-    !eventPath || eventName.length === 0 || eventName === "workflow_dispatch" ||
-    eventName === "schedule"
+    !source &&
+    (!eventPath || eventName.length === 0 ||
+      eventName === "workflow_dispatch" || eventName === "schedule")
   ) {
     return;
   }
-  const event = JSON.parse(await Deno.readTextFile(eventPath)) as unknown;
+  const event = source
+    ? source.event
+    : JSON.parse(await Deno.readTextFile(eventPath ?? "")) as unknown;
   if (eventName === "issues") {
     await syncIssueEvent(ctx, event);
     return;
@@ -100,6 +107,16 @@ async function reconcileIssue(
   }
   try {
     const task = await ctx.clickup.getTask(taskId);
+    const space = spacePrivacy(
+      await loadLists(ctx),
+      ctx.policy,
+      new Set(ctx.tombstones.keys()),
+    );
+    const decision = classifyTask(subjectOf(task), space);
+    if (decision.action === "skip") {
+      console.log(`task=${task.id} skipped reason=${decision.reason}`);
+      return false;
+    }
     await reconcileLinkedTask({
       clickup: ctx.clickup,
       github: ctx.github,

@@ -1,9 +1,9 @@
 # Sync ClickUp ↔ GitHub
 
-El espacio de ClickUp Enrailar (`90177904660`) es donde se planifica. Cada tarea
-de cualquiera de sus listas —incluye carpetas y subtareas— tiene un issue en
-`sinequix/enrailar`. Desde que ese issue existe, GitHub manda el estado, el
-asignado, las labels y las PR vinculadas.
+El espacio de ClickUp Enrailar (`90177904660`) es donde se planifica. Solo las
+listas cuyo id está en la allowlist tienen un issue en `sinequix/enrailar`. El
+resto se salta. Desde que ese issue existe, GitHub manda el estado, el asignado,
+las labels y las PR vinculadas.
 
 No hay servidor propio ni un token nuevo de GitHub. Los workflows usan
 `GITHUB_TOKEN` y el secreto `CLICKUP_API_TOKEN`.
@@ -17,27 +17,28 @@ No hay servidor propio ni un token nuevo de GitHub. Los workflows usan
 | Título o descripción distintos | ClickUp     | Un comentario avisa que el issue es la fuente de verdad.                                                                      |
 | Comentarios de GitHub          | —           | No se copian. El vínculo queda en la tarea.                                                                                   |
 
-La descripción de la tarea se publica en el issue. En este repositorio público
-no van nombres de personas, correos ni montos.
+La descripción de una tarea permitida se publica en el issue. En este
+repositorio público no van nombres de personas, correos ni montos. Nada del CRM
+se publica: ver [Privacidad](#privacidad).
 
 ## Mapeo de estados
 
 El código está en `scripts/clickup-sync/state.ts`. Elige el primer estado que
 exista en la lista, sin distinguir mayúsculas.
 
-| Situación en GitHub                                                                                                      | Estado que busca en ClickUp                                                                                                                                                                                           |
-| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Issue abierto, sin PR abierta                                                                                            | `to do`, o el equivalente abierto de la lista: `por hacer`, `idea`, `planificada`, `identificado`, `pendiente`, `objetivo`, `detectada`, `preinscripto`. Si el nombre no está en la lista, el estado de tipo `open`. |
-| Issue abierto, con una PR abierta que lo menciona o que aparece en el timeline (también draft)                          | `in progress`, `en curso`, `pr abierto`, `en preparación`, `priorizada` o `asignada a agente`                                                                                                                        |
-| PR mergeada y el issue está en `closingIssuesReferences` de esa PR, sin otra PR abierta                                  | `complete`, `hecha`, `mergeada`, `publicado`, `listo`, `comunicada`, `participó` o `cerrada`. Si ninguno está, el primer estado de tipo `done`, o el único `closed` que no sea un descarte.                         |
-| Issue cerrado como completed                                                                                             | Los mismos nombres de cierre de la fila anterior.                                                                                                                                                                     |
-| Issue cerrado como not planned o duplicate                                                                               | `cancelled`, `closed`, `descartada`, `descartado`, `no avanza`, `no comunicable`, `no contactar` o `perdida`                                                                                                          |
+| Situación en GitHub                                                                            | Estado que busca en ClickUp                                                                                                                                                                                          |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Issue abierto, sin PR abierta                                                                  | `to do`, o el equivalente abierto de la lista: `por hacer`, `idea`, `planificada`, `identificado`, `pendiente`, `objetivo`, `detectada`, `preinscripto`. Si el nombre no está en la lista, el estado de tipo `open`. |
+| Issue abierto, con una PR abierta que lo menciona o que aparece en el timeline (también draft) | `in progress`, `en curso`, `pr abierto`, `en preparación`, `priorizada` o `asignada a agente`                                                                                                                        |
+| PR mergeada y el issue está en `closingIssuesReferences` de esa PR, sin otra PR abierta        | `complete`, `hecha`, `mergeada`, `publicado`, `listo`, `comunicada`, `participó` o `cerrada`. Si ninguno está, el primer estado de tipo `done`, o el único `closed` que no sea un descarte.                          |
+| Issue cerrado como completed                                                                   | Los mismos nombres de cierre de la fila anterior.                                                                                                                                                                    |
+| Issue cerrado como not planned o duplicate                                                     | `cancelled`, `closed`, `descartada`, `descartado`, `no avanza`, `no comunicable`, `no contactar` o `perdida`                                                                                                         |
 
-Una PR abierta deja la tarea en progreso si el título o el cuerpo mencionan
-`#N` (o `owner/repo#N`) o si el timeline del issue tiene un evento
-`cross-referenced` o `connected` hacia esa PR. También cuenta un draft. Esa
-mención, y ese cross-reference, no completan la tarea: si la PR se mergea sin
-más, el issue sigue abierto y la tarea vuelve al estado de pendiente.
+Una PR abierta deja la tarea en progreso si el título o el cuerpo mencionan `#N`
+(o `owner/repo#N`) o si el timeline del issue tiene un evento `cross-referenced`
+o `connected` hacia esa PR. También cuenta un draft. Esa mención, y ese
+cross-reference, no completan la tarea: si la PR se mergea sin más, el issue
+sigue abierto y la tarea vuelve al estado de pendiente.
 
 La tarea pasa a hecha por una PR solo cuando GitHub lista el issue en
 `closingIssuesReferences` de esa PR y la PR está mergeada. Eso es lo que
@@ -51,11 +52,11 @@ Al importar una tarea que ya está cerrada en ClickUp, el issue nace cerrado:
 `descartada` como not planned.
 
 Cada lista puede tener su propio set. La de propuestas sigue en `to do` /
-`complete`. Marketing, CRM y agentes usan nombres en español (`idea`,
-`planificada`, `identificado`, `por hacer`, `mergeada`, `hecha`, …). El nombre
-se compara sin distinguir mayúsculas y tiene que coincidir con el tipo: un
-`activo` de tipo `done` no cuenta como pendiente. Si no hay un nombre conocido,
-el pendiente cae al estado `open` y el cierre al estado `done`.
+`complete`. Marketing y agentes usan nombres en español (`idea`, `planificada`,
+`identificado`, `por hacer`, `mergeada`, `hecha`, …). El nombre se compara sin
+distinguir mayúsculas y tiene que coincidir con el tipo: un `activo` de tipo
+`done` no cuenta como pendiente. Si no hay un nombre conocido, el pendiente cae
+al estado `open` y el cierre al estado `done`.
 
 La sync no crea estados. Si el estado buscado no está en la lista, la tarea no
 cambia de estado y el comentario de sync lo dice. Un fallo al leer o escribir
@@ -66,8 +67,8 @@ una tarea no cambia el estado que se informa de las demás.
 Cada subtarea es su propio issue, con el mismo marcador. Se intenta colgarla
 como sub-issue de GitHub. Si ya es sub-issue de ese padre, GitHub responde 422
 (`duplicate sub-issues` / `only have one parent`) y la sync lo toma como hecho.
-Si una subtarea falla de verdad, se anota esa tarea y se sigue con las demás.
-Si la API no permite sub-issues, el issue padre lleva un checklist entre
+Si una subtarea falla de verdad, se anota esa tarea y se sigue con las demás. Si
+la API no permite sub-issues, el issue padre lleva un checklist entre
 `<!-- clickup-subtasks:start -->` y `<!-- clickup-subtasks:end -->`.
 
 Labels del issue nuevo:
@@ -102,12 +103,79 @@ Antes de crear un issue se listan los issues del repo, con paginación, y se
 busca el marcador en el cuerpo. Si está, no se crea otro. El mismo id en la
 misma corrida tampoco se crea dos veces.
 
-Las listas salen de `GET /space/{id}/list` y de las carpetas del espacio. Las
+El marcador del issue no es el único vínculo. `tombstones.json` guarda pares
+`taskId` / número de issue. Al crear un issue, la tarea recibe un comentario
+`clickup-sync:tombstone` que solo lleva la URL. También cuentan la URL de este
+repo en la descripción, en el custom field `github` o en un comentario. Si ese
+issue está cerrado, fue borrado o ya no tiene el marcador, la tarea queda como
+lápida: no se crea otro issue y no se copia la descripción de ClickUp al issue.
+
+Las listas salen de `GET /space/{id}/list` y de las carpetas del espacio. Solo
+entran a GitHub las de la allowlist que no caen en el filtro de privacidad. Las
 tareas se piden de a 100 (`page`), con subtareas y cerradas, hasta una página
-corta o `last_page`.
+corta o `last_page`. De una lista denegada solo se cuentan ids: no se crea el
+issue ni se escribe el vínculo de vuelta.
 
 Los dos workflows comparten el grupo de concurrencia `clickup-github-sync`, sin
 cancelar el que ya corre, para no crear dos issues de la misma tarea.
+
+## Privacidad
+
+Nada del CRM llega a GitHub. La sync es fail closed: sin allowlist explícita no
+se publica, y un motivo de denegación gana aunque la lista esté permitida. La
+denegación también corta el camino inverso: no se crea el issue, no se cuelga
+como sub-issue, no se escribe la URL de GitHub en la tarea y no se agregan
+comentarios de sync ni de orquestación.
+
+Allowlist, sin secretos, en
+[`scripts/clickup-sync/allowlist.json`](../scripts/clickup-sync/allowlist.json).
+Solo cuenta el id numérico de la lista. Un nombre, aunque sea el de una lista
+pública, no publica. Una carpeta tampoco: ni por nombre ni por id. Un nombre en
+el JSON se ignora.
+
+Ids confirmados: `901717708587` y `901717736453`.
+
+Pendientes de confirmación, y por eso fuera de la allowlist:
+`Producto↔Marketing`, `Cursor · Agentes`, `Propuesta Trenes Tandil` y
+`Marketing`. `Novedades enviadas` queda afuera a propósito: tiene suscriptores.
+Su id no está en el repo.
+
+`CLICKUP_SYNC_ALLOWLIST` suma ids de lista, separados por coma. No saca una
+denegación. `CLICKUP_SYNC_ALLOW_FOLDERS` no se lee.
+
+Denegación fija, en código. No se puede anular con el JSON ni con el entorno.
+
+| Motivo            | Qué cubre                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deny-list`       | Cuentas `901717736443`, Contactos `901717736444`, Alianzas y sponsors `901717736445`, Voluntarios y Hackatrain `901717736446`. También una lista llamada `Contactos` o `Contactos y contexto`, aunque el id sea otro.                                                                                                                                                                             |
+| `deny-folder`     | La carpeta CRM (el nombre es `crm`), una carpeta llamada `Contactos` o `Contactos y contexto`, y cualquier carpeta que contenga una lista CRM. Una lista nueva ahí también se salta.                                                                                                                                                                                                              |
+| `deny-task`       | La tarea `86e3nbvhz`. Su id de lista no quedó en el issue después de retirar el cuerpo, así que se niega en cualquier lista.                                                                                                                                                                                                                                                                      |
+| `deny-tag`        | Etiquetas `voluntario`, `voluntarios`, `contacto`, `contactos`, `lead` o `leads`                                                                                                                                                                                                                                                                                                                  |
+| `deny-fuente`     | Custom field `fuente` o `source` en `sumate`, `email` (el alta de `hola@`) o `hola@`. También las etiquetas `fuente-sumate`, `fuente-email` y `fuente-hola`.                                                                                                                                                                                                                                      |
+| `deny-content`    | En una lista permitida: un correo cuyo dominio no es exactamente `enrailar.com` o `sinequix.com` ni un subdominio de esos dos (`evilenrailar.com` y `enrailar.com.evil.io` no pasan; `ENRAILAR.COM` sí); un correo escrito como `nombre arroba gmail punto com`; un teléfono; el nombre o la frase `contactos y contexto`; o una línea que es solo `Contactos`. "contactos de prensa" no alcanza. |
+| `tombstone`       | La tarea ya tuvo issue. El vínculo está en `tombstones.json` o en la tarea, y el issue no se vuelve a crear.                                                                                                                                                                                                                                                                                      |
+| `not-allowlisted` | Cualquier otra lista o carpeta                                                                                                                                                                                                                                                                                                                                                                    |
+
+`email` es el valor que escribe el worker de `hola@`. No es una dirección.
+
+El log de cada corrida imprime cantidades, no personas:
+
+```text
+skipped deny-list=0 deny-folder=0 deny-task=0 deny-tag=0 deny-fuente=0 deny-content=0 tombstone=0 not-allowlisted=0
+```
+
+`deny-task`, `deny-content` y `tombstone` también dejan una línea
+`task=<id> skipped reason=<motivo>`. Esa línea no lleva nombre, correo, ciudad,
+título ni cuerpo. El resto de los motivos solo suma en el contador.
+
+Un issue que ya se haya publicado queda fuera de esta sync: no se borra ni se
+actualiza desde una tarea denegada, y una lápida no lo republica.
+
+Sumate y el correo a `hola@` siguen guardando la ficha en ClickUp y en D1. El
+título y la descripción de esas tareas no llevan perfil, lugar, intenciones, id
+de ficha, asunto ni cuerpo. Eso queda en un comentario con `notify_all` en
+falso. La web no abre issues. Los logs de la API y de `email-in` anotan la ruta
+y el id del registro, no el formulario.
 
 ## Personas
 

@@ -1,4 +1,4 @@
-import { publicCrmText, upsertCrmContact, type CrmFetch } from "@enrailar/shared";
+import { type CrmFetch, upsertCrmContact } from "@enrailar/shared";
 import type { InboundContact } from "./contact.ts";
 import type { RetryStore } from "./retry.ts";
 
@@ -13,7 +13,10 @@ type CrmEnv = {
   fetchImpl?: typeof fetch;
 };
 
-export async function syncContact(env: CrmEnv, contact: InboundContact): Promise<"synced" | "retry" | "skipped"> {
+export async function syncContact(
+  env: CrmEnv,
+  contact: InboundContact,
+): Promise<"synced" | "retry" | "skipped"> {
   if (!acceptableSender(contact.sender)) return "skipped";
   try {
     await writeContact(env, contact);
@@ -46,16 +49,31 @@ export async function drainContacts(env: CrmEnv, limit: number): Promise<void> {
   }
 }
 
-async function writeContact(env: CrmEnv, contact: InboundContact): Promise<void> {
+export function contactTaskCopy(contact: InboundContact): {
+  title: string;
+  summary: string;
+  note: string;
+} {
+  return {
+    title: "Contacto por correo",
+    summary: "Mensaje recibido por correo.",
+    note:
+      `Remitente: ${contact.sender}\nAsunto: ${contact.subject}\n\n${contact.body}`,
+  };
+}
+
+async function writeContact(
+  env: CrmEnv,
+  contact: InboundContact,
+): Promise<void> {
   if (!configured(env.token, env.listId)) throw new Error("clickup config");
-  const title = publicCrmText(contact.subject, contact.sender, undefined) || "Contacto por correo";
-  const summary = publicCrmText(contact.body, contact.sender, undefined) || "Mensaje recibido por correo.";
+  const copy = contactTaskCopy(contact);
   const result = await upsertCrmContact(
     {
       email: contact.sender,
-      title,
-      summary,
-      note: `Remitente: ${contact.sender}\nAsunto: ${contact.subject}\n\n${contact.body}`,
+      title: copy.title,
+      summary: copy.summary,
+      note: copy.note,
       fuente: "email",
       tags: ["contacto"],
     },

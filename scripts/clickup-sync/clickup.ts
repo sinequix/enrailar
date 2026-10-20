@@ -13,6 +13,9 @@ export type ClickupStatus = {
 
 export type ClickupList = {
   id: string;
+  name: string;
+  folderId: string | null;
+  folderName: string | null;
   statuses: ClickupStatus[];
 };
 
@@ -35,6 +38,9 @@ export type ClickupTask = {
   tags: string[];
   parentId: string | null;
   listId: string;
+  listName: string;
+  folderId: string | null;
+  folderName: string | null;
   customFields: ClickupCustomField[];
 };
 
@@ -69,33 +75,47 @@ export class ClickupClient {
     assertId(spaceId, "space");
     const folderless = await this.#get(`/space/${spaceId}/list?archived=false`);
     const folders = await this.#get(`/space/${spaceId}/folder?archived=false`);
-    const rawLists = [...asArray(asRecord(folderless)?.lists)];
+    const rawLists: RawList[] = [];
+    for (const raw of asArray(asRecord(folderless)?.lists)) {
+      rawLists.push({ raw, folderId: null, folderName: null });
+    }
     for (const folder of asArray(asRecord(folders)?.folders)) {
       const record = asRecord(folder);
-      const nested = asArray(record?.lists);
-      if (nested.length > 0) {
-        rawLists.push(...nested);
-        continue;
+      if (!record) continue;
+      const folderId = idString(record.id);
+      const folderName = asString(record.name);
+      const nested = asArray(record.lists);
+      let source = nested;
+      if (source.length === 0 && folderId) {
+        const folderLists = await this.#get(
+          `/folder/${folderId}/list?archived=false`,
+        );
+        source = asArray(asRecord(folderLists)?.lists);
       }
-      const folderId = idString(record?.id);
-      if (!folderId) continue;
-      const folderLists = await this.#get(
-        `/folder/${folderId}/list?archived=false`,
-      );
-      rawLists.push(...asArray(asRecord(folderLists)?.lists));
+      for (const raw of source) {
+        rawLists.push({ raw, folderId, folderName });
+      }
     }
 
     const lists = new Map<string, ClickupList>();
-    for (const raw of rawLists) {
-      const record = asRecord(raw);
+    for (const entry of rawLists) {
+      const record = asRecord(entry.raw);
       const id = idString(record?.id);
-      if (!id || lists.has(id)) continue;
+      if (!id) continue;
+      const current = lists.get(id);
+      if (current?.folderId && !entry.folderId) continue;
       let statuses = parseStatuses(record?.statuses);
       if (statuses.length === 0) {
         const detail = asRecord(await this.#get(`/list/${id}`));
         statuses = parseStatuses(detail?.statuses);
       }
-      lists.set(id, { id, statuses });
+      lists.set(id, {
+        id,
+        name: asString(record?.name) ?? current?.name ?? "",
+        folderId: entry.folderId ?? current?.folderId ?? null,
+        folderName: entry.folderName ?? current?.folderName ?? null,
+        statuses: statuses.length > 0 ? statuses : current?.statuses ?? [],
+      });
     }
     return [...lists.values()];
   }
@@ -303,8 +323,18 @@ function parseTask(value: unknown): ClickupTask | null {
     tags: parseTags(record.tags),
     parentId: parentId(record.parent),
     listId: idString(list?.id) ?? "",
+    listName: asString(list?.name) ?? "",
+    folderId: idString(folderOf(record, list)?.id),
+    folderName: asString(folderOf(record, list)?.name),
     customFields: parseFields(record.custom_fields),
   };
+}
+
+function folderOf(
+  record: Record<string, unknown>,
+  list: Record<string, unknown> | null,
+): Record<string, unknown> | null {
+  return asRecord(record.folder) ?? asRecord(list?.folder);
 }
 
 function parseStatuses(value: unknown): ClickupStatus[] {
@@ -373,16 +403,60 @@ function parseFields(value: unknown): ClickupCustomField[] {
     const record = asRecord(raw);
     const id = idString(record?.id);
     const name = asString(record?.name);
-    if (!id || !name) continue;
-    const rawValue = record?.value;
+    if (!record || !id || !name) continue;
     fields.push({
       id,
       name,
-      type: asString(record?.type) ?? "",
-      value: typeof rawValue === "string" ? rawValue : null,
+      type: asString(record.type) ?? "",
+      value: fieldValue(record),
     });
   }
   return fields;
+}
+
+function fieldValue(record: Record<string, unknown>): string | null {
+  const options = asArray(asRecord(record.type_config)?.options);
+  const raw = record.value;
+  if (typeof raw === "string") {
+    const named = optionName(options, raw);
+    return named ?? raw;
+  }
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    for (const option of options) {
+      const item = asRecord(option);
+      const order = item?.orderindex;
+      if (order === raw || Number(order) === raw) {
+        return asString(item?.name) ?? asString(item?.label);
+      }
+    }
+    const byIndex = asRecord(options[raw]);
+    return asString(byIndex?.name) ?? asString(byIndex?.label);
+  }
+  if (Array.isArray(raw)) {
+    const parts: string[] = [];
+    for (const item of raw) {
+      const text = typeof item === "string"
+        ? item
+        : asString(asRecord(item)?.name);
+      if (text && text.trim().length > 0) parts.push(text.trim());
+    }
+    return parts.length > 0 ? parts.join(", ") : null;
+  }
+  const object = asRecord(raw);
+  if (object) return asString(object.name) ?? asString(object.label);
+  return null;
+}
+
+function optionName(options: unknown[], value: string): string | null {
+  for (const option of options) {
+    const item = asRecord(option);
+    if (!item) continue;
+    const id = idString(item.id);
+    const name = asString(item.name) ?? asString(item.label);
+    if (id === value) return name ?? value;
+    if (name === value) return name;
+  }
+  return null;
 }
 
 function commentText(value: unknown): string | null {
@@ -410,6 +484,12 @@ function integers(ids: readonly string[]): number[] {
   }
   return values;
 }
+
+type RawList = {
+  raw: unknown;
+  folderId: string | null;
+  folderName: string | null;
+};
 
 function assertId(value: string, label: string): void {
   if (!/^[A-Za-z0-9_-]+$/.test(value)) {
