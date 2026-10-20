@@ -1,5 +1,5 @@
 import type { ClickupList, ClickupTask } from "./clickup.ts";
-import { asArray, asRecord, asString, idString } from "./json.ts";
+import { asArray, asRecord, idString } from "./json.ts";
 
 /** Listas del CRM. El id gana sobre cualquier allowlist, env o nombre. */
 export const CRM_LISTS = [
@@ -9,7 +9,14 @@ export const CRM_LISTS = [
   { id: "901717736446", name: "Voluntarios y Hackatrain" },
 ] as const;
 
-const DENY_TAGS = new Set(["voluntario", "contacto", "lead"]);
+const DENY_TAGS = new Set([
+  "voluntario",
+  "voluntarios",
+  "contacto",
+  "contactos",
+  "lead",
+  "leads",
+]);
 const FUENTE_TAGS = new Set(["fuente-sumate", "fuente-email", "fuente-hola"]);
 const FUENTE_FIELDS = new Set(["fuente", "source"]);
 
@@ -41,8 +48,6 @@ export type SkipCounts = Record<SkipReason, number>;
 
 export type SyncPolicy = {
   allowListIds: ReadonlySet<string>;
-  allowFolderIds: ReadonlySet<string>;
-  allowNames: ReadonlySet<string>;
   denyListIds: ReadonlySet<string>;
   denyFolderIds: ReadonlySet<string>;
 };
@@ -50,6 +55,7 @@ export type SyncPolicy = {
 export type SpacePrivacy = {
   policy: SyncPolicy;
   denyFolderIds: ReadonlySet<string>;
+  tombstones: ReadonlySet<string>;
 };
 
 export type PrivacySubject = {
@@ -66,7 +72,6 @@ export type PrivacySubject = {
 
 type AllowEnv = {
   CLICKUP_SYNC_ALLOWLIST?: string;
-  CLICKUP_SYNC_ALLOW_FOLDERS?: string;
 };
 
 export function emptySkips(): SkipCounts {
@@ -144,25 +149,13 @@ export function policyFromConfig(
 ): SyncPolicy {
   const record = asRecord(config);
   const allowListIds = new Set<string>();
-  const allowFolderIds = new Set<string>();
-  const allowNames = new Set<string>();
-  collectEntries(record?.lists, allowListIds, allowNames);
-  collectEntries(record?.folders, allowFolderIds, allowNames);
+  collectIds(record?.lists, allowListIds);
   for (const id of splitIds(env.CLICKUP_SYNC_ALLOWLIST)) allowListIds.add(id);
-  for (const id of splitIds(env.CLICKUP_SYNC_ALLOW_FOLDERS)) {
-    allowFolderIds.add(id);
-  }
   const denyListIds = new Set<string>(CRM_LISTS.map((list) => list.id));
   for (const id of denyListIds) allowListIds.delete(id);
   const denyFolderIds = new Set<string>();
   collectIds(record?.denyFolders, denyFolderIds);
-  return {
-    allowListIds,
-    allowFolderIds,
-    allowNames,
-    denyListIds,
-    denyFolderIds,
-  };
+  return { allowListIds, denyListIds, denyFolderIds };
 }
 
 export async function loadSyncPolicy(env?: AllowEnv): Promise<SyncPolicy> {
@@ -171,7 +164,6 @@ export async function loadSyncPolicy(env?: AllowEnv): Promise<SyncPolicy> {
   );
   const resolved = env ?? {
     CLICKUP_SYNC_ALLOWLIST: Deno.env.get("CLICKUP_SYNC_ALLOWLIST"),
-    CLICKUP_SYNC_ALLOW_FOLDERS: Deno.env.get("CLICKUP_SYNC_ALLOW_FOLDERS"),
   };
   return policyFromConfig(JSON.parse(text), resolved);
 }
@@ -179,6 +171,7 @@ export async function loadSyncPolicy(env?: AllowEnv): Promise<SyncPolicy> {
 export function spacePrivacy(
   lists: readonly ClickupList[],
   policy: SyncPolicy,
+  tombstones: ReadonlySet<string> = new Set(),
 ): SpacePrivacy {
   const denyFolderIds = new Set(policy.denyFolderIds);
   for (const list of lists) {
@@ -190,7 +183,7 @@ export function spacePrivacy(
       denyFolderIds.add(list.folderId);
     }
   }
-  return { policy, denyFolderIds };
+  return { policy, denyFolderIds, tombstones };
 }
 
 export function listGate(
@@ -204,9 +197,7 @@ export function listGate(
   if (isCrmFolderName(list.folderName)) return "deny-folder";
   const named = deniedPlace(list.name, list.folderName);
   if (named) return named;
-  if (isListed(list.id, list.name, list.folderId, list.folderName, space)) {
-    return null;
-  }
+  if (isListed(list.id, space)) return null;
   return "not-allowlisted";
 }
 
@@ -233,17 +224,12 @@ export function classifyTask(
   if (tag === "deny-fuente" || deniedFuente(subject.fuente)) {
     return { action: "skip", reason: "deny-fuente" };
   }
-  if (
-    isListed(
-      subject.listId,
-      subject.listName,
-      subject.folderId,
-      subject.folderName,
-      space,
-    )
-  ) {
+  if (isListed(subject.listId, space)) {
     if (deniedContent(subject.name ?? "", subject.text ?? "")) {
       return { action: "skip", reason: "deny-content" };
+    }
+    if (subject.taskId && space.tombstones.has(subject.taskId)) {
+      return { action: "skip", reason: "tombstone" };
     }
     return { action: "sync" };
   }
@@ -283,21 +269,8 @@ function rank(reason: SkipReason): number {
   }
 }
 
-function isListed(
-  listId: string,
-  listName: string,
-  folderId: string | null,
-  folderName: string | null,
-  space: SpacePrivacy,
-): boolean {
-  const { policy } = space;
-  if (listId.length > 0 && policy.allowListIds.has(listId)) return true;
-  if (folderId && policy.allowFolderIds.has(folderId)) return true;
-  if (listName && policy.allowNames.has(normalizeLabel(listName))) return true;
-  if (folderName && policy.allowNames.has(normalizeLabel(folderName))) {
-    return true;
-  }
-  return false;
+function isListed(listId: string, space: SpacePrivacy): boolean {
+  return listId.length > 0 && space.policy.allowListIds.has(listId);
 }
 
 function deniedTask(taskId: string | undefined): boolean {
@@ -319,8 +292,31 @@ function deniedPlace(
 }
 
 function deniedContent(name: string, text: string): boolean {
-  return hasContactosContent(name, text) ||
-    hasExternalEmail(`${name}\n${text}`);
+  const blob = `${name}\n${text}`;
+  return hasContactosContent(name, text) || hasExternalEmail(blob) ||
+    hasSpelledEmail(blob) || hasPhone(blob);
+}
+
+function hasSpelledEmail(text: string): boolean {
+  return /[\p{L}\d._%+-]+\s+arroba\s+[\p{L}\d-]+(?:\s+punto\s+[\p{L}\d-]+)+/iu
+    .test(text);
+}
+
+function hasPhone(text: string): boolean {
+  const international = text.match(/\+\d[\d\s().-]{7,}\d/g) ?? [];
+  for (const chunk of international) {
+    const digits = chunk.replace(/\D/g, "");
+    if (digits.length >= 8 && digits.length <= 15) return true;
+  }
+  for (
+    const match of text.matchAll(
+      /(?:^|[^\d])((?:\(?\d{2,5}\)?[\s.-]+){1,3}\d{3,5})\b/g,
+    )
+  ) {
+    const digits = match[1]?.replace(/\D/g, "") ?? "";
+    if (digits.length >= 8 && digits.length <= 15) return true;
+  }
+  return false;
 }
 
 function hasContactosContent(name: string, text: string): boolean {
@@ -379,25 +375,6 @@ function deniedFuente(value: string | null): boolean {
       return true;
     default:
       return key.includes("hola@");
-  }
-}
-
-function collectEntries(
-  value: unknown,
-  ids: Set<string>,
-  names: Set<string>,
-): void {
-  for (const raw of asArray(value)) {
-    const record = asRecord(raw);
-    if (!record) {
-      const name = asString(raw);
-      if (name?.trim()) names.add(normalizeLabel(name));
-      continue;
-    }
-    const id = idString(record.id);
-    if (id && /^\d+$/.test(id)) ids.add(id);
-    const name = asString(record.name);
-    if (name?.trim()) names.add(normalizeLabel(name));
   }
 }
 

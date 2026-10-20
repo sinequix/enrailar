@@ -13,7 +13,6 @@ import {
   formatSkips,
   listGate,
   loadSyncPolicy,
-  normalizeLabel,
   policyFromConfig,
   type PrivacySubject,
   spacePrivacy,
@@ -50,34 +49,52 @@ function list(
   };
 }
 
+const CONFIRMED = ["901717708587", "901717736453"];
+
 function policy(): SyncPolicy {
-  return policyFromConfig({
-    lists: [
-      { name: "Producto↔Marketing" },
-      { name: "Cursor · Agentes" },
-      { name: "Propuesta Trenes Tandil" },
-      { name: "Marketing" },
-    ],
-    folders: [{ name: "Marketing" }],
-  });
+  return policyFromConfig({ lists: [{ id: MARKETING }] });
 }
 
-Deno.test("la allowlist del repo nombra el trabajo público y no incluye el CRM", async () => {
+Deno.test("la allowlist del repo es solo por id de lista y no incluye el CRM", async () => {
   const loaded = await loadSyncPolicy({});
-  for (
-    const name of [
-      "Producto↔Marketing",
-      "Cursor · Agentes",
-      "Propuesta Trenes Tandil",
-      "Marketing",
-    ]
-  ) {
-    assert(loaded.allowNames.has(normalizeLabel(name)));
-  }
+  assertEquals([...loaded.allowListIds].sort(), [...CONFIRMED].sort());
   for (const crm of CRM_LISTS) {
     assert(loaded.denyListIds.has(crm.id));
     assertFalse(loaded.allowListIds.has(crm.id));
   }
+});
+
+Deno.test("un nombre permitido con un id desconocido no se publica", () => {
+  const loaded = policyFromConfig({
+    lists: [
+      { name: "Marketing" },
+      { name: "Producto↔Marketing" },
+      { name: "Cursor · Agentes" },
+      { name: "Propuesta Trenes Tandil" },
+    ],
+    folders: [{ id: "901700000002", name: "Marketing" }],
+  });
+  assertEquals(loaded.allowListIds.size, 0);
+  const space = spacePrivacy([], loaded);
+  assertEquals(
+    listGate(
+      list("901700009999", "Marketing", "901700000002", "Marketing"),
+      space,
+    ),
+    "not-allowlisted",
+  );
+  assertEquals(
+    classifyTask(
+      subject({
+        listId: "901700009999",
+        listName: "Producto↔Marketing",
+        folderId: "901700000002",
+        folderName: "Marketing",
+      }),
+      space,
+    ),
+    { action: "skip", reason: "not-allowlisted" },
+  );
 });
 
 Deno.test("un id del CRM en la allowlist o en el entorno sigue denegado", () => {
@@ -188,7 +205,7 @@ Deno.test("etiqueta, fuente y lista desconocida se saltan; la lista permitida pa
       tags: [],
       fuente: null,
     }, space),
-    { action: "sync" },
+    { action: "skip", reason: "not-allowlisted" },
   );
   assertEquals(
     classifyTask({
@@ -199,8 +216,21 @@ Deno.test("etiqueta, fuente y lista desconocida se saltan; la lista permitida pa
       tags: [],
       fuente: null,
     }, space),
-    { action: "sync" },
+    { action: "skip", reason: "not-allowlisted" },
   );
+  for (const tag of ["voluntarios", "contactos", "leads"]) {
+    assertEquals(
+      classifyTask({
+        listId: MARKETING,
+        listName: "Marketing",
+        folderId: null,
+        folderName: null,
+        tags: [tag],
+        fuente: null,
+      }, space),
+      { action: "skip", reason: "deny-tag" },
+    );
+  }
 });
 
 Deno.test("un dropdown de fuente se lee como texto", async () => {
@@ -407,6 +437,8 @@ Deno.test("un correo externo o un bloque Contactos no se publica; el dominio int
       "equipo@enrailar.com",
       "ops@sinequix.com",
       "mesa@mail.enrailar.com",
+      "equipo@ENRAILAR.COM",
+      "mesa@mail.SINEQUiX.com",
     ]
   ) {
     assertEquals(
@@ -414,6 +446,40 @@ Deno.test("un correo externo o un bloque Contactos no se publica; el dominio int
       { action: "sync" },
     );
   }
+  for (
+    const mail of [
+      "lead@evilenrailar.com",
+      "lead@enrailar.com.evil.io",
+      "lead@evilsinequix.com",
+      "lead@sinequix.com.evil.io",
+    ]
+  ) {
+    assertEquals(
+      classifyTask(subject({ text: `Escribir a ${mail}.` }), space),
+      { action: "skip", reason: "deny-content" },
+    );
+  }
+  for (
+    const text of [
+      "nombre arroba gmail punto com",
+      "Nombre ARROBA Gmail Punto Com",
+      "equipo arroba enrailar punto com",
+      "Llamar al +54 9 249 555 0134.",
+      "Teléfono 011 15 5555 0134.",
+    ]
+  ) {
+    assertEquals(
+      classifyTask(subject({ text }), space),
+      { action: "skip", reason: "deny-content" },
+    );
+  }
+  assertEquals(
+    classifyTask(
+      subject({ text: "Plan 2026. Lista 901717708587." }),
+      space,
+    ),
+    { action: "sync" },
+  );
   assertEquals(
     classifyTask(
       subject({ text: "Los contactos de prensa confirman el horario." }),
@@ -442,6 +508,103 @@ Deno.test("un correo externo o un bloque Contactos no se publica; el dominio int
       space,
     ),
     { action: "skip", reason: "deny-task" },
+  );
+});
+
+Deno.test("classifyTask niega el id de una lista del CRM", () => {
+  const space = spacePrivacy([], policy());
+  assertEquals(
+    classifyTask(subject({ listId: VOLUNTEER, listName: "Marketing" }), space),
+    { action: "skip", reason: "deny-list" },
+  );
+});
+
+Deno.test("classifyTask niega la carpeta del CRM", () => {
+  const lists = [
+    list(VOLUNTEER, "Voluntarios y Hackatrain", CRM_FOLDER, "CRM"),
+  ];
+  const space = spacePrivacy(lists, policy());
+  assertEquals(
+    classifyTask(
+      subject({
+        listId: SIBLING,
+        listName: "Notas internas",
+        folderId: CRM_FOLDER,
+        folderName: "CRM",
+      }),
+      space,
+    ),
+    { action: "skip", reason: "deny-folder" },
+  );
+});
+
+Deno.test("classifyTask niega la tarea bloqueada", () => {
+  const space = spacePrivacy([], policy());
+  assertEquals(
+    classifyTask(subject({ taskId: DENIED_TASK_IDS[0] }), space),
+    { action: "skip", reason: "deny-task" },
+  );
+});
+
+Deno.test("classifyTask niega la etiqueta", () => {
+  const space = spacePrivacy([], policy());
+  assertEquals(
+    classifyTask(subject({ tags: ["voluntario"] }), space),
+    { action: "skip", reason: "deny-tag" },
+  );
+});
+
+Deno.test("classifyTask niega la fuente que llega como etiqueta", () => {
+  const space = spacePrivacy([], policy());
+  assertEquals(
+    classifyTask(subject({ tags: ["fuente-sumate"] }), space),
+    { action: "skip", reason: "deny-fuente" },
+  );
+});
+
+Deno.test("classifyTask niega la fuente que llega como campo", () => {
+  const space = spacePrivacy([], policy());
+  assertEquals(
+    classifyTask(subject({ fuente: "sumate" }), space),
+    { action: "skip", reason: "deny-fuente" },
+  );
+});
+
+Deno.test("classifyTask niega el contenido", () => {
+  const space = spacePrivacy([], policy());
+  assertEquals(
+    classifyTask(subject({ text: "Avisar a lead@gmail.com." }), space),
+    { action: "skip", reason: "deny-content" },
+  );
+});
+
+Deno.test("classifyTask niega una lápida", () => {
+  const space = spacePrivacy([], policy(), new Set(["tomb1"]));
+  assertEquals(
+    classifyTask(subject({ taskId: "tomb1" }), space),
+    { action: "skip", reason: "tombstone" },
+  );
+});
+
+Deno.test("classifyTask niega una lista que no está en la allowlist", () => {
+  const space = spacePrivacy([], policy());
+  assertEquals(
+    classifyTask(
+      subject({ listId: UNKNOWN, listName: "Marketing" }),
+      space,
+    ),
+    { action: "skip", reason: "not-allowlisted" },
+  );
+});
+
+Deno.test("classifyTask niega un id de lista vacío", () => {
+  const space = spacePrivacy([], policy());
+  assertEquals(
+    classifyTask(
+      subject({ listId: "", listName: "Producto↔Marketing" }),
+      space,
+    ),
+    { action: "skip", reason: "not-allowlisted" },
   );
 });
 

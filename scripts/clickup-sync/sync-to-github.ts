@@ -36,7 +36,11 @@ type Summary = { id: string; parentId: string | null };
 
 export async function syncClickupToGithub(ctx: SyncContext): Promise<void> {
   const lists = await loadLists(ctx);
-  const space = spacePrivacy(lists, ctx.policy);
+  const space = spacePrivacy(
+    lists,
+    ctx.policy,
+    new Set(ctx.tombstones.keys()),
+  );
   const skipped = emptySkips();
   const blocked = new Map<string, SkipReason>();
   const pending = new Map<string, Summary>();

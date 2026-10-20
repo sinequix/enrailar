@@ -107,7 +107,11 @@ async function reconcileIssue(
   }
   try {
     const task = await ctx.clickup.getTask(taskId);
-    const space = spacePrivacy(await loadLists(ctx), ctx.policy);
+    const space = spacePrivacy(
+      await loadLists(ctx),
+      ctx.policy,
+      new Set(ctx.tombstones.keys()),
+    );
     const decision = classifyTask(subjectOf(task), space);
     if (decision.action === "skip") {
       console.log(`task=${task.id} skipped reason=${decision.reason}`);

@@ -20,6 +20,7 @@ import {
   spacePrivacy,
   subjectOf,
 } from "./privacy.ts";
+import { loadTombstones } from "./tombstone.ts";
 import {
   parseRepository,
   referencedIssueNumbers,
@@ -286,7 +287,11 @@ async function postClickup(
     task = await clickup.getTask(taskId);
     const decision = classifyTask(
       subjectOf(task),
-      spacePrivacy(await clickup.listsInSpace(spaceId), await loadSyncPolicy()),
+      spacePrivacy(
+        await clickup.listsInSpace(spaceId),
+        await loadSyncPolicy(),
+        new Set((await loadTombstones()).keys()),
+      ),
     );
     if (decision.action === "skip") {
       console.log(`task=${taskId} skipped reason=${decision.reason}`);

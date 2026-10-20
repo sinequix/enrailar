@@ -1,7 +1,7 @@
 # Sync ClickUp ↔ GitHub
 
 El espacio de ClickUp Enrailar (`90177904660`) es donde se planifica. Solo las
-listas y carpetas de la allowlist tienen un issue en `sinequix/enrailar`. El
+listas cuyo id está en la allowlist tienen un issue en `sinequix/enrailar`. El
 resto se salta. Desde que ese issue existe, GitHub manda el estado, el asignado,
 las labels y las PR vinculadas.
 
@@ -129,33 +129,32 @@ comentarios de sync ni de orquestación.
 
 Allowlist, sin secretos, en
 [`scripts/clickup-sync/allowlist.json`](../scripts/clickup-sync/allowlist.json).
-Una entrada puede llevar `name`, `id`, o los dos. El nombre se compara sin
-mayúsculas y sin distinguir `·`, `-` o `↔`. Vale igual si es lista o carpeta:
-una carpeta permitida publica sus listas, salvo las denegadas.
+Solo cuenta el id numérico de la lista. Un nombre, aunque sea el de una lista
+pública, no publica. Una carpeta tampoco: ni por nombre ni por id. Un nombre en
+el JSON se ignora.
 
-Hoy los nombres permitidos son los de trabajo público que ya tenían issues:
+Ids confirmados: `901717708587` y `901717736453`.
+
+Pendientes de confirmación, y por eso fuera de la allowlist:
 `Producto↔Marketing`, `Cursor · Agentes`, `Propuesta Trenes Tandil` y
-`Marketing`. Los ids numéricos de esas listas no están en el repo; se agregan en
-el JSON cuando se confirman. Dos variables de entorno suman ids, no sacan
-denegaciones:
+`Marketing`. `Novedades enviadas` queda afuera a propósito: tiene suscriptores.
+Su id no está en el repo.
 
-| Variable                     | Qué suma                           |
-| ---------------------------- | ---------------------------------- |
-| `CLICKUP_SYNC_ALLOWLIST`     | ids de lista, separados por coma   |
-| `CLICKUP_SYNC_ALLOW_FOLDERS` | ids de carpeta, separados por coma |
+`CLICKUP_SYNC_ALLOWLIST` suma ids de lista, separados por coma. No saca una
+denegación. `CLICKUP_SYNC_ALLOW_FOLDERS` no se lee.
 
 Denegación fija, en código. No se puede anular con el JSON ni con el entorno.
 
-| Motivo            | Qué cubre                                                                                                                                                                                                                                                        |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `deny-list`       | Cuentas `901717736443`, Contactos `901717736444`, Alianzas y sponsors `901717736445`, Voluntarios y Hackatrain `901717736446`. También una lista llamada `Contactos` o `Contactos y contexto`, aunque el id sea otro.                                            |
-| `deny-folder`     | La carpeta CRM (el nombre es `crm`), una carpeta llamada `Contactos` o `Contactos y contexto`, y cualquier carpeta que contenga una lista CRM. Una lista nueva ahí también se salta.                                                                             |
-| `deny-task`       | La tarea `86e3nbvhz`. Su id de lista no quedó en el issue después de retirar el cuerpo, así que se niega en cualquier lista.                                                                                                                                     |
-| `deny-tag`        | Etiquetas `voluntario`, `contacto` o `lead`                                                                                                                                                                                                                      |
-| `deny-fuente`     | Custom field `fuente` o `source` en `sumate`, `email` (el alta de `hola@`) o `hola@`. También las etiquetas `fuente-sumate`, `fuente-email` y `fuente-hola`.                                                                                                     |
-| `deny-content`    | En una lista permitida, un correo cuyo dominio no es `enrailar.com` ni `sinequix.com` (los subdominios de esos dos sí pasan), el nombre o la frase `contactos y contexto`, o una línea que es solo `Contactos`. Una frase como "contactos de prensa" no alcanza. |
-| `tombstone`       | La tarea ya tuvo issue. El vínculo está en `tombstones.json` o en la tarea, y el issue no se vuelve a crear.                                                                                                                                                     |
-| `not-allowlisted` | Cualquier otra lista o carpeta                                                                                                                                                                                                                                   |
+| Motivo            | Qué cubre                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deny-list`       | Cuentas `901717736443`, Contactos `901717736444`, Alianzas y sponsors `901717736445`, Voluntarios y Hackatrain `901717736446`. También una lista llamada `Contactos` o `Contactos y contexto`, aunque el id sea otro.                                                                                                                                                                             |
+| `deny-folder`     | La carpeta CRM (el nombre es `crm`), una carpeta llamada `Contactos` o `Contactos y contexto`, y cualquier carpeta que contenga una lista CRM. Una lista nueva ahí también se salta.                                                                                                                                                                                                              |
+| `deny-task`       | La tarea `86e3nbvhz`. Su id de lista no quedó en el issue después de retirar el cuerpo, así que se niega en cualquier lista.                                                                                                                                                                                                                                                                      |
+| `deny-tag`        | Etiquetas `voluntario`, `voluntarios`, `contacto`, `contactos`, `lead` o `leads`                                                                                                                                                                                                                                                                                                                  |
+| `deny-fuente`     | Custom field `fuente` o `source` en `sumate`, `email` (el alta de `hola@`) o `hola@`. También las etiquetas `fuente-sumate`, `fuente-email` y `fuente-hola`.                                                                                                                                                                                                                                      |
+| `deny-content`    | En una lista permitida: un correo cuyo dominio no es exactamente `enrailar.com` o `sinequix.com` ni un subdominio de esos dos (`evilenrailar.com` y `enrailar.com.evil.io` no pasan; `ENRAILAR.COM` sí); un correo escrito como `nombre arroba gmail punto com`; un teléfono; el nombre o la frase `contactos y contexto`; o una línea que es solo `Contactos`. "contactos de prensa" no alcanza. |
+| `tombstone`       | La tarea ya tuvo issue. El vínculo está en `tombstones.json` o en la tarea, y el issue no se vuelve a crear.                                                                                                                                                                                                                                                                                      |
+| `not-allowlisted` | Cualquier otra lista o carpeta                                                                                                                                                                                                                                                                                                                                                                    |
 
 `email` es el valor que escribe el worker de `hola@`. No es una dirección.
 
