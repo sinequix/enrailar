@@ -1,0 +1,21 @@
+# Post-merge: closes linked ClickUp tasks, comments on referenced issues and
+# deletes the head branch. Logic lives in sinequix/.github.
+name: post-merge
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: read
+
+jobs:
+  post-merge:
+    if: github.event.pull_request.merged == true
+    uses: sinequix/.github/.github/workflows/post-merge.yml@main
+    with:
+      # ClickUp ya lo actualiza github-to-clickup.yml (scripts/clickup-sync).
+      clickup: false
+    secrets: inherit
