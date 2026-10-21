@@ -1,4 +1,8 @@
-import { CONSENT_COPY, HACKATRAIN_WHEN, type VolunteerProfile } from "@enrailar/shared";
+import {
+  CONSENT_COPY,
+  HACKATRAIN_WHEN,
+  type VolunteerProfile,
+} from "@enrailar/shared";
 
 export const LOCALES = ["es", "en"] as const;
 
@@ -25,7 +29,12 @@ export const ARTICLE_URL = "https://x.com/tebayoso/status/2107894676426559739";
 export const POST_SLUG = "fase-1";
 
 /** Imagen OG compartida. Cada página la repite porque `openGraph` no se fusiona con el del layout. */
-export const OG_IMAGE = { url: `${SITE_URL}/brand/og.png`, width: 1200, height: 630, alt: "Enrailar" } as const;
+export const OG_IMAGE = {
+  url: `${SITE_URL}/brand/og.png`,
+  width: 1200,
+  height: 630,
+  alt: "Enrailar",
+} as const;
 
 export const SYNTHETIC_IMAGE = {
   es: "Imagen sintética ilustrativa",
@@ -48,7 +57,17 @@ interface Copy {
   description: string;
   tagline: string;
   skip: string;
-  nav: { vision: string; phase: string; next: string; hackatrain: string; join: string; blog: string; news: string };
+  nav: {
+    vision: string;
+    phase: string;
+    next: string;
+    hackatrain: string;
+    join: string;
+    blog: string;
+    news: string;
+    menuOpen: string;
+    menuClose: string;
+  };
   phase: string;
   heroEyebrow: string;
   heroLede: string;
@@ -209,10 +228,21 @@ interface Copy {
 export const COPY: Record<Locale, Copy> = {
   es: {
     title: "Enrailar · Recuperar los trenes de Argentina",
-    description: `Recuperar los trenes de Argentina. Fase 1: monitoreo. Hackatrain en ${HACKATRAIN_WHEN.es}.`,
+    description:
+      `Recuperar los trenes de Argentina. Fase 1: monitoreo. Hackatrain en ${HACKATRAIN_WHEN.es}.`,
     tagline: "Primero ver, después mover.",
     skip: "Ir al contenido",
-    nav: { vision: "Visión", phase: "Fase 1", next: "Qué viene", hackatrain: "Hackatrain", join: "Sumate", blog: "Bitácora", news: "Noticias" },
+    nav: {
+      vision: "Visión",
+      phase: "Fase 1",
+      next: "Qué viene",
+      hackatrain: "Hackatrain",
+      join: "Sumate",
+      blog: "Bitácora",
+      news: "Noticias",
+      menuOpen: "Abrir menú",
+      menuClose: "Cerrar menú",
+    },
     phase: "Fase 1 · monitoreo",
     heroEyebrow: "Proyecto abierto · Fase 1: monitoreo",
     heroLede:
@@ -229,7 +259,8 @@ export const COPY: Record<Locale, Copy> = {
     captionRobot: "Prototipo de inspección",
     captionStation: "Estación con casilleros",
     countdownLabel: "Hackatrain",
-    countdownNote: `El anuncio no fija un día. La referencia es ${HACKATRAIN_WHEN.es}. La cuenta regresiva aparece cuando haya una fecha.`,
+    countdownNote:
+      `El anuncio no fija un día. La referencia es ${HACKATRAIN_WHEN.es}. La cuenta regresiva aparece cuando haya una fecha.`,
     visionEyebrow: "Visión",
     visionHeading: "Trenes que vuelvan a servir",
     visionTitle: "Una red que se pueda volver a usar",
@@ -239,10 +270,25 @@ export const COPY: Record<Locale, Copy> = {
       "La organización que imaginamos reúne técnicos, trabajadores ferroviarios, municipios, comercios y usuarios. Los presupuestos, las propuestas y el avance se publican. Quienes operan y quienes firman una decisión de seguridad siguen siendo personas identificables.",
     ],
     principles: [
-      { title: "Abierto", body: "Código, datos y protocolos públicos, con licencia Apache-2.0." },
-      { title: "Cooperativo", body: "Técnicos, ferroviarios, municipios, comercios y usuarios en la misma mesa." },
-      { title: "Transparente", body: "Presupuestos, propuestas y avances se publican a medida que existen." },
-      { title: "Responsable", body: "Quien opera y quien firma una decisión de seguridad es una persona identificable." },
+      {
+        title: "Abierto",
+        body: "Código, datos y protocolos públicos, con licencia Apache-2.0.",
+      },
+      {
+        title: "Cooperativo",
+        body:
+          "Técnicos, ferroviarios, municipios, comercios y usuarios en la misma mesa.",
+      },
+      {
+        title: "Transparente",
+        body:
+          "Presupuestos, propuestas y avances se publican a medida que existen.",
+      },
+      {
+        title: "Responsable",
+        body:
+          "Quien opera y quien firma una decisión de seguridad es una persona identificable.",
+      },
     ],
     phaseEyebrow: "Fase 1 · monitoreo",
     phaseTitle: "Primero, saber qué hay",
@@ -269,32 +315,38 @@ export const COPY: Record<Locale, Copy> = {
     ],
     nextEyebrow: "Después del mapa",
     nextTitle: "Qué viene",
-    nextLede: "Una línea, no una promesa. Cada estación se abre cuando la anterior se puede medir.",
+    nextLede:
+      "Una línea, no una promesa. Cada estación se abre cuando la anterior se puede medir.",
     stations: [
       {
         title: "Inspección como servicio",
         when: "Primer producto",
-        body: "Auditoría de vía y seguimiento del mantenimiento, en Argentina y América Latina. Cada intervención queda escrita: el defecto, la obra y la capacidad que se recupera.",
+        body:
+          "Auditoría de vía y seguimiento del mantenimiento, en Argentina y América Latina. Cada intervención queda escrita: el defecto, la obra y la capacidad que se recupera.",
       },
       {
         title: "Última milla por estaciones",
         when: "Primer corredor",
-        body: "Depósitos regionales y estaciones usadas como centros chicos de logística. El primer mercado es la paquetería, con repartidores locales que completan la entrega.",
+        body:
+          "Depósitos regionales y estaciones usadas como centros chicos de logística. El primer mercado es la paquetería, con repartidores locales que completan la entrega.",
       },
       {
         title: "Trenes taquilla",
         when: "Piloto",
-        body: "Formaciones con módulos y casilleros. Retiro con un código y módulos que se cambian en el andén para que el tren no tenga que esperar.",
+        body:
+          "Formaciones con módulos y casilleros. Retiro con un código y módulos que se cambian en el andén para que el tren no tenga que esperar.",
       },
       {
         title: "Escenarios de carga",
         when: "Estudio",
-        body: "Por tonelaje y velocidad: de paquetería y repuestos a contenedores y carga pesada, donde la infraestructura ya aguante. Para estudiar, no para prometer.",
+        body:
+          "Por tonelaje y velocidad: de paquetería y repuestos a contenedores y carga pesada, donde la infraestructura ya aguante. Para estudiar, no para prometer.",
       },
       {
         title: "Conexión con Chile",
         when: "Estudio regional",
-        body: "Una conexión trasandina pide estudio propio: trazado histórico y alternativas, pendientes, túneles, trochas, clima, aduanas, demanda y financiamiento.",
+        body:
+          "Una conexión trasandina pide estudio propio: trazado histórico y alternativas, pendientes, túneles, trochas, clima, aduanas, demanda y financiamiento.",
       },
     ],
     hackatrainEyebrow: "Lanzamiento público",
@@ -309,14 +361,18 @@ export const COPY: Record<Locale, Copy> = {
     ],
     hackatrainCta: "Preinscribirme",
     blogTitle: "Bitácora",
-    blogDeck: "Notas de trabajo del proyecto. Lo que se decide, lo que se mide y lo que todavía no se sabe.",
+    blogDeck:
+      "Notas de trabajo del proyecto. Lo que se decide, lo que se mide y lo que todavía no se sabe.",
     postTitle: "Recuperar los trenes empieza por verlos",
-    postDeck: "Mapa, inspección y un corredor que funcione. El texto de origen está en X.",
+    postDeck:
+      "Mapa, inspección y un corredor que funcione. El texto de origen está en X.",
     postSource: "Texto de origen",
     participate: "Sumate",
-    joinLede: "Una sola ficha. Marcá lo que querés hacer. La lee una persona del proyecto.",
+    joinLede:
+      "Una sola ficha. Marcá lo que querés hacer. La lee una persona del proyecto.",
     joinMail: "También podés escribir a {email}.",
-    formHint: "Podés elegir más de una opción. Hace falta la ciudad o la región.",
+    formHint:
+      "Podés elegir más de una opción. Hace falta la ciudad o la región.",
     consent: CONSENT_COPY,
     email: "Correo",
     name: "Nombre",
@@ -347,7 +403,8 @@ export const COPY: Record<Locale, Copy> = {
     send: "Enviar",
     sending: "Enviando…",
     accepted: "Recibimos la solicitud.",
-    acceptedNewsletter: "Recibimos la solicitud. Si pediste el boletín, te llega un correo para confirmarlo.",
+    acceptedNewsletter:
+      "Recibimos la solicitud. Si pediste el boletín, te llega un correo para confirmarlo.",
     alreadyTitle: "Ya te anotaste. Pronto nos vamos a contactar.",
     alreadyIntents: "Elegiste",
     alreadyNewsletter: "Revisá el correo para confirmar el boletín.",
@@ -363,7 +420,8 @@ export const COPY: Record<Locale, Copy> = {
       howHelp: "Contanos cómo querés ayudar.",
       link: "El enlace tiene que ser https.",
       message: "El mensaje es demasiado largo.",
-      consent: "Hace falta el consentimiento para tratar los datos según la Ley 25.326.",
+      consent:
+        "Hace falta el consentimiento para tratar los datos según la Ley 25.326.",
       turnstileToken: "Falta la verificación.",
     },
     turnstileMissing: "Falta la clave pública de Turnstile en este entorno.",
@@ -379,13 +437,16 @@ export const COPY: Record<Locale, Copy> = {
       submitSignUp: "Crear cuenta",
       forgot: "Olvidé la contraseña",
       verifyTitle: "Verificá tu correo",
-      verifyBody: "El enlace confirma la cuenta. Vence en una hora y se usa una sola vez. Si no llegó, pedí otro desde el ingreso.",
+      verifyBody:
+        "El enlace confirma la cuenta. Vence en una hora y se usa una sola vez. Si no llegó, pedí otro desde el ingreso.",
       verifyAction: "Verificar",
       recoverTitle: "Recuperar el acceso",
       recoverSend: "Enviar el enlace",
       recoverChoose: "Guardar contraseña",
-      sent: "Te enviamos un correo para verificar la cuenta. El enlace vence en una hora y se usa una sola vez.",
-      sentRecover: "Si hay una cuenta con ese correo, llega un enlace. Vence en una hora y se usa una sola vez.",
+      sent:
+        "Te enviamos un correo para verificar la cuenta. El enlace vence en una hora y se usa una sola vez.",
+      sentRecover:
+        "Si hay una cuenta con ese correo, llega un enlace. Vence en una hora y se usa una sola vez.",
       verified: "Correo verificado. Ya podés ingresar.",
       recovered: "Contraseña guardada. Ya podés ingresar.",
       unverified: "Falta verificar el correo.",
@@ -402,7 +463,8 @@ export const COPY: Record<Locale, Copy> = {
       code: "Código",
       sessions: "Sesiones activas",
       revoke: "Revocar",
-      signedOut: "Entrá para ver las sesiones, las passkeys y el segundo factor.",
+      signedOut:
+        "Entrá para ver las sesiones, las passkeys y el segundo factor.",
       mismatch: "Las contraseñas no coinciden.",
       failed: "No se pudo completar. Revisá los datos.",
     },
@@ -429,7 +491,8 @@ export const COPY: Record<Locale, Copy> = {
     },
     language: "Idioma",
     footer: {
-      about: "Enrailar es una iniciativa de Sinequix para recuperar los trenes de Argentina. Proyecto abierto, con código Apache-2.0.",
+      about:
+        "Enrailar es una iniciativa de Sinequix para recuperar los trenes de Argentina. Proyecto abierto, con código Apache-2.0.",
       contact: "Contacto",
       mailboxes: "Casillas",
       project: "Proyecto",
@@ -441,10 +504,21 @@ export const COPY: Record<Locale, Copy> = {
   },
   en: {
     title: "Enrailar · Restoring Argentina's railways",
-    description: `Restoring Argentina's railways. Phase 1 is monitoring. Hackatrain is in ${HACKATRAIN_WHEN.en}.`,
+    description:
+      `Restoring Argentina's railways. Phase 1 is monitoring. Hackatrain is in ${HACKATRAIN_WHEN.en}.`,
     tagline: "See first, then move.",
     skip: "Skip to content",
-    nav: { vision: "Vision", phase: "Phase 1", next: "What's next", hackatrain: "Hackatrain", join: "Join", blog: "Log", news: "News" },
+    nav: {
+      vision: "Vision",
+      phase: "Phase 1",
+      next: "What's next",
+      hackatrain: "Hackatrain",
+      join: "Join",
+      blog: "Log",
+      news: "News",
+      menuOpen: "Open menu",
+      menuClose: "Close menu",
+    },
     phase: "Phase 1 · monitoring",
     heroEyebrow: "Open project · Phase 1: monitoring",
     heroLede:
@@ -461,7 +535,8 @@ export const COPY: Record<Locale, Copy> = {
     captionRobot: "Inspection prototype",
     captionStation: "Station with lockers",
     countdownLabel: "Hackatrain",
-    countdownNote: `The announcement does not name a day. The reference is ${HACKATRAIN_WHEN.en}. The countdown appears when a date is set.`,
+    countdownNote:
+      `The announcement does not name a day. The reference is ${HACKATRAIN_WHEN.en}. The countdown appears when a date is set.`,
     visionEyebrow: "Vision",
     visionHeading: "Trains that serve again",
     visionTitle: "A network that can be used again",
@@ -471,10 +546,24 @@ export const COPY: Record<Locale, Copy> = {
       "The organization we have in mind brings together technicians, railway workers, municipalities, businesses and users. Budgets, proposals and progress are published. The people who operate, and the people who sign a safety decision, stay identifiable.",
     ],
     principles: [
-      { title: "Open", body: "Public code, data and protocols, under the Apache-2.0 license." },
-      { title: "Cooperative", body: "Technicians, railway workers, municipalities, businesses and users at the same table." },
-      { title: "Transparent", body: "Budgets, proposals and progress are published as they exist." },
-      { title: "Accountable", body: "Whoever operates, and whoever signs a safety decision, is an identifiable person." },
+      {
+        title: "Open",
+        body: "Public code, data and protocols, under the Apache-2.0 license.",
+      },
+      {
+        title: "Cooperative",
+        body:
+          "Technicians, railway workers, municipalities, businesses and users at the same table.",
+      },
+      {
+        title: "Transparent",
+        body: "Budgets, proposals and progress are published as they exist.",
+      },
+      {
+        title: "Accountable",
+        body:
+          "Whoever operates, and whoever signs a safety decision, is an identifiable person.",
+      },
     ],
     phaseEyebrow: "Phase 1 · monitoring",
     phaseTitle: "First, see what is there",
@@ -501,32 +590,38 @@ export const COPY: Record<Locale, Copy> = {
     ],
     nextEyebrow: "After the map",
     nextTitle: "What's next",
-    nextLede: "A line, not a promise. Each station opens when the previous one can be measured.",
+    nextLede:
+      "A line, not a promise. Each station opens when the previous one can be measured.",
     stations: [
       {
         title: "Inspection as a service",
         when: "First product",
-        body: "Track audits and maintenance tracking, in Argentina and across Latin America. Each intervention is written down: the defect, the work and the capacity that comes back.",
+        body:
+          "Track audits and maintenance tracking, in Argentina and across Latin America. Each intervention is written down: the defect, the work and the capacity that comes back.",
       },
       {
         title: "Last mile through stations",
         when: "First corridor",
-        body: "Regional depots and stations used as small logistics rooms. The first market is parcels, with local couriers finishing the delivery.",
+        body:
+          "Regional depots and stations used as small logistics rooms. The first market is parcels, with local couriers finishing the delivery.",
       },
       {
         title: "Locker trains",
         when: "Pilot",
-        body: "Consists with modules and lockers. Pickup with a code, and modules that swap on the platform so the train does not have to wait.",
+        body:
+          "Consists with modules and lockers. Pickup with a code, and modules that swap on the platform so the train does not have to wait.",
       },
       {
         title: "Freight scenarios",
         when: "Study",
-        body: "By tonnage and speed: from parcels and parts to containers and heavy goods, where the infrastructure can already carry them. For study, not as a promise.",
+        body:
+          "By tonnage and speed: from parcels and parts to containers and heavy goods, where the infrastructure can already carry them. For study, not as a promise.",
       },
       {
         title: "Connection with Chile",
         when: "Regional study",
-        body: "A trans-Andean connection needs its own study: the historic alignment and alternatives, grades, tunnels, gauges, weather, customs, demand and financing.",
+        body:
+          "A trans-Andean connection needs its own study: the historic alignment and alternatives, grades, tunnels, gauges, weather, customs, demand and financing.",
       },
     ],
     hackatrainEyebrow: "Public launch",
@@ -541,12 +636,15 @@ export const COPY: Record<Locale, Copy> = {
     ],
     hackatrainCta: "Pre-register",
     blogTitle: "Log",
-    blogDeck: "Working notes from the project. What gets decided, what gets measured, and what is still unknown.",
+    blogDeck:
+      "Working notes from the project. What gets decided, what gets measured, and what is still unknown.",
     postTitle: "Restoring the railways starts by seeing them",
-    postDeck: "A map, an inspection, and a corridor that works. The source note is on X.",
+    postDeck:
+      "A map, an inspection, and a corridor that works. The source note is on X.",
     postSource: "Source note",
     participate: "Join",
-    joinLede: "One form. Mark what you want to do. A person from the project reads it.",
+    joinLede:
+      "One form. Mark what you want to do. A person from the project reads it.",
     joinMail: "You can also write to {email}.",
     formHint: "You can choose more than one. A city or a region is required.",
     consent:
@@ -580,7 +678,8 @@ export const COPY: Record<Locale, Copy> = {
     send: "Send",
     sending: "Sending…",
     accepted: "We received the request.",
-    acceptedNewsletter: "We received the request. If you asked for the newsletter, a message arrives to confirm it.",
+    acceptedNewsletter:
+      "We received the request. If you asked for the newsletter, a message arrives to confirm it.",
     alreadyTitle: "You're already signed up. We'll be in touch soon.",
     alreadyIntents: "You chose",
     alreadyNewsletter: "Check your inbox to confirm the newsletter.",
@@ -612,13 +711,16 @@ export const COPY: Record<Locale, Copy> = {
       submitSignUp: "Create account",
       forgot: "Forgot password",
       verifyTitle: "Verify your email",
-      verifyBody: "The link confirms the account. It expires in one hour and works only once. If it did not arrive, ask for another from sign in.",
+      verifyBody:
+        "The link confirms the account. It expires in one hour and works only once. If it did not arrive, ask for another from sign in.",
       verifyAction: "Verify",
       recoverTitle: "Recover access",
       recoverSend: "Send the link",
       recoverChoose: "Save password",
-      sent: "We sent an email to verify the account. The link expires in one hour and works only once.",
-      sentRecover: "If an account uses that email, a link is on the way. It expires in one hour and works only once.",
+      sent:
+        "We sent an email to verify the account. The link expires in one hour and works only once.",
+      sentRecover:
+        "If an account uses that email, a link is on the way. It expires in one hour and works only once.",
       verified: "Email verified. You can sign in.",
       recovered: "Password saved. You can sign in.",
       unverified: "The email still needs verification.",
@@ -662,7 +764,8 @@ export const COPY: Record<Locale, Copy> = {
     },
     language: "Language",
     footer: {
-      about: "Enrailar is a Sinequix initiative to restore Argentina's railways. An open project, with Apache-2.0 code.",
+      about:
+        "Enrailar is a Sinequix initiative to restore Argentina's railways. An open project, with Apache-2.0 code.",
       contact: "Contact",
       mailboxes: "Mailboxes",
       project: "Project",
