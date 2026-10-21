@@ -48,7 +48,17 @@ interface Copy {
   description: string;
   tagline: string;
   skip: string;
-  nav: { vision: string; phase: string; next: string; hackatrain: string; join: string; blog: string; news: string };
+  nav: {
+    vision: string;
+    phase: string;
+    next: string;
+    hackatrain: string;
+    join: string;
+    blog: string;
+    news: string;
+    menuOpen: string;
+    menuClose: string;
+  };
   phase: string;
   heroEyebrow: string;
   heroLede: string;
@@ -212,7 +222,17 @@ export const COPY: Record<Locale, Copy> = {
     description: `Recuperar los trenes de Argentina. Fase 1: monitoreo. Hackatrain en ${HACKATRAIN_WHEN.es}.`,
     tagline: "Primero ver, después mover.",
     skip: "Ir al contenido",
-    nav: { vision: "Visión", phase: "Fase 1", next: "Qué viene", hackatrain: "Hackatrain", join: "Sumate", blog: "Bitácora", news: "Noticias" },
+    nav: {
+      vision: "Visión",
+      phase: "Fase 1",
+      next: "Qué viene",
+      hackatrain: "Hackatrain",
+      join: "Sumate",
+      blog: "Bitácora",
+      news: "Noticias",
+      menuOpen: "Abrir menú",
+      menuClose: "Cerrar menú",
+    },
     phase: "Fase 1 · monitoreo",
     heroEyebrow: "Proyecto abierto · Fase 1: monitoreo",
     heroLede:
@@ -444,7 +464,17 @@ export const COPY: Record<Locale, Copy> = {
     description: `Restoring Argentina's railways. Phase 1 is monitoring. Hackatrain is in ${HACKATRAIN_WHEN.en}.`,
     tagline: "See first, then move.",
     skip: "Skip to content",
-    nav: { vision: "Vision", phase: "Phase 1", next: "What's next", hackatrain: "Hackatrain", join: "Join", blog: "Log", news: "News" },
+    nav: {
+      vision: "Vision",
+      phase: "Phase 1",
+      next: "What's next",
+      hackatrain: "Hackatrain",
+      join: "Join",
+      blog: "Log",
+      news: "News",
+      menuOpen: "Open menu",
+      menuClose: "Close menu",
+    },
     phase: "Phase 1 · monitoring",
     heroEyebrow: "Open project · Phase 1: monitoring",
     heroLede:
