@@ -41,7 +41,13 @@ jobs:
       - name: Test
         run: pnpm test
       - name: Install Playwright
-        run: pnpm --filter @enrailar/web exec playwright install chromium --with-deps
+        run: |
+          if [[ "${{ runner.environment }}" == "github-hosted" ]]; then
+            pnpm --filter @enrailar/web exec playwright install chromium --with-deps
+          else
+            # The managed runner supplies OS libraries; CI has no sudo access.
+            pnpm --filter @enrailar/web exec playwright install chromium
+          fi
       - name: E2E mobile
         run: pnpm --filter @enrailar/web e2e
       - name: Build web
