@@ -19,6 +19,7 @@ jobs:
         uses: pnpm/action-setup@v6
         with:
           version: 12.11.2
+          dest: ${{ runner.temp }}/pnpm-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
       - name: Node
         uses: actions/setup-node@v7
         with:
@@ -28,6 +29,8 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.7
+      - name: Preview eligibility
+        run: node --test scripts/ci/preview-eligibility.test.mjs
       - name: Install
         run: pnpm install --frozen-lockfile
       - name: Chrome
@@ -39,7 +42,13 @@ jobs:
       - name: Test
         run: pnpm test
       - name: Install Playwright
-        run: pnpm --filter @enrailar/web exec playwright install chromium --with-deps
+        run: |
+          if [[ "${{ runner.environment }}" == "github-hosted" ]]; then
+            pnpm --filter @enrailar/web exec playwright install chromium --with-deps
+          else
+            # The managed runner supplies OS libraries; CI has no sudo access.
+            pnpm --filter @enrailar/web exec playwright install chromium
+          fi
       - name: E2E mobile
         run: pnpm --filter @enrailar/web e2e
       - name: Build web

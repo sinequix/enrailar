@@ -38,6 +38,7 @@ jobs:
         uses: pnpm/action-setup@v6
         with:
           version: 12.11.2
+          dest: ${{ runner.temp }}/pnpm-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
       - name: Node
         uses: actions/setup-node@v7
         with:
