@@ -28,6 +28,8 @@ Los previews solo se ejecutan para PR internos que no sean de Dependabot. Los PR
 
 El runner administrado ejecuta CI sin `sudo`: sus librerías de sistema para Chromium deben estar provisionadas. CI descarga el navegador y ejecuta los E2E; si faltan librerías, los tests fallan. En runners de GitHub se conserva `playwright install --with-deps`. Gitleaks se instala en `RUNNER_TEMP`, sin modificar `/usr/local/bin` ni ampliar permisos del runner.
 
+Cada job instala pnpm en un directorio propio de `RUNNER_TEMP`, identificado por ejecución, intento y job. `pnpm/action-setup` borra su destino al instalar: no se comparte `~/setup-pnpm` con otros jobs o repositorios del runner.
+
 ## Secretos
 
 Los valores no van en el repositorio, ni en ejemplos, ni en logs. [`.env.example`](../.env.example) solo tiene el nombre, vacío. Cargalos en el entorno del que corre Alchemy (la shell local o los secretos del repositorio en GitHub).
