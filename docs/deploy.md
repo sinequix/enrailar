@@ -24,6 +24,12 @@ pnpm --filter @enrailar/infra exec alchemy destroy --no-input --stage pr-12
 
 Los workflows están en `.github/workflows/`. `ci.yml` corre lint, typecheck, tests y el build de la web, sin token de Cloudflare. `preview.yml` despliega el stage `pr-<número>` y lo destruye al terminar ese job (haya salido bien o mal el deploy) y otra vez al cerrar el PR. `prod.yml` despliega `prod` en cada push a `main`. Los dos últimos llaman a `scripts/ci/require-secrets.sh` antes de Alchemy: si falta un secreto, salen con error y no despliegan. `alchemy destroy` de `prod` no está en ningún workflow.
 
+Los previews solo se ejecutan para PR internos que no sean de Dependabot. Los PR de forks y Dependabot no reciben secretos de Actions: sus jobs de preview y limpieza quedan `skipped`, sin crear recursos. Se comprueba el autor del PR, no quien reintenta el workflow. Esto no reemplaza una prueba de despliegue ni cambia el check `ci` obligatorio: lint, typecheck, tests, E2E y builds siguen corriendo sin credenciales. Los PR internos conservan `require-secrets.sh` y fallan si falta configuración. Después de fusionar una dependencia, se verifica el workflow de producción antes de continuar con la siguiente.
+
+El runner administrado ejecuta CI sin `sudo`: sus librerías de sistema para Chromium deben estar provisionadas. CI descarga el navegador y ejecuta los E2E; si faltan librerías, los tests fallan. En runners de GitHub se conserva `playwright install --with-deps`. Gitleaks se instala en `RUNNER_TEMP`, sin modificar `/usr/local/bin` ni ampliar permisos del runner.
+
+Cada job instala pnpm en un directorio propio de `RUNNER_TEMP`, identificado por ejecución, intento y job. `pnpm/action-setup` borra su destino al instalar: no se comparte `~/setup-pnpm` con otros jobs o repositorios del runner.
+
 ## Secretos
 
 Los valores no van en el repositorio, ni en ejemplos, ni en logs. [`.env.example`](../.env.example) solo tiene el nombre, vacío. Cargalos en el entorno del que corre Alchemy (la shell local o los secretos del repositorio en GitHub).
