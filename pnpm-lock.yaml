@@ -199,7 +199,7 @@ importers:
         version: 7.1.0(@types/node@26.6.4)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(terser@5.51.2)(yaml@2.9.1)
       '@emdash-cms/cloudflare':
         specifier: 1.3.0
-        version: 1.3.0(7b38cee8b0a8d93394bde0e2a7b5f131)
+        version: 1.3.0(8f4c8689e00385ced352ee3def600a48)
       '@enrailar/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -210,8 +210,8 @@ importers:
         specifier: 1.3.0
         version: 1.3.0(@astrojs/react@7.1.0(@types/node@26.6.4)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(terser@5.51.2)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@6.0.3))(@date-fns/tz@1.5.0)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(astro@7.4.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)(typescript@6.0.3)
       kysely:
-        specifier: 0.29.6
-        version: 0.29.6
+        specifier: 0.29.7
+        version: 0.29.7
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -4279,6 +4279,10 @@ packages:
     resolution: {integrity: sha512-hHaB8C/rfzDDtr/t8YZwxAuPJTT0zHyaPoVzcXwDYhYNAgH/4sIfVhi/XLLIY+bL/FqaIJnjATDbi8ObSELmxg==}
     engines: {node: '>=22.0.0'}
 
+  kysely@0.29.7:
+    resolution: {integrity: sha512-fmIq+7kv4WbFm2tcfznRzikqB4cuNpgZ40PSU2fAJ2/OO5XhojqnTPrmgrCjYSRJVwBln03XcRXJGnw9H099IQ==}
+    engines: {node: '>=22.0.0'}
+
   launder@1.7.2:
     resolution: {integrity: sha512-DLg3HPnHUfBi5/MxMLmJD12dmlMpFEC2HgMW6vkZ/9JR0RU00kXoRGvDxAvFmdO0o610OA77i4FgNTLucmhDVg==}
 
@@ -6860,7 +6864,7 @@ snapshots:
       - typescript
       - zod
 
-  '@emdash-cms/auth@1.3.0(astro@7.4.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(kysely@0.29.6)':
+  '@emdash-cms/auth@1.3.0(astro@7.4.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(kysely@0.29.7)':
     dependencies:
       '@oslojs/crypto': 1.0.1
       '@oslojs/encoding': 1.1.0
@@ -6870,7 +6874,7 @@ snapshots:
       ulidx: 2.4.1
       zod: 4.5.4
     optionalDependencies:
-      kysely: 0.29.6
+      kysely: 0.29.7
 
   '@emdash-cms/blocks@1.3.0(@date-fns/tz@1.5.0)(@types/react@19.2.15)(date-fns@4.4.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(zod@4.5.4)':
     dependencies:
@@ -6888,7 +6892,7 @@ snapshots:
       - date-fns
       - zod
 
-  '@emdash-cms/cloudflare@1.3.0(7b38cee8b0a8d93394bde0e2a7b5f131)':
+  '@emdash-cms/cloudflare@1.3.0(8f4c8689e00385ced352ee3def600a48)':
     dependencies:
       '@astrojs/cloudflare': 14.4.1(@types/node@26.6.4)(astro@7.4.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(wrangler@4.151.3(@cloudflare/workers-types@5.20261009.1)(@types/node@26.6.4))(yaml@2.9.1)
       '@cloudflare/ai-search-snippet': 0.0.42
@@ -6896,8 +6900,8 @@ snapshots:
       astro: 7.4.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1)
       emdash: 1.3.0(@astrojs/react@7.1.0(@types/node@26.6.4)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(terser@5.51.2)(yaml@2.9.1))(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@atcute/identity@2.0.2(@atcute/lexicons@2.1.1)(typescript@6.0.3))(@date-fns/tz@1.5.0)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(astro@7.4.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(date-fns@4.4.0)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)(typescript@6.0.3)
       jose: 6.2.12
-      kysely: 0.29.6
-      kysely-d1: 0.4.0(kysely@0.29.6)
+      kysely: 0.29.7
+      kysely-d1: 0.4.0(kysely@0.29.7)
       ulidx: 2.4.1
       wrangler: 4.151.3(@cloudflare/workers-types@5.20261009.1)(@types/node@26.6.4)
     optionalDependencies:
@@ -7376,10 +7380,10 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@libsql/kysely-libsql@0.4.1(kysely@0.29.6)':
+  '@libsql/kysely-libsql@0.4.1(kysely@0.29.7)':
     dependencies:
       '@libsql/client': 0.8.1
-      kysely: 0.29.6
+      kysely: 0.29.7
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -9377,7 +9381,7 @@ snapshots:
       '@atcute/lexicons': 2.1.1
       '@atcute/multibase': 1.2.5
       '@emdash-cms/admin': 1.3.0(@atcute/cbor@2.3.8(@atcute/cid@2.5.0))(@atcute/cid@2.5.0)(@date-fns/tz@1.5.0)(@floating-ui/dom@1.8.0)(@tiptap/extensions@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0))(@tiptap/pm@3.32.0))(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(echarts@6.1.0)(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.6)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@6.0.3)(zod@4.5.4)
-      '@emdash-cms/auth': 1.3.0(astro@7.4.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(kysely@0.29.6)
+      '@emdash-cms/auth': 1.3.0(astro@7.4.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))(kysely@0.29.7)
       '@emdash-cms/blocks': 1.3.0(@date-fns/tz@1.5.0)(@types/react@19.2.15)(date-fns@4.4.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(zod@4.5.4)
       '@emdash-cms/gutenberg-to-portable-text': 1.3.0
       '@emdash-cms/plugin-types': 0.6.0
@@ -9420,7 +9424,7 @@ snapshots:
       jose: 6.2.12
       jpeg-js: 0.4.4
       jsonc-parser: 3.3.1
-      kysely: 0.29.6
+      kysely: 0.29.7
       lowlight: 3.3.0
       mime: 4.1.0
       modern-tar: 0.7.7
@@ -9434,7 +9438,7 @@ snapshots:
       upng-js: 2.1.0
       zod: 4.5.4
     optionalDependencies:
-      '@libsql/kysely-libsql': 0.4.1(kysely@0.29.6)
+      '@libsql/kysely-libsql': 0.4.1(kysely@0.29.7)
       pg: 8.23.1
     transitivePeerDependencies:
       - '@atcute/cbor'
@@ -9870,11 +9874,13 @@ snapshots:
 
   kleur@4.1.5: {}
 
-  kysely-d1@0.4.0(kysely@0.29.6):
+  kysely-d1@0.4.0(kysely@0.29.7):
     dependencies:
-      kysely: 0.29.6
+      kysely: 0.29.7
 
   kysely@0.29.6: {}
+
+  kysely@0.29.7: {}
 
   launder@1.7.2:
     dependencies:
