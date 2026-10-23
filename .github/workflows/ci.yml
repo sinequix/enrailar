@@ -28,6 +28,8 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.7
+      - name: Preview eligibility
+        run: node --test scripts/ci/preview-eligibility.test.mjs
       - name: Install
         run: pnpm install --frozen-lockfile
       - name: Chrome

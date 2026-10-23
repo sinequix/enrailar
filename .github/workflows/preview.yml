@@ -14,7 +14,12 @@ concurrency:
 jobs:
   deploy:
     name: preview
-    if: github.event.action != 'closed'
+    # Forks and Dependabot do not receive Actions secrets. Their validation stays
+    # in CI; never grant credentials just to run a preview of untrusted code.
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","ian-hetzner"]') || 'ubuntu-latest' }}
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -71,7 +76,11 @@ jobs:
 
   destroy:
     name: destroy preview
-    if: github.event.action == 'closed'
+    # Only these PRs can have created a preview stage above.
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","ian-hetzner"]') || 'ubuntu-latest' }}
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
