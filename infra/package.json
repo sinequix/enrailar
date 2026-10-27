@@ -12,7 +12,7 @@
     "@alchemy.run/frontend-frameworks": "2.0.0-beta.81",
     "@effect/platform-node": "4.0.5",
     "@enrailar/shared": "workspace:*",
-    "alchemy": "2.0.0-beta.81",
+    "alchemy": "2.0.0-beta.84",
     "effect": "4.0.5"
   },
   "devDependencies": {
