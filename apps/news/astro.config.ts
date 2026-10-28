@@ -43,6 +43,11 @@ export default defineConfig({
         : local({ directory: "./data/uploads", baseUrl: "/_emdash/api/media/file" }),
       admin: { locales: ["es-419", "en"] },
       middleware: { outer: "./src/access-gate.ts" },
+      // El Worker nunca migra dentro de un request: un Worker cortado a mitad
+      // de una migración dejó `_emdash_migrations_lock` tomado y el sitio en
+      // 503 (incidente 2026-10-28). Prod y preview migran en el workflow con
+      // `emdash migrate` (scripts/ci/news-migrate.sh); `astro dev` sigue en auto.
+      migrations: { runtime: "check", dev: "auto" },
     }),
   ],
   vite: {
