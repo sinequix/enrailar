@@ -136,6 +136,28 @@ Deno.test({
 
     const serverCwd = `${dir}/app`;
     await Deno.mkdir(`${serverCwd}/data`, { recursive: true });
+    // Con `migrations.runtime: "check"` el server no migra solo: igual que
+    // en prod y preview, se migra antes con la CLI y el fingerprint del target.
+    const dbPath = `${serverCwd}/data/news.db`;
+    const migrate = async (...extra: string[]) => {
+      const run = await new Deno.Command("pnpm", {
+        args: ["exec", "emdash", "migrate", "--from-config", "--database", dbPath, "--json", ...extra],
+        cwd: NEWS_ROOT,
+        env: buildEnv,
+        stdout: "piped",
+        stderr: "piped",
+      }).output();
+      const out = new TextDecoder().decode(run.stdout);
+      const json = out.slice(out.indexOf("{"), out.lastIndexOf("}") + 1);
+      return { code: run.code, report: JSON.parse(json || "{}"), stderr: new TextDecoder().decode(run.stderr) };
+    };
+    const pending = await migrate("--check");
+    assertEquals(pending.code, 2, pending.stderr);
+    assert(pending.report.pending.length > 0);
+    const applied = await migrate("--expected-target-fingerprint", pending.report.target.fingerprint);
+    assertEquals(applied.code, 0, applied.stderr);
+    assertEquals((await migrate("--check")).code, 0);
+
     const serverEnv = {
       ...buildEnv,
       HOST: "127.0.0.1",
