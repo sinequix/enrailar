@@ -50,10 +50,16 @@ jobs:
         run: npm ci --prefix apps/inbox
       # Las migraciones de EmDash son compatibles con el código anterior: van
       # antes del deploy, así el Worker nuevo (runtime "check") arranca migrado.
+      # news-migrate.sh lee el output de Alchemy, que evalúa infra/alchemy.run.ts:
+      # necesita los mismos secretos que el deploy (el resto ya está en el job).
       - name: EmDash migrations (news)
         env:
           NEWS_D1_TARGET_FINGERPRINT: ${{ vars.NEWS_D1_TARGET_FINGERPRINT }}
-        run: bash scripts/ci/news-migrate.sh prod "$NEWS_D1_TARGET_FINGERPRINT"
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          EMDASH_ENCRYPTION_KEY: ${{ secrets.EMDASH_ENCRYPTION_KEY }}
+        run: |
+          bash scripts/ci/require-secrets.sh
+          bash scripts/ci/news-migrate.sh prod "$NEWS_D1_TARGET_FINGERPRINT"
       - name: Deploy prod
         env:
           NODE_OPTIONS: --import ${{ github.workspace }}/scripts/ci/inbox-vite-hooks.mjs

@@ -500,7 +500,14 @@ Deno.test("prod no pone el secreto en el job y CI no baja Chrome sin pin", () =>
   const deploy = prod.slice(prod.indexOf("name: Deploy prod"));
   assert(deploy.includes("BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}"));
   assert(deploy.includes("require-secrets.sh"));
-  assertEquals(prod.indexOf("BETTER_AUTH_SECRET"), prod.indexOf("name: Deploy prod") < prod.indexOf("BETTER_AUTH_SECRET") ? prod.indexOf("BETTER_AUTH_SECRET") : -1);
+  // El secreto vive solo en los pasos que evalúan la config de Alchemy: el
+  // deploy y las migraciones de EmDash (news-migrate.sh lee su output).
+  const withSecret = prod.split("\n      - name: ").slice(1)
+    .filter((step) => step.includes("BETTER_AUTH_SECRET"))
+    .map((step) => step.split("\n")[0]);
+  assertEquals(withSecret, ["EmDash migrations (news)", "Deploy prod"]);
+  const migrate = prod.slice(prod.indexOf("name: EmDash migrations (news)"), prod.indexOf("name: Deploy prod"));
+  assert(migrate.includes("require-secrets.sh"));
   const ci = Deno.readTextFileSync(new URL("../../../.github/workflows/ci.yml", import.meta.url));
   assert(!ci.includes("google-chrome-stable"));
   assert(httpHosts(ci).every((host) => host !== "dl.google.com"));
