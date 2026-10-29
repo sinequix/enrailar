@@ -493,14 +493,10 @@ a:hover {
   stroke-linecap: round;
 }
 
-@media (max-width: 860px) {
-  .nav .nav-section {
-    display: none;
-  }
-}
-
-/* 360–430: una sola fila. Los enlaces van a un menú; el idioma queda visible. */
-@media (max-width: 480px) {
+/* Hasta 1160 px la fila completa (secciones, bitácora, noticias y cuenta) no
+   entra junto a la marca y se partía en dos o tres filas. Mobile y tablet usan
+   una sola fila: los enlaces van a un menú; el idioma queda visible. */
+@media (max-width: 1160px) {
   .site-header .wrap {
     flex-wrap: nowrap;
     align-items: center;
@@ -537,10 +533,6 @@ a:hover {
 
   .nav-links.is-open {
     display: flex;
-  }
-
-  .nav-links.is-open .nav-section {
-    display: block;
   }
 }
 
@@ -1454,6 +1446,8 @@ html[data-sumate-boletin="1"] .sumate-confirm {
 .article p {
   font-size: var(--t-md);
   line-height: 1.65;
+  /* Las URL largas del texto no deben ensanchar la página en mobile. */
+  overflow-wrap: anywhere;
 }
 
 .article .source {
@@ -1556,6 +1550,10 @@ html[data-sumate-boletin="1"] .sumate-confirm {
     border-top: 2px solid var(--accent-soft);
     padding-left: 0;
     padding-top: var(--s-4);
+  }
+
+  .hero-aside dl {
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   }
 
   .site-footer .wrap {
