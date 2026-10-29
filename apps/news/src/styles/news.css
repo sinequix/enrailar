@@ -272,6 +272,13 @@ h1 {
   margin: 0.35rem 0;
 }
 
+/* Las URL largas (fuente, cuerpo) no deben ensanchar la tarjeta ni la página en mobile. */
+.source,
+.summary,
+.body {
+  overflow-wrap: anywhere;
+}
+
 .source strong {
   font-family: var(--font-display);
 }
