@@ -3,6 +3,10 @@ import { SITE_URL } from "../src/copy.ts";
 import { sumateBootScript } from "../src/sumate-memory.ts";
 import "./globals.css";
 
+/** Ahrefs Web Analytics (proyecto Enrailar). La data-key es pública: vive en el HTML. */
+const AHREFS_ANALYTICS_SRC = "https://analytics.ahrefs.com/analytics.js";
+const AHREFS_ANALYTICS_KEY = "zh3y3cn8V+6DKAB/bteo9w";
+
 export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Enrailar",
@@ -36,6 +40,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         <link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/chivo-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <script src={AHREFS_ANALYTICS_SRC} data-key={AHREFS_ANALYTICS_KEY} async />
       </head>
       <body>
         <script dangerouslySetInnerHTML={{ __html: sumateBootScript() }} />

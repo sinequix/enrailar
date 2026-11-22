@@ -205,6 +205,8 @@ Deno.test("el recuerdo de Sumate no guarda el correo", () => {
   assert(forms.includes("components/ui/button.tsx"));
   const layout = Deno.readTextFileSync(new URL("../app/layout.tsx", import.meta.url));
   assert(layout.includes("sumateBootScript"));
+  assert(layout.includes('"https://analytics.ahrefs.com/analytics.js"'));
+  assert(layout.includes('"zh3y3cn8V+6DKAB/bteo9w"'));
 });
 
 Deno.test("el pie atribuye el copyright a Sinequix", () => {
