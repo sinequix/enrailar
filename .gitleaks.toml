@@ -1,0 +1,16 @@
+# Public identifiers that gitleaks generic-api-key otherwise flags.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Public Ahrefs Web Analytics data-key (required in the HTML head for the Ahrefs crawler)"
+condition = "AND"
+regexTarget = "line"
+regexes = ['''zh3y3cn8V\+6DKAB/bteo9w''']
+paths = [
+  '''apps/web/app/layout\.tsx''',
+  '''apps/web/tests/site_test\.ts''',
+]
