@@ -224,6 +224,9 @@ Deno.test("el recuerdo de Sumate no guarda el correo", () => {
   assert(layout.includes("sumateBootScript"));
   assert(layout.includes('"https://analytics.ahrefs.com/analytics.js"'));
   assert(layout.includes('"zh3y3cn8V+6DKAB/bteo9w"'));
+  assert(layout.includes('"G-Y0M7G9KGEW"'));
+  assert(layout.includes("https://www.googletagmanager.com/gtag/js?id="));
+  assert(layout.includes("GA_INLINE_SCRIPT"));
 });
 
 Deno.test("el pie atribuye el copyright a Sinequix", () => {
