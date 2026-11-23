@@ -78,20 +78,33 @@ export const intentsSchema = z.preprocess(
 const optionalText = (max: number) =>
   z.preprocess(emptyToUndefined, z.string().trim().max(max).optional());
 
-/** Cualquier URL https. El campo de la ficha única no se limita a LinkedIn. */
+/**
+ * Si el enlace llega sin esquema ("linkedin.com/in/ana", "www.ana.dev"), se
+ * completa con https://. Un esquema explícito distinto de https sigue rechazado.
+ */
+export function withHttps(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (trimmed === "") return undefined;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
+  return `https://${trimmed.replace(/^\/\//, "")}`;
+}
+
+/** Cualquier URL https con dominio. El campo de la ficha única no se limita a LinkedIn. */
 export const linkSchema = z.preprocess(
-  emptyToUndefined,
+  withHttps,
   z
     .string()
-    .trim()
     .max(300)
     .refine((value) => {
+      if (/\s/.test(value)) return false;
       try {
-        return new URL(value).protocol === "https:";
+        const url = new URL(value);
+        return url.protocol === "https:" && url.hostname.includes(".");
       } catch {
         return false;
       }
-    }, "Tiene que ser un enlace https")
+    }, "Tiene que ser un solo enlace https")
     .optional(),
 );
 

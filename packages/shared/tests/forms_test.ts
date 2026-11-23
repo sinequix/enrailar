@@ -84,3 +84,23 @@ Deno.test("la ficha única deduplica intenciones y acepta un https cualquiera", 
   assertFalse(sumateSchema.safeParse({ ...sumate, link: "http://example.com" }).success);
   assertFalse(sumateSchema.safeParse({ ...sumate, consent: false }).success);
 });
+
+Deno.test("la ficha única completa https:// cuando el enlace llega sin esquema", () => {
+  const cases: Array<[string, string]> = [
+    ["linkedin.com/in/ejemplo", "https://linkedin.com/in/ejemplo"],
+    ["www.linkedin.com/in/ejemplo/", "https://www.linkedin.com/in/ejemplo/"],
+    ["  ejemplo.io  ", "https://ejemplo.io"],
+    ["//ejemplo.io/a", "https://ejemplo.io/a"],
+  ];
+  for (const [input, expected] of cases) {
+    const parsed = sumateSchema.safeParse({ ...sumate, link: input });
+    assert(parsed.success, input);
+    assertEquals(parsed.data.link, expected);
+  }
+});
+
+Deno.test("la ficha única sigue rechazando enlaces que no son un https válido", () => {
+  for (const link of ["http://ejemplo.io", "ftp://ejemplo.io", "javascript:alert(1)", "hola", "https://a.io https://b.io"]) {
+    assertFalse(sumateSchema.safeParse({ ...sumate, link }).success, link);
+  }
+});

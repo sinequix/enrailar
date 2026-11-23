@@ -80,6 +80,23 @@ Deno.test("la ficha única preselecciona desde el hash y exige una intención", 
   });
   assert(parsed.success);
   assertEquals(SUMATE_PATH, "/v1/sumate");
+  const bare = parseSumate({
+    intents: ["hackatrain"],
+    email: "hola@enrailar.com",
+    name: "Equipo",
+    city: "Tandil",
+    region: "",
+    profile: "dev",
+    howHelp: "Quiero programar.",
+    link: "linkedin.com/in/ejemplo",
+    message: "",
+    locale: "es",
+    consent: true,
+    turnstileToken: "token",
+    company_url: "",
+  });
+  assert(bare.success, "un enlace sin https:// no frena el envío");
+  assertEquals(bare.data.link, "https://linkedin.com/in/ejemplo");
   assert(!parseSumate({
     intents: [],
     email: "",
