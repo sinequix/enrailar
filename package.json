@@ -12,7 +12,7 @@
     "test": "turbo test && deno test --allow-env --allow-read scripts/clickup-sync"
   },
   "devDependencies": {
-    "turbo": "2.11.8",
+    "turbo": "2.11.10",
     "typescript": "7.0.2"
   }
 }
