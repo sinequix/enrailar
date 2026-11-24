@@ -117,15 +117,15 @@ export function inlineScriptHashes(html: string): string[] {
 }
 
 export function securityHeaders(https: boolean, scriptHashes: readonly string[] = [sumateScriptHash()]): ReadonlyArray<readonly [string, string]> {
-  const scripts = ["'self'", ...new Set(scriptHashes), "https://challenges.cloudflare.com", "https://static.cloudflareinsights.com", "https://analytics.ahrefs.com"].join(" ");
+  const scripts = ["'self'", ...new Set(scriptHashes), "https://challenges.cloudflare.com", "https://static.cloudflareinsights.com", "https://analytics.ahrefs.com", "https://www.googletagmanager.com"].join(" ");
   const headers: Array<readonly [string, string]> = [
     ["content-security-policy", [
       "default-src 'self'",
       `script-src ${scripts}`,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
+      "img-src 'self' data: blob: https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
       "font-src 'self'",
-      "connect-src 'self' https://api.enrailar.com https://challenges.cloudflare.com https://cloudflareinsights.com https://analytics.ahrefs.com",
+      "connect-src 'self' https://api.enrailar.com https://challenges.cloudflare.com https://cloudflareinsights.com https://analytics.ahrefs.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
       "frame-src https://challenges.cloudflare.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
